@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-red: #E63946;
+  --color-brand-orange: #F4A261;
+  --color-brand-cream: #FDFCF8;
+
+  --font-poppins: "Poppins", sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-brand-cream);
+    color: #111827; /* text-gray-900 */
+    font-family: var(--font-poppins);
+    @apply transition-colors duration-300 antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-montserrat);
+  }
+
+  .dark body {
+    background-color: #030712; 
+    color: #ffffff;
+  }
+}
+
+@utility theme-card {
+  @apply bg-white border border-gray-200 text-gray-900 shadow-sm transition-colors duration-300;
+  
+  @apply dark:bg-gray-900 dark:border-gray-800 dark:text-white dark:shadow-none;
+}
+
+@layer components {
+  .font-custom {
+    font-family: var(--font-poppins);
+  }
+
+  .font-montserrat {
+    font-family: var(--font-montserrat);
+  }
+
+  .caption {
+    font-family: var(--font-poppins);
+    @apply text-sm;
+  }
+}
