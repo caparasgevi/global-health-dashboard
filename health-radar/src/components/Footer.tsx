@@ -13,6 +13,9 @@ const Footer = () => {
           <p className="text-sm text-black dark:text-gray-400 leading-relaxed max-w-xs">
             Advancing global health through real-time data surveillance and innovative IoT solutions.
           </p>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium pt-2">
+            © 2026 HealthRadar Surveillance Group.
+          </p>
         </div>
 
         {/* Quick Links */}
@@ -31,23 +34,31 @@ const Footer = () => {
           </ul>
         </div>
 
-        {/* Status Section */}
+        {/* Global Resources Section */}
         <div>
           <h4 className="text-xs font-bold uppercase tracking-widest text-brand-red mb-6">
-            System Status
+            Global Resources
           </h4>
-          <div className="flex items-center space-x-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            <span className="text-sm font-bold text-black dark:text-white">
-              All Systems Operational
-            </span>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">
-            © 2026 HealthRadar Surveillance Group.
-          </p>
+          <ul className="space-y-4 text-sm font-medium">
+            <li>
+              <a href="https://www.who.int" target="_blank" rel="noopener noreferrer" className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors flex flex-col">
+                World Health Organization
+                <span className="text-[10px] text-gray-500 uppercase tracking-tighter">Global Health Security</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://www.cdc.gov" target="_blank" rel="noopener noreferrer" className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors flex flex-col">
+                CDC Surveillance
+                <span className="text-[10px] text-gray-500 uppercase tracking-tighter">Disease Tracking Hub</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://www.gisaid.org" target="_blank" rel="noopener noreferrer" className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors flex flex-col">
+                GISAID Data
+                <span className="text-[10px] text-gray-500 uppercase tracking-tighter">Genomic Intelligence</span>
+              </a>
+            </li>
+          </ul>
         </div>
 
       </div>
