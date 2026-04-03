@@ -14,7 +14,7 @@ const About = () => {
       <m.section 
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: false, amount: 0.3 }} 
+        viewport={{ once: true, amount: 0.3 }} 
         transition={{ duration: 0.6 }}
         variants={sectionVar}
         className="theme-card border-x-0 border-t-0 pt-20 pb-16 px-6 mb-12 shadow-none rounded-none"
@@ -35,7 +35,7 @@ const About = () => {
         <m.section 
           initial={{ opacity: 0, x: -30 }}
           whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: false, margin: "-100px" }} // Re-animates on upward scroll
+          viewport={{ once: true, margin: "-50px" }} 
           transition={{ duration: 0.7 }}
           className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center"
         >
@@ -43,13 +43,13 @@ const About = () => {
             <h2 className="text-3xl font-bold mb-6 text-black dark:text-white">Disease Surveillance</h2>
             <p className="text-lg text-black dark:text-gray-400 leading-relaxed">
               Founded at the intersection of Computer Engineering and Epidemiological Science,
-              <strong> Health<span className="text-brand-red">Radar</span></strong> is a pioneer in decentralized outbreak detection.
-              We leverage IoT infrastructure and real-time analytics to provide
-              actionable insights into global pathogen transmission and biological threats.
+              <strong> Health<span className="text-brand-red">Radar</span></strong> is a pioneer in API-driven outbreak detection.
+              We leverage real-time global health data and cloud analytics to provide
+              actionable insights into pathogen transmission and regional biological threats.
             </p>
           </div>
           <div className="theme-card aspect-square rounded-3xl flex items-center justify-center border-dashed border-2 border-gray-200 dark:border-gray-800">
-             <span className="text-brand-red font-mono text-sm uppercase tracking-widest">[ Outbreak Mapping ]</span>
+             <span className="text-brand-red font-mono text-sm uppercase tracking-widest">[ OUTBREAK MAPPING ]</span>
           </div>
         </m.section>
 
@@ -58,7 +58,7 @@ const About = () => {
           <m.div 
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: false }} 
+            viewport={{ once: true }} 
             transition={{ duration: 0.5, delay: 0.1 }}
             variants={sectionVar}
             className="theme-card p-10 rounded-3xl shadow-sm"
@@ -66,16 +66,14 @@ const About = () => {
             <div className="w-12 h-1 bg-brand-red mb-6"></div>
             <h3 className="text-2xl font-bold mb-4 text-black dark:text-white uppercase tracking-tight">Mission</h3>
             <p className="text-black dark:text-gray-400 leading-relaxed">
-              To democratize health security by providing communities and organizations 
-              with the digital surveillance tools necessary to monitor, report, and 
-              mitigate disease clusters and biological risks in real-time.
+              To provide seamless access to global health intelligence by integrating verified API data into a centralized surveillance platform, empowering organizations to monitor and mitigate biological risks through computational transparency.
             </p>
           </m.div>
 
           <m.div 
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: false }} 
+            viewport={{ once: true }} 
             transition={{ duration: 0.5, delay: 0.3 }}
             variants={sectionVar}
             className="theme-card p-10 rounded-3xl shadow-sm"
@@ -83,7 +81,7 @@ const About = () => {
             <div className="w-12 h-1 bg-brand-orange mb-6"></div>
             <h3 className="text-2xl font-bold mb-4 text-black dark:text-white uppercase tracking-tight">Vision</h3>
             <p className="text-black dark:text-gray-400 leading-relaxed">
-              To establish 'Smart Health Nodes' as the global standard for biosecurity, leveraging predictive technology to neutralize the threat of a disease outbreak through decentralized surveillance and instantaneous data sharing.
+              To redefine biosecurity through a standard of instantaneous data transparency, where integrated global health streams enable the proactive suppression of disease outbreaks at their point of origin.
             </p>
           </m.div>
         </section>
@@ -92,7 +90,7 @@ const About = () => {
         <m.section
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: false }} 
+          viewport={{ once: true }} 
           transition={{ duration: 0.5 }}
           className="theme-card p-12 rounded-3xl text-center"
         >
