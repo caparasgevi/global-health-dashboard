@@ -24,7 +24,7 @@ const Footer = () => {
             Platform
           </h4>
           <ul className="space-y-4 text-sm font-medium">
-            {['Analytics', 'Global Nodes', 'Privacy Protocol'].map((item) => (
+            {['Predictive Analytics', 'API Intelligence', 'Biosecurity Protocol'].map((item) => (
               <li key={item}>
                 <a href="#" className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors">
                   {item}

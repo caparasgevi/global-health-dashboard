@@ -1,31 +1,26 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-const Header = () => {
+interface HeaderProps {
+  isDark: boolean;
+  setIsDark: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const navItems = ['Home', 'About', 'Global Map', 'Country Statistics', 'Trends', 'Risk Scores', 'Our Team'];
   const [activeItem, setActiveItem] = useState('Home');
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
 
   useEffect(() => {
-    const html = document.documentElement;
-    if (isDark) {
-      html.classList.add('dark');
-      html.style.colorScheme = 'dark';
-      localStorage.setItem('theme', 'dark');
-    } else {
-      html.classList.remove('dark');
-      html.style.colorScheme = 'light';
-      localStorage.setItem('theme', 'light');
+    if (location.pathname === '/full-report') {
+      setActiveItem('Trends');
+      return; 
     }
-  }, [isDark]);
 
-  useEffect(() => {
     const observerOptions = {
       root: null,
-      rootMargin: '-20% 0px -70% 0px', 
+      rootMargin: '-80px 0px -50% 0px', 
       threshold: 0
     };
 
@@ -35,9 +30,13 @@ const Header = () => {
           const id = entry.target.id;
           const formattedId = navItems.find(
             item => item.toLowerCase().replace(/\s+/g, '-') === id
-          ) || (id === 'home' ? 'Home' : '');
+          );
           
-          if (formattedId) setActiveItem(formattedId);
+          if (formattedId) {
+            setActiveItem(formattedId);
+          } else if (id === 'home') {
+            setActiveItem('Home');
+          }
         }
       });
     };
@@ -50,13 +49,33 @@ const Header = () => {
       if (element) observer.observe(element);
     });
 
-    return () => observer.disconnect();
-  }, []);
+    const handleScroll = () => {
+      if (window.scrollY < 50 && location.pathname === '/') {
+        setActiveItem('Home');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [location.pathname]);
 
   const scrollToSection = (id: string) => {
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => {
+        executeScroll(id);
+      }, 100);
+    } else {
+      executeScroll(id);
+    }
+  };
+
+  const executeScroll = (id: string) => {
     setActiveItem(id);
-    
-    // Fix: Force absolute top for Home or Logo clicks to prevent word cutting
     if (id === 'Home') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -66,7 +85,14 @@ const Header = () => {
     const element = document.getElementById(elementId);
     
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      const headerOffset = 80;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -103,7 +129,6 @@ const Header = () => {
               `}
             >
               {item}
-              
               <span 
                 className={`
                   absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-brand-red transition-all duration-300 rounded-full
@@ -119,23 +144,13 @@ const Header = () => {
           <button 
             onClick={() => setIsDark(!isDark)}
             className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all duration-300 group"
-            aria-label="Toggle theme"
           >
-            <svg 
-              className={`w-5 h-5 transition-all duration-500 absolute ${isDark ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100 text-orange-500'}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"
-            >
+            <svg className={`w-5 h-5 transition-all duration-500 absolute ${isDark ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100 text-orange-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
             </svg>
-
-            <svg 
-              className={`w-5 h-5 transition-all duration-500 absolute ${isDark ? 'rotate-0 scale-100 opacity-100 text-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.4)]' : '-rotate-90 scale-0 opacity-0'}`}
-              fill="currentColor" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"
-            >
+            <svg className={`w-5 h-5 transition-all duration-500 absolute ${isDark ? 'rotate-0 scale-100 opacity-100 text-yellow-300' : '-rotate-90 scale-0 opacity-0'}`} fill="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
-            
-            <div className="absolute inset-0 rounded-xl ring-2 ring-brand-red/0 group-hover:ring-brand-red/20 transition-all duration-300" />
           </button>
         </div>
       </div>
