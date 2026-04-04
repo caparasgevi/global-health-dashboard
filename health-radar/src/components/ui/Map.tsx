@@ -38,91 +38,46 @@ export const Map = forwardRef<MapRef, MapProps>(({ children, className = "" }, r
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
 
+    // We use a clean, dark-themed base style to match your HealthRadar UI
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            attribution: "&copy; OpenStreetMap contributors",
-          },
-        },
-        layers: [
-          {
-            id: "osm",
-            type: "raster",
-            source: "osm",
-          },
-        ],
-      },
-      center: [0, 18],
-      zoom: 1.5,
+      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      center: [20, 20],
+      zoom: 1.8,
       attributionControl: false,
     });
 
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+    map.addControl(new maplibregl.NavigationControl(), "top-right");
 
     map.on("load", () => {
-      setTimeout(() => {
-        map.resize();
-        setMapReady(map);
-      }, 100);
+      setMapReady(map);
+      map.resize();
     });
-
-    const resizeObserver = new ResizeObserver(() => {
-      if (mapInstance.current) {
-        mapInstance.current.resize();
-      }
-    });
-
-    if (mapContainer.current) {
-      resizeObserver.observe(mapContainer.current);
-    }
 
     mapInstance.current = map;
 
     return () => {
-      resizeObserver.disconnect();
       map.remove();
       mapInstance.current = null;
-      setMapReady(null);
     };
   }, []);
 
   return (
     <MapContext.Provider value={mapReady}>
-      <div className={`relative w-full h-full min-h-[300px] bg-slate-100 dark:bg-slate-900 overflow-hidden ${className}`}>
-        {/* Actual Map DOM Element */}
-        <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
-
-        {/* Layer for Markers/UI - Only renders once map is ready */}
-        <div className="absolute inset-0 z-10 pointer-events-none">
-          {mapReady && children}
+      <div className={`relative h-full w-full ${className}`}>
+        <div ref={mapContainer} className="absolute inset-0 h-full w-full" />
+        {/* The UI layer must allow clicks to pass through to the map unless a button is hit */}
+        <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+          {children}
         </div>
       </div>
     </MapContext.Provider>
   );
 });
 
-interface MapMarkerProps {
-  longitude: number;
-  latitude: number;
-  onClick?: () => void;
-  children?: React.ReactNode;
-}
-
-export const MapMarker: React.FC<MapMarkerProps> = ({
-  longitude,
-  latitude,
-  onClick,
-  children
-}) => {
+export const MapMarker = ({ longitude, latitude, onClick, children }: any) => {
   const map = useMap();
   const markerElRef = useRef<HTMLDivElement>(null);
-  const markerRef = useRef<maplibregl.Marker | null>(null);
 
   useEffect(() => {
     if (!map || !markerElRef.current) return;
@@ -134,29 +89,16 @@ export const MapMarker: React.FC<MapMarkerProps> = ({
       .setLngLat([longitude, latitude])
       .addTo(map);
 
-    markerRef.current = marker;
-
-    return () => {
-      marker.remove();
-      markerRef.current = null;
-    };
+    return () => { marker.remove(); };
   }, [map, longitude, latitude]);
 
   return (
-    <div
-      ref={markerElRef}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick?.();
-      }}
-      className="pointer-events-auto cursor-pointer"
-    >
+    <div ref={markerElRef} onClick={onClick} className="pointer-events-auto cursor-pointer">
       {children}
     </div>
   );
 };
 
-
-export const MarkerContent: React.FC<{ children: React.ReactNode }> = ({ children }) => <>{children}</>;
-export const MarkerTooltip: React.FC<{ children: React.ReactNode }> = ({ children }) => <>{children}</>;
-export const MapControls: React.FC = () => null; 
+export const MarkerContent = ({ children }: any) => <>{children}</>;
+export const MarkerTooltip = ({ children }: any) => <>{children}</>;
+export const MapControls = () => null;
