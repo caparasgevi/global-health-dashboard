@@ -154,6 +154,7 @@ const Trends: React.FC = () => {
       setIsSearchingData(true);
       try {
         const indicators = await healthService.getAllIndicators({ signal: controller.signal });
+        
         const activeKeywords = ['outbreak', 'epidemic', 'incidence', 'reported cases', 'cholera', 'dengue', 'malaria', 'measles', 'covid'];
         const secondaryKeywords = ['ebola', 'zika', 'yellow fever', 'meningitis', 'typhoid', 'hepatitis', 'tuberculosis', 'hiv', 'influenza'];
         const travelRiskKeywords = [...activeKeywords, ...secondaryKeywords];
@@ -174,26 +175,37 @@ const Trends: React.FC = () => {
             return 0;
         }).slice(0, 50);
 
-        const results: any[] = [];
-        for (let i = 0; i < sortedIndicators.length; i += 5) {
+        const results: {name: string, code: string}[] = [];
+        
+        const chunkSize = 5;
+        for (let i = 0; i < sortedIndicators.length; i += chunkSize) {
           if (!isMounted || results.length >= 4) break;
-          const chunk = sortedIndicators.slice(i, i + 5);
+          
+          const chunk = sortedIndicators.slice(i, i + chunkSize);
           const chunkResults = await Promise.all(
             chunk.map(async (ind: any) => {
               try {
                 if (results.length >= 4) return null;
                 const value = await healthService.checkIndicatorStatus(ind.IndicatorCode, activeCountry, { signal: controller.signal });
                 if (value && value.length > 0) return { name: ind.IndicatorName, code: ind.IndicatorCode };
-              } catch (e: any) { return null; }
+              } catch (e: any) {
+                // Silently swallow AbortErrors — expected on cleanup
+                if (e?.name !== 'AbortError') console.error(e);
+                return null;
+              }
               return null;
             })
           );
-          results.push(...chunkResults.filter(Boolean));
+          
+          const filtered = chunkResults.filter((item): item is {name: string, code: string} => item !== null);
+          results.push(...filtered);
+          
+          if (isMounted && results.length > 0) {
+            setDynamicDiseases([...results.slice(0, 4)]);
+          }
         }
-
-        if (isMounted) setDynamicDiseases(results.slice(0, 4));
       } catch (err: any) {
-        console.error("Discovery failed:", err);
+        if (err?.name !== 'AbortError') console.error("Discovery failed:", err);
       } finally {
         if (isMounted) setIsSearchingData(false);
       }
@@ -202,6 +214,10 @@ const Trends: React.FC = () => {
     findActiveDiseases();
     return () => { isMounted = false; controller.abort(); };
   }, [activeCountry]);
+
+  useEffect(() => {
+    return () => { observer.current?.disconnect(); };
+  }, []);
 
   const lastElementRef = useCallback((node: HTMLDivElement) => {
     if (isSearchingData) return;
@@ -212,7 +228,7 @@ const Trends: React.FC = () => {
       }
     });
     if (node) observer.current.observe(node);
-  }, [isSearchingData, dynamicDiseases.length]);
+  }, [isSearchingData, dynamicDiseases.length]); 
 
   const selectCountry = (name: string, alpha3: string) => {
     setSearchQuery(name);
