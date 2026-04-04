@@ -56,6 +56,22 @@ const Home = () => {
   const swiperRef = useRef<any>(null);
 
   useEffect(() => {
+    if (!swiperRef.current) return;
+
+    if (isExpanded) {
+      swiperRef.current.autoplay.stop();
+    } else {
+      const resumeTimer = setTimeout(() => {
+        if (swiperRef.current && !isExpanded) {
+          swiperRef.current.autoplay.start();
+        }
+      }, 2000); 
+
+      return () => clearTimeout(resumeTimer);
+    }
+  }, [isExpanded]);
+
+  useEffect(() => {
     let isMounted = true;
     const controller = new AbortController();
     const fetchRegionalData = async () => {
@@ -176,15 +192,24 @@ const Home = () => {
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <m.div className="lg:col-span-8 w-full" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}>
-          <div 
-            className="theme-card rounded-[2rem] p-5 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm"
-            onMouseEnter={() => swiperRef.current?.autoplay.stop()}
-            onMouseLeave={() => swiperRef.current?.autoplay.start()}
-          >
+          <div className="theme-card rounded-[2rem] p-5 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+
+            {/* Header Section */}
             <div className="flex items-center justify-between mb-6">
-              <div className="flex flex-col">
-                <h2 className="text-xs md:text-base font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em]">REAL-TIME</h2>
-                <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Global Outbreaks</h3>
+              <div className="flex flex-col items-start gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm shadow-emerald-500/5">
+                  <span className="text-[10px] md:text-xs font-black uppercase text-emerald-600 dark:text-emerald-400 font-montserrat tracking-[0.15em] flex items-center gap-1.5">
+                    Verified
+                    <svg className="w-3.5 h-3.5 fill-emerald-500" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293l-4 4a1 1 0 01-1.414 0l-2-2a1 1 0 111.414-1.414L9 10.586l3.293-3.293a1 1 0 111.414 1.414z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                </div>
+
+                {/* Main Title */}
+                <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  WHO Surveillance Archive
+                </h3>
               </div>
             </div>
             
@@ -237,7 +262,6 @@ const Home = () => {
                     </p>
                   </m.div>
                   
-                  {/* Action Bar: Stacks on mobile, Rows on small screens up */}
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
                     <button 
                       onClick={() => setIsExpanded(!isExpanded)}
