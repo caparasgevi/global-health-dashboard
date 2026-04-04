@@ -10,6 +10,10 @@ const FullReport: React.FC = () => {
   const [searchParams] = useSearchParams();
   const countryCode = searchParams.get('country') || '';
   const searchQuery = searchParams.get('query') || countryCode;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
   
   const [activeDiseases, setActiveDiseases] = useState<{ name: string, code: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,7 +93,7 @@ const FullReport: React.FC = () => {
       }
     }, { rootMargin: '300px' });
     if (node) observer.current.observe(node);
-  }, [isLoading, activeDiseases.length]); // visibleCount intentionally removed
+  }, [isLoading, activeDiseases.length]); 
 
   const previewDiseases = useMemo(() => activeDiseases.slice(0, visibleCount), [activeDiseases, visibleCount]);
 
@@ -97,7 +101,18 @@ const FullReport: React.FC = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         <header className="mb-10">
-          <button onClick={() => navigate(-1)} className="mb-4 flex items-center gap-2 text-slate-500 hover:text-brand-red font-bold transition-colors">
+          <button
+            onClick={() => {
+              navigate('/');
+              setTimeout(() => {
+                const element = document.getElementById('trends');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                }
+              }, 100);
+            }}
+            className="mb-4 flex items-center gap-2 text-slate-500 hover:text-brand-red font-bold transition-colors"
+          >
             ← Back
           </button>
           <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">

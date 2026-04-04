@@ -33,10 +33,10 @@ const DefaultHealthDashboard: React.FC = () => {
         const regionMap: Record<string, string> = {
           'AFR': 'Africa',
           'AMR': 'Americas',
-          'SEAR': 'S.E. Asia',
+          'SEAR': 'South-East Asia',
           'EUR': 'Europe',
-          'EMR': 'E. Med',
-          'WPR': 'W. Pacific'
+          'EMR': 'Eastern Mediterranean',
+          'WPR': 'Western Pacific'
         };
 
         const uniqueData = data.reduce((acc: any[], current: any) => {
@@ -71,7 +71,6 @@ const DefaultHealthDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Reduced p-8 to p-4 on mobile to prevent squashing */}
       <div className="bg-white dark:bg-slate-900/50 p-4 md:p-8 rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
           <div>
@@ -81,7 +80,6 @@ const DefaultHealthDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Dynamic height: shorter on mobile so it fits the viewport */}
         <div className="h-[300px] md:h-80 w-full overflow-visible">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={globalStats} margin={{ top: 10, right: 10, left: -25, bottom: 40 }}>
@@ -91,10 +89,10 @@ const DefaultHealthDashboard: React.FC = () => {
                 axisLine={false}
                 tickLine={false}
                 interval={0}
-                angle={-35} // Sharper angle for better mobile fit
+                angle={-35} 
                 textAnchor="end"
                 tick={{ fontSize: 9, fill: '#64748b', fontWeight: 600 }}
-                height={60} // Added height to accommodate rotated labels
+                height={60} 
               />
               <YAxis domain={[40, 90]} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
               <Tooltip
@@ -103,7 +101,7 @@ const DefaultHealthDashboard: React.FC = () => {
               />
               <Bar
                 dataKey="value"
-                barSize={window.innerWidth < 768 ? 25 : 45} // Essential: smaller bars on mobile
+                barSize={window.innerWidth < 768 ? 25 : 45} 
                 shape={renderBarShape}
               />
             </BarChart>
@@ -131,15 +129,26 @@ const DefaultHealthDashboard: React.FC = () => {
 
 const Trends: React.FC = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState(''); 
-  const [activeCountry, setActiveCountry] = useState(''); 
+  const [searchQuery, setSearchQuery] = useState(() => 
+    sessionStorage.getItem('health_radar_query') || ''
+  ); 
+  const [activeCountry, setActiveCountry] = useState(() => 
+    sessionStorage.getItem('health_radar_country') || ''
+  ); 
+
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [dynamicDiseases, setDynamicDiseases] = useState<{name: string, code: string}[]>([]);
   const [isSearchingData, setIsSearchingData] = useState(false);
   const [visibleCount, setVisibleCount] = useState(4);
   const observer = useRef<IntersectionObserver | null>(null);
 
+  useEffect(() => {
+    sessionStorage.setItem('health_radar_query', searchQuery);
+    sessionStorage.setItem('health_radar_country', activeCountry);
+  }, [searchQuery, activeCountry]);
+
   const allCountries = useMemo(() => iso.all(), []);
+  
   const suggestions = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
     return allCountries.filter(c => 
@@ -192,7 +201,6 @@ const Trends: React.FC = () => {
                 const value = await healthService.checkIndicatorStatus(ind.IndicatorCode, activeCountry, { signal: controller.signal });
                 if (value && value.length > 0) return { name: ind.IndicatorName, code: ind.IndicatorCode };
               } catch (e: any) {
-                // Silently swallow AbortErrors — expected on cleanup
                 if (e?.name !== 'AbortError') console.error(e);
                 return null;
               }
@@ -315,11 +323,36 @@ const Trends: React.FC = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-8">
-              <Suspense fallback={<div className="h-96 flex items-center justify-center">Loading Comparative Data...</div>}>
-                <ComparisonChart activeCountryCode={activeCountry} />
-              </Suspense>
-            </div>
+              {/* Global Comparative Analysis Section */}
+              <div className="mt-12 space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+                <div className="text-center lg:text-left border-b border-slate-100 dark:border-white/5 pb-6">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Cross-Border Benchmarking</h2>
+                  <p className="text-slate-500 text-sm italic">Comparing {searchQuery} against discovered global peers for key biological threats.</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-8">
+                  {[
+                    { name: "Tuberculosis Incidence", code: "MDG_0000000001" },
+                    { name: "Measles Surveillance", code: "WHS3_62" },
+                    { name: "Malaria Reported Cases", code: "MALARIA_EST_CASES" }
+                  ].map((disease) => (
+                    <Suspense key={disease.code} fallback={
+                      <div className="h-80 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900/20 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/5">
+                        <div className="w-6 h-6 border-2 border-brand-red border-t-transparent rounded-full animate-spin mb-4" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                          Synchronizing {disease.name} Data...
+                        </p>
+                      </div>
+                    }>
+                      <ComparisonChart
+                        activeCountryCode={activeCountry}
+                        indicatorCode={disease.code}
+                        indicatorName={disease.name}
+                      />
+                    </Suspense>
+                  ))}
+                </div>
+              </div>
           </>
         ) : (
           <DefaultHealthDashboard />
