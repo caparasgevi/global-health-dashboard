@@ -17,8 +17,8 @@ const DefaultHealthDashboard: React.FC = () => {
     const { x, y, width, height, value } = props;
     const fill = value > 75 ? '#10b981' : value > 65 ? '#f59e0b' : '#ef4444';
     return (
-      <rect 
-        x={x} y={y} width={width} height={height} fill={fill} 
+      <rect
+        x={x} y={y} width={width} height={height} fill={fill}
         rx={6} ry={6} className="transition-all duration-300 hover:opacity-80"
       />
     );
@@ -26,27 +26,23 @@ const DefaultHealthDashboard: React.FC = () => {
 
   useEffect(() => {
     const controller = new AbortController();
-
     const fetchGlobalBaseline = async () => {
       setLoading(true);
       try {
         const data = await healthService.getGlobalBaseline({ signal: controller.signal });
-        const regionMap: Record<string, string> = { 
-          'AFR': 'African Region (AFR)', 
-          'AMR': 'Region of the Americas (AMR)', 
-          'SEAR': 'South-East Asia Region (SEAR)', 
-          'EUR': 'European Region (EUR)', 
-          'EMR': 'Eastern Mediterranean Region (EMR)', 
-          'WPR': 'Western Pacific Region (WPR)' 
+        const regionMap: Record<string, string> = {
+          'AFR': 'Africa',
+          'AMR': 'Americas',
+          'SEAR': 'S.E. Asia',
+          'EUR': 'Europe',
+          'EMR': 'E. Med',
+          'WPR': 'W. Pacific'
         };
-        
+
         const uniqueData = data.reduce((acc: any[], current: any) => {
           const x = acc.find(item => item.SpatialDim === current.SpatialDim);
-          if (!x) {
-            return acc.concat([current]);
-          } else {
-            return acc;
-          }
+          if (!x) return acc.concat([current]);
+          return acc;
         }, []);
 
         const formatted = uniqueData.map((item: any) => ({
@@ -74,51 +70,58 @@ const DefaultHealthDashboard: React.FC = () => {
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="bg-white dark:bg-slate-900/50 p-8 rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl">
-        <div className="flex justify-between items-center mb-8">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Reduced p-8 to p-4 on mobile to prevent squashing */}
+      <div className="bg-white dark:bg-slate-900/50 p-4 md:p-8 rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
           <div>
             <span className="bg-sky-500/10 text-sky-500 text-[10px] font-black px-2 py-1 rounded mb-2 inline-block uppercase tracking-widest">Global Data</span>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white leading-tight">WHO Regional Life Expectancy</h2>
-            <p className="text-slate-500 text-sm mt-1">Official surveillance data categorized by WHO Member State Regions.</p>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white leading-tight">WHO Regional Life Expectancy</h2>
+            <p className="text-slate-500 text-xs md:sm mt-1">Official surveillance data by WHO Regions.</p>
           </div>
         </div>
 
-        <div className="h-80 w-full overflow-visible"> 
+        {/* Dynamic height: shorter on mobile so it fits the viewport */}
+        <div className="h-[300px] md:h-80 w-full overflow-visible">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={globalStats} margin={{ top: 10, right: 10, left: 0, bottom: 65 }}>
+            <BarChart data={globalStats} margin={{ top: 10, right: 10, left: -25, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
-              <XAxis 
-                dataKey="region" 
-                axisLine={false} 
-                tickLine={false} 
+              <XAxis
+                dataKey="region"
+                axisLine={false}
+                tickLine={false}
                 interval={0}
-                angle={-25}
+                angle={-35} // Sharper angle for better mobile fit
                 textAnchor="end"
-                tick={{ fontSize: 9, fill: '#64748b', fontWeight: 600 }} 
+                tick={{ fontSize: 9, fill: '#64748b', fontWeight: 600 }}
+                height={60} // Added height to accommodate rotated labels
               />
-              <YAxis domain={[40, 90]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-              <Tooltip 
+              <YAxis domain={[40, 90]} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+              <Tooltip
                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', color: '#fff' }}
+                contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
               />
-              <Bar dataKey="value" barSize={45} shape={renderBarShape} />
+              <Bar
+                dataKey="value"
+                barSize={window.innerWidth < 768 ? 25 : 45} // Essential: smaller bars on mobile
+                shape={renderBarShape}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="mt-6 md:mt-8 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
-            <h4 className="text-emerald-500 text-[10px] font-black uppercase mb-1">Surveillance Accuracy</h4>
-            <p className="text-slate-500 dark:text-slate-400 text-xs italic leading-snug">Data is synchronized with the latest WHO health indicators for regional policy making.</p>
+            <h4 className="text-emerald-500 text-[9px] md:text-[10px] font-black uppercase mb-1">Surveillance Accuracy</h4>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] italic leading-snug">Synced with latest WHO health indicators.</p>
           </div>
           <div className="p-4 rounded-2xl bg-brand-red/5 border border-brand-red/10">
-            <h4 className="text-brand-red text-[10px] font-black uppercase mb-1">Standardized Metrics</h4>
-            <p className="text-slate-500 dark:text-slate-400 text-xs italic leading-snug">Color coding indicates life expectancy thresholds relative to global health security goals.</p>
+            <h4 className="text-brand-red text-[9px] md:text-[10px] font-black uppercase mb-1">Standardized Metrics</h4>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] italic leading-snug">Colors indicate expectancy thresholds.</p>
           </div>
           <div className="p-4 rounded-2xl bg-sky-500/5 border border-sky-500/10">
-            <h4 className="text-sky-500 text-[10px] font-black uppercase mb-1">Interactive Drilldown</h4>
-            <p className="text-slate-500 dark:text-slate-400 text-xs italic leading-snug">Search for a specific country above to move from regional averages to localized risk data.</p>
+            <h4 className="text-sky-500 text-[9px] md:text-[10px] font-black uppercase mb-1">Interactive Drilldown</h4>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] italic leading-snug">Search a country to move to localized risk data.</p>
           </div>
         </div>
       </div>
