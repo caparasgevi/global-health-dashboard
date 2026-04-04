@@ -1,10 +1,18 @@
-import React from 'react';
-import { m } from 'framer-motion';
+import React, { useState } from 'react';
+import { m, AnimatePresence } from 'framer-motion';
 
 const About = () => {
+  const [selectedValue, setSelectedValue] = useState<string | null>(null);
+
   const sectionVar = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
+  };
+
+  const valueDetails: Record<string, string> = {
+    "Radical Transparency": "We bridge the gap between complex health databases and public awareness. By ensuring every data point is traceable back to verified WHO and regional sources, we eliminate ambiguity in biological risk reporting.",
+    "Engineering Excellence": "Our infrastructure is built on the principles of high-availability and low-latency. Leveraging modern cloud architectures and optimized API integration, we provide a robust platform capable of real-time global surveillance.",
+    "Global Ethics": "Data integrity and privacy are our highest priorities. We operate with a strict commitment to international health regulations, ensuring that surveillance serves humanity without compromising individual or regional data sovereignty."
   };
 
   return (
@@ -40,7 +48,7 @@ const About = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center"
         >
           <div>
-            <h2 className="text-3xl font-bold mb-6 text-black dark:text-white">Disease Surveillance</h2>
+            <h2 className="text-3xl font-bold mb-6 text-black dark:text-white uppercase tracking-tight">Disease Surveillance</h2>
             <p className="text-lg text-black dark:text-gray-400 leading-relaxed">
               Founded at the intersection of Computer Engineering and Epidemiological Science,
               <strong> Health<span className="text-brand-red">Radar</span></strong> is a pioneer in API-driven outbreak detection.
@@ -86,7 +94,7 @@ const About = () => {
           </m.div>
         </section>
 
-        {/* Core Values */}
+        {/* Core Values Section */}
         <m.section
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -97,17 +105,76 @@ const About = () => {
           <h2 className="text-xs font-bold uppercase tracking-widest text-brand-red mb-8 font-montserrat">Core Values</h2>
 
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 w-full">
-            {['Radical Transparency', 'Engineering Excellence', 'Global Ethics'].map((value) => (
+            {Object.keys(valueDetails).map((value) => (
               <div key={value} className="group flex-shrink-0">
-                <span className="text-lg font-bold text-black dark:text-white block group-hover:text-brand-red transition-colors cursor-default font-montserrat">
+                <button 
+                  onClick={() => setSelectedValue(value)}
+                  className="text-lg font-bold text-black dark:text-white block hover:text-brand-red transition-all cursor-pointer font-montserrat transform hover:scale-105 active:scale-95"
+                >
                   {value}
-                </span>
+                </button>
               </div>
             ))}
           </div>
         </m.section>
-
       </div>
+
+      {/* Popup Modal (Footer-Style Layout) */}
+      <AnimatePresence>
+        {selectedValue && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+            {/* Click backdrop to close */}
+            <m.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedValue(null)}
+              className="absolute inset-0"
+            />
+            
+            <m.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden"
+            >
+              <div className="p-8 md:p-10">
+                <div className="flex justify-between items-center mb-6">
+                  <span className="bg-brand-red/10 text-brand-red text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                    CORE VALUES
+                  </span>
+                  <button 
+                    onClick={() => setSelectedValue(null)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-brand-red transition-colors font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                {/* Retained Red Line above the Title */}
+                <div className="w-12 h-1 bg-brand-red mb-4 rounded-full"></div>
+                
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-tighter">
+                  {selectedValue}
+                </h3>
+                
+                <div className="space-y-4 mb-8">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                    {valueDetails[selectedValue]}
+                  </p>
+                </div>
+
+                <button 
+                  onClick={() => setSelectedValue(null)}
+                  className="w-full py-4 bg-brand-red text-white rounded-2xl font-bold text-sm hover:bg-brand-red/90 transition-all shadow-lg shadow-brand-red/20"
+                >
+                  Return to Purpose
+                </button>
+              </div>
+            </m.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

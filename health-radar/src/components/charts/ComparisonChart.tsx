@@ -48,6 +48,12 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
     ];
   };
 
+  const formatYAxis = (value: number) => {
+      if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+      if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+      return value.toString();
+    };
+
   const countries = useMemo(() => {
     const found = iso.whereAlpha3(activeCountryCode);
     const activeEntry = { 
@@ -117,10 +123,10 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
 
       <div className="w-full h-[70%] md:h-[75%]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+          <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/5" />
             <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: 'currentColor', fontSize: 10 }} className="text-slate-400 dark:text-slate-500" minTickGap={20} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: 'currentColor', fontSize: 10 }} className="text-slate-400 dark:text-slate-500" />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: 'currentColor', fontSize: 10 }} className="text-slate-400 dark:text-slate-500" width={50} tickFormatter={formatYAxis} />
             <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', fontSize: '11px', color: '#fff' }} itemStyle={{ padding: '2px 0' }} cursor={{ stroke: '#64748b', strokeWidth: 1, strokeDasharray: '4 4' }} />
             <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ paddingTop: '24px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }} />
             {countries.map(c => (
