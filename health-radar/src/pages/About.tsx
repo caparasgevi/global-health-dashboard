@@ -17,7 +17,7 @@ const About = () => {
         viewport={{ once: true, amount: 0.3 }} 
         transition={{ duration: 0.6 }}
         variants={sectionVar}
-        className="theme-card border-x-0 border-t-0 pt-20 pb-16 px-6 mb-12 shadow-none rounded-none"
+        className="theme-card dark:bg-transparent dark:border-none border-x-0 border-t-0 pt-20 pb-16 px-6 mb-12 shadow-none rounded-none"
       >
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-6xl font-black mb-6 text-black dark:text-white tracking-tighter">
