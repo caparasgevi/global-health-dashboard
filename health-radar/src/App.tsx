@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import About from './pages/About';
 import Trends from './pages/Trends';
+import GlobalMap from './pages/GlobalMap';
 import FullReport from './pages/FullReport';
 
 /**
@@ -76,6 +77,7 @@ function App() {
                     <>
                       <Home />
                       <About />
+                      <GlobalMap />
                       <Trends />
                     </>
                   } />
