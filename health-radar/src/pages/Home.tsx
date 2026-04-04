@@ -311,7 +311,7 @@ const Home = () => {
                       <img
                         src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/WHO_logo.svg/1024px-WHO_logo.svg.png"
                         alt="WHO Logo"
-                        className="w-6 h-6 object-contain"
+                        className="w-6 h-6 object-contain dark:invert dark:brightness-200"
                         onError={(e) => {
                           e.currentTarget.src = "https://www.svgrepo.com/show/306988/world-health-organization.svg";
                         }}
