@@ -59,31 +59,33 @@ const TrendChart: React.FC<TrendChartProps> = ({
   }, [indicatorCode, countryCode]);
 
   if (loading) return (
-    <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900/20 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+    <div className="h-full min-h-[350px] md:min-h-[400px] flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900/20 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
       <div className="w-8 h-8 border-2 border-brand-red border-t-transparent rounded-full animate-spin mb-4"></div>
       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Syncing GHO Data...</p>
     </div>
   );
 
   return (
-    <div className="flex flex-col h-full w-full bg-white dark:bg-slate-900/40 p-6 transition-colors duration-300">
-      <div className="mb-6">
+    <div className="flex flex-col h-full w-full bg-white dark:bg-slate-900/40 p-4 md:p-6 transition-colors duration-300">
+      <div className="mb-4 md:mb-6">
         <div className="flex items-center justify-between mb-2">
-          <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
+          <span className={`px-2 py-1 rounded text-[9px] md:text-[10px] font-black uppercase tracking-widest ${
             trend === 'rising' ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'
           }`}>
             {trend === 'rising' ? '📈 Cases Increasing' : '📉 Cases Declining'}
           </span>
-          <span className="text-[10px] font-mono text-slate-400 uppercase">{indicatorCode}</span>
+          <span className="text-[9px] md:text-[10px] font-mono text-slate-400 uppercase">{indicatorCode}</span>
         </div>
         
-        <h3 className="text-slate-900 dark:text-white text-xl font-bold leading-tight line-clamp-2 h-14">{title}</h3>
-        <p className="text-slate-500 dark:text-slate-400 text-xs mt-2 leading-relaxed italic">{description}</p>
+        {/* Changed h-14 to min-h-[3.5rem] so long titles don't overlap on small screens */}
+        <h3 className="text-slate-900 dark:text-white text-lg md:text-xl font-bold leading-tight line-clamp-2 min-h-[3.5rem]">{title}</h3>
+        <p className="text-slate-500 dark:text-slate-400 text-[11px] md:text-xs mt-1 md:mt-2 leading-relaxed italic">{description}</p>
       </div>
 
-      <div className="flex-1 min-h-[200px] w-full">
+      {/* Adjusted min-height for better aspect ratio on mobile */}
+      <div className="flex-1 min-h-[180px] md:min-h-[200px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
             <defs>
               <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
@@ -95,13 +97,14 @@ const TrendChart: React.FC<TrendChartProps> = ({
               dataKey="year" 
               axisLine={false} 
               tickLine={false} 
-              tick={{ fill: 'currentColor', fontSize: 10, fontWeight: 600 }} 
-              className="text-slate-400 dark:text-slate-500" 
+              tick={{ fill: 'currentColor', fontSize: 9, fontWeight: 600 }} 
+              className="text-slate-400 dark:text-slate-500"
+              minTickGap={15} // Prevents overlapping years on narrow screens
             />
             <YAxis 
               axisLine={false} 
               tickLine={false} 
-              tick={{ fill: 'currentColor', fontSize: 10 }} 
+              tick={{ fill: 'currentColor', fontSize: 9 }} 
               className="text-slate-400 dark:text-slate-500" 
             />
             <Tooltip 
@@ -109,30 +112,31 @@ const TrendChart: React.FC<TrendChartProps> = ({
                 backgroundColor: '#0f172a', 
                 border: '1px solid rgba(255,255,255,0.1)', 
                 borderRadius: '12px',
-                fontSize: '12px'
+                fontSize: '11px'
               }}
-              itemStyle={{ color: '#ef4444', fontWeight: 'bold' }}
-              labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
+              itemStyle={{ color: '#ef4444', fontWeight: 'bold', padding: 0 }}
+              labelStyle={{ color: '#94a3b8', marginBottom: '2px' }}
             />
             <Area 
               type="monotone" 
               dataKey="value" 
               stroke="#ef4444" 
-              strokeWidth={3} 
+              strokeWidth={2} // Thinner line for mobile clarity
               fill="url(#colorRisk)" 
-              activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
-              dot={{ r: 4, fill: '#ef4444', opacity: 0.5 }}
+              activeDot={{ r: 5, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
+              dot={{ r: 3, fill: '#ef4444', opacity: 0.5 }}
+              animationDuration={1200}
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-6 p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5">
-        <h4 className="text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-wider mb-1 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-brand-red animate-ping"></span>
+      <div className="mt-4 md:mt-6 p-3 md:p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5">
+        <h4 className="text-slate-900 dark:text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider mb-1 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-red animate-ping"></span>
           Traveler Guidance
         </h4>
-        <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-snug">
+        <p className="text-slate-500 dark:text-slate-400 text-[10px] md:text-[11px] leading-snug">
           {trend === 'rising' 
             ? "Caution: Upward trajectory detected. Ensure vaccinations are up to date before arrival." 
             : "Data shows a stable or downward trend, but standard hygiene and local health protocols should remain a priority."}
