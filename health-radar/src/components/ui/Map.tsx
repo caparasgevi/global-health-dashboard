@@ -17,7 +17,6 @@ export type MapRef = {
 };
 
 const MapContext = createContext<MapLibreMap | null>(null);
-
 export const useMap = () => useContext(MapContext);
 
 type MapProps = {
@@ -33,106 +32,58 @@ export const Map = forwardRef<MapRef, MapProps>(function Map(
   const mapInstance = useRef<MapLibreMap | null>(null);
   const [mapReady, setMapReady] = useState<MapLibreMap | null>(null);
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      flyTo: (opts) => mapInstance.current?.flyTo(opts),
-      resize: () => mapInstance.current?.resize(),
-      getMap: () => mapInstance.current,
-    }),
-    []
-  );
+  useImperativeHandle(ref, () => ({
+    flyTo: (opts) => mapInstance.current?.flyTo(opts),
+    resize: () => mapInstance.current?.resize(),
+    getMap: () => mapInstance.current,
+  }), []);
 
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
 
+    // We use a clean, dark-themed base style to match your HealthRadar UI
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-          },
-        },
-        layers: [
-          {
-            id: "osm",
-            type: "raster",
-            source: "osm",
-          },
-        ],
-      },
-      center: [0, 18],
-      zoom: 1.5,
+      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      center: [20, 20],
+      zoom: 1.8,
       attributionControl: false,
-      dragPan: true,
-      scrollZoom: true,
-      boxZoom: true,
-      keyboard: true,
-      doubleClickZoom: true,
-      touchZoomRotate: true,
-      touchPitch: true,
     });
 
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+    map.addControl(new maplibregl.NavigationControl(), "top-right");
 
     map.on("load", () => {
-      map.resize();
       setMapReady(map);
+      map.resize();
     });
-
-    const resizeObserver =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(() => map.resize())
-        : null;
-
-    if (resizeObserver) {
-      resizeObserver.observe(mapContainer.current);
-    }
-
-    const handleWindowResize = () => map.resize();
-    window.addEventListener("resize", handleWindowResize);
 
     mapInstance.current = map;
 
     return () => {
-      window.removeEventListener("resize", handleWindowResize);
-      resizeObserver?.disconnect();
       map.remove();
       mapInstance.current = null;
-      setMapReady(null);
     };
   }, []);
 
   return (
     <MapContext.Provider value={mapReady}>
-      <div className={`relative h-full w-full overflow-hidden ${className}`.trim()}>
-        <div ref={mapContainer} className="absolute inset-0" />
-        <div className="pointer-events-none absolute inset-0 z-10">{children}</div>
+      <div className={`relative h-full w-full ${className}`}>
+        <div ref={mapContainer} className="absolute inset-0 h-full w-full" />
+        {/* The UI layer must allow clicks to pass through to the map unless a button is hit */}
+        <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+          {children}
+        </div>
       </div>
     </MapContext.Provider>
   );
 });
 
-type MapMarkerProps = {
-  longitude: number;
-  latitude: number;
-  onClick?: () => void;
-  children?: React.ReactNode;
-};
-
-export const MapMarker = ({ longitude, latitude, onClick, children }: MapMarkerProps) => {
+export const MapMarker = ({ longitude, latitude, onClick, children }: any) => {
   const map = useMap();
   const markerElRef = useRef<HTMLDivElement>(null);
-  const markerRef = useRef<maplibregl.Marker | null>(null);
 
   useEffect(() => {
     if (!map || !markerElRef.current) return;
-
-    markerRef.current?.remove();
 
     const marker = new maplibregl.Marker({
       element: markerElRef.current,
@@ -141,24 +92,11 @@ export const MapMarker = ({ longitude, latitude, onClick, children }: MapMarkerP
       .setLngLat([longitude, latitude])
       .addTo(map);
 
-    markerRef.current = marker;
-
-    const el = markerElRef.current;
-    const handleClick = (e: MouseEvent) => {
-      e.stopPropagation();
-      onClick?.();
-    };
-
-    el.addEventListener("click", handleClick);
-
-    return () => {
-      el.removeEventListener("click", handleClick);
-      marker.remove();
-    };
-  }, [map, longitude, latitude, onClick]);
+    return () => { marker.remove(); };
+  }, [map, longitude, latitude]);
 
   return (
-    <div ref={markerElRef} className="pointer-events-auto select-none">
+    <div ref={markerElRef} onClick={onClick} className="pointer-events-auto cursor-pointer">
       {children}
     </div>
   );
@@ -166,5 +104,4 @@ export const MapMarker = ({ longitude, latitude, onClick, children }: MapMarkerP
 
 export const MarkerContent = ({ children }: any) => <>{children}</>;
 export const MarkerTooltip = ({ children }: any) => <>{children}</>;
-
 export const MapControls = () => null;
