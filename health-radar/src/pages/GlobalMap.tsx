@@ -167,7 +167,10 @@ const GlobalMap: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col lg:relative lg:h-[780px] w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-slate-950">
+    <div 
+      id="global-map" 
+      className="flex flex-col lg:relative lg:h-[780px] w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-slate-950"
+    >
       {/* Map Section: Fixed height on mobile, full height on desktop */}
       <div className="h-[450px] lg:h-full w-full relative shrink-0">
         <Map ref={mapRef} className="h-full w-full">
