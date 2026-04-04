@@ -95,7 +95,7 @@ const Footer = () => {
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">{activePlatform}</h3>
               
               <div className="space-y-4 mb-8">
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium text-justify">
                   {platformDescriptions[activePlatform]}
                 </p>
               </div>

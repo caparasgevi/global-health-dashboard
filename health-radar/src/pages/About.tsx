@@ -159,7 +159,7 @@ const About = () => {
                 </h3>
                 
                 <div className="space-y-4 mb-8">
-                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium text-justify">
                     {valueDetails[selectedValue]}
                   </p>
                 </div>
