@@ -19,15 +19,12 @@ export type MapRef = {
 const MapContext = createContext<MapLibreMap | null>(null);
 export const useMap = () => useContext(MapContext);
 
-type MapProps = {
+interface MapProps {
   children?: React.ReactNode;
   className?: string;
-};
+}
 
-export const Map = forwardRef<MapRef, MapProps>(function Map(
-  { children, className = "" },
-  ref
-) {
+export const Map = forwardRef<MapRef, MapProps>(({ children, className = "" }, ref) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<MapLibreMap | null>(null);
   const [mapReady, setMapReady] = useState<MapLibreMap | null>(null);
