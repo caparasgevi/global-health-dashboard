@@ -62,21 +62,39 @@ const Home = () => {
       setIsLoading(true);
       try {
         const rawData = await healthService.getGlobalBaseline({ signal: controller.signal });
+
         const regionNames: Record<string, string> = {
-          'AFR': 'Africa', 'AMR': 'Americas', 'SEAR': 'South-East Asia', 
-          'EUR': 'Europe', 'EMR': 'Eastern Mediterranean', 'WPR': 'Western Pacific'
+          'AFR': 'African Region (AFR)',
+          'AMR': 'Region of the Americas (AMR)',
+          'SEAR': 'South-East Asia Region (SEAR)',
+          'EUR': 'European Region (EUR)',
+          'EMR': 'Eastern Mediterranean Region (EMR)',
+          'WPR': 'Western Pacific Region (WPR)'
         };
-        const processedData = rawData.slice(0, 6).map((item: any) => {
-          const value = Math.min(Math.round(item.NumericValue || 0), 100);
-          return {
-            id: item.SpatialDim,
-            region: regionNames[item.SpatialDim] || item.SpatialDim,
-            threatLevel: value,
-            status: value > 80 ? "Critical" : value > 60 ? "High" : value > 40 ? "Moderate" : "Low"
-          };
-        });
+
+        const seenRegions = new Set();
+        const uniqueProcessedData: any[] = [];
+
+        for (const item of rawData) {
+          const regionCode = item.SpatialDim;
+
+          if (regionNames[regionCode] && !seenRegions.has(regionCode)) {
+            seenRegions.add(regionCode);
+
+            const value = Math.min(Math.round(item.NumericValue || 0), 100);
+            uniqueProcessedData.push({
+              id: regionCode,
+              region: regionNames[regionCode],
+              threatLevel: value,
+              status: value > 80 ? "Critical" : value > 60 ? "High" : value > 40 ? "Moderate" : "Low"
+            });
+          }
+
+          if (uniqueProcessedData.length === 6) break;
+        }
+
         if (isMounted) {
-          setRegionalThreatData(processedData);
+          setRegionalThreatData(uniqueProcessedData);
           setLastUpdated(new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric' }));
         }
       } catch (error: any) {
@@ -267,11 +285,11 @@ const Home = () => {
                       <m.div key={item.id} layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="group">
                         <div className="flex justify-between items-end mb-2.5">
                           <div className="flex flex-col">
-                            <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter mb-0.5">Region</span>
+                            <span className="text-xs font-black invisible uppercase tracking-tighter mb-0.5">Region</span>
                             <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{item.region}</span>
                           </div>
                           <div className="text-right">
-                             <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">Index</span>
+                             <span className="text-[10px] font-black invisible uppercase block mb-0.5">Index</span>
                              <span className={`text-xs font-black tracking-widest uppercase ${item.threatLevel > 70 ? 'text-brand-red' : 'text-brand-orange'}`}>
                                {item.status} · <Counter value={item.threatLevel} />%
                              </span>
