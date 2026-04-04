@@ -27,10 +27,10 @@ const TrendChart: React.FC<TrendChartProps> = ({
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `https://cors-anywhere.herokuapp.com/https://ghoapi.azureedge.net/api/${indicatorCode}?$format=json&$filter=SpatialDim eq '${countryCode}'`;
+        const url = `/gho-api/${indicatorCode}?$format=json&$filter=SpatialDim eq '${countryCode}'`;
         const response = await fetch(url, { signal: controller.signal });
         const responseData = await response.json();
-        
+
         if (responseData?.value?.length > 0) {
           const formatted = formatWHOData(responseData.value);
           const sorted = formatted.sort((a: any, b: any) => a.year - b.year);

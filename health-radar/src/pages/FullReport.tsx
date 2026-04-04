@@ -49,14 +49,20 @@ const FullReport: React.FC = () => {
               try {
                 const hasData = await healthService.checkIndicatorStatus(ind.IndicatorCode, countryCode, { signal: controller.signal });
                 return (hasData && hasData.length > 0) ? { name: ind.IndicatorName, code: ind.IndicatorCode } : null;
-              } catch { return null; }
+              } catch (e: any) {
+                if (e?.name !== 'AbortError') console.error(e);
+                return null;
+              }
             })
           );
           
-          found.push(...results.filter((item): item is {name: string, code: string} => item !== null));
+          const validResults = results.filter((item): item is {name: string, code: string} => item !== null);
           
-          if (isMounted && found.length > 0) {
-            setActiveDiseases([...found]);
+          if (validResults.length > 0) {
+            found.push(...validResults);
+            if (isMounted) {
+              setActiveDiseases([...found]);
+            }
           }
         }
       } catch (err: any) {
@@ -70,16 +76,20 @@ const FullReport: React.FC = () => {
     return () => { isMounted = false; controller.abort(); };
   }, [countryCode]);
 
+  useEffect(() => {
+    return () => { observer.current?.disconnect(); };
+  }, []);
+
   const lastElementRef = useCallback((node: HTMLDivElement) => {
     if (isLoading) return;
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && activeDiseases.length > visibleCount) {
-        setVisibleCount(prev => prev + 4);
+      if (entries[0].isIntersecting) {
+        setVisibleCount(prev => (prev < activeDiseases.length ? prev + 4 : prev));
       }
     }, { rootMargin: '300px' });
     if (node) observer.current.observe(node);
-  }, [isLoading, activeDiseases.length, visibleCount]);
+  }, [isLoading, activeDiseases.length]); // visibleCount intentionally removed
 
   const previewDiseases = useMemo(() => activeDiseases.slice(0, visibleCount), [activeDiseases, visibleCount]);
 

@@ -32,9 +32,9 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({ activeCountryCode }) 
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        const requests = countries.map(c => 
+        const requests = countries.map(c =>
           fetch(
-            `https://cors-anywhere.herokuapp.com/https://ghoapi.azureedge.net/api/${INDICATOR}?$format=json&$filter=SpatialDim eq '${c.code}'`,
+            `/gho-api/${INDICATOR}?$format=json&$filter=SpatialDim eq '${c.code}'`,
             { signal: controller.signal }
           ).then(res => res.json())
         );

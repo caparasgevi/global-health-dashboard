@@ -4,6 +4,9 @@ import { healthService } from '../services/healthService';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, EffectFade } from 'swiper/modules'; 
 
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
 
 const Counter = React.memo(({ value }: { value: number }) => {
   const count = useMotionValue(0);
@@ -30,154 +33,270 @@ const Star = ({ id }: { id: string }) => (
   </div>
 );
 
+interface OutbreakSlide {
+  id: string;
+  title: string;
+  date: string;
+  image: string;
+  caption: string; 
+  url: string;
+}
+
+const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+
 const Home = () => {
   const [regionalThreatData, setRegionalThreatData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [outbreakSlides, setOutbreakSlides] = useState<OutbreakSlide[]>([]);
+  const [outbreakLoading, setOutbreakLoading] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const swiperRef = useRef<any>(null);
 
   useEffect(() => {
     let isMounted = true;
-
+    const controller = new AbortController();
     const fetchRegionalData = async () => {
+      setIsLoading(true);
       try {
-        await healthService.getAllIndicators();
-        
-        const regions = [
-          { id: 'AFR', name: 'Africa' }, { id: 'AMR', name: 'Americas' },
-          { id: 'SEAR', name: 'South-East Asia' }, { id: 'EUR', name: 'Europe' },
-          { id: 'EMR', name: 'Eastern Mediterranean' }, { id: 'WPR', name: 'Western Pacific' }
-        ];
-
-        const processedData = regions.map((reg) => {
-          const riskFactor = Math.floor(Math.random() * (95 - 20 + 1)) + 20; 
-          let status = riskFactor > 80 ? "Critical" : riskFactor > 60 ? "High" : riskFactor > 40 ? "Moderate" : "Low";
-          return { id: reg.id, region: reg.name, threatLevel: riskFactor, status };
+        const rawData = await healthService.getGlobalBaseline({ signal: controller.signal });
+        const regionNames: Record<string, string> = {
+          'AFR': 'Africa', 'AMR': 'Americas', 'SEAR': 'South-East Asia', 
+          'EUR': 'Europe', 'EMR': 'Eastern Mediterranean', 'WPR': 'Western Pacific'
+        };
+        const processedData = rawData.slice(0, 6).map((item: any) => {
+          const value = Math.min(Math.round(item.NumericValue || 0), 100);
+          return {
+            id: item.SpatialDim,
+            region: regionNames[item.SpatialDim] || item.SpatialDim,
+            threatLevel: value,
+            status: value > 80 ? "Critical" : value > 60 ? "High" : value > 40 ? "Moderate" : "Low"
+          };
         });
-
         if (isMounted) {
           setRegionalThreatData(processedData);
-          setLastUpdated(new Date().toLocaleString('en-US', { 
-            hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric' 
-          }));
-          setIsLoading(false);
+          setLastUpdated(new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric' }));
         }
-      } catch (error) {
-        console.error("Fetch error:", error);
+      } catch (error: any) {
+        if (error?.name !== 'AbortError') console.error("Regional fetch error:", error);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    fetchRegionalData();
+    return () => { isMounted = false; controller.abort(); };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    let intervalId: ReturnType<typeof setInterval>;
+    const controller = new AbortController();
+
+    const fetchOutbreaks = async () => {
+      setOutbreakLoading(true);
+      try {
+        const news = await healthService.getOutbreakNews(10, { signal: controller.signal });
+        const slides: OutbreakSlide[] = await Promise.all(
+          news.map(async (item: any, index: number) => {
+            const searchKeyword = item.title.split('-')[0].trim();
+            const pexelsImg = await healthService.getRelevantImage(`${searchKeyword} ${index}`);
+            return {
+              id: item.id,
+              title: item.title,
+              date: item.date,
+              image: pexelsImg ? `${pexelsImg}?sig=${item.id}` : `https://images.unsplash.com/photo-1584118624012-df456d49ecaa?sig=${item.id}`,
+              url: `https://www.google.com/search?q=${encodeURIComponent(item.title + " WHO Report")}`,
+              caption: item.summary.replace(/<[^>]+>/g, '').trim()
+            };
+          })
+        );
+        if (isMounted) {
+          setOutbreakSlides(slides);
+          setActiveSlide(0);
+        }
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') console.error('Outbreak fetch failed:', err);
+      } finally {
+        if (isMounted) setOutbreakLoading(false);
       }
     };
 
-    fetchRegionalData();
-    return () => { isMounted = false; };
+    fetchOutbreaks();
+    intervalId = setInterval(() => { if (isMounted) fetchOutbreaks(); }, REFRESH_INTERVAL_MS);
+    return () => { isMounted = false; controller.abort(); clearInterval(intervalId); };
   }, []);
 
-  const carouselSlides = [
-    {
-      id: 1,
-      image: '/src/assets/photo-4-malaria-vaccine-pilot.tmb-1920v.jpg',
-      title: "Ebola Outbreak",
-      caption: "Vaccines to protect against Ebola are under development and have been used to help control the spread in Guinea and the DRC."
-    },
-    {
-      id: 2,
-      image: '/src/assets/photo-8-waris-5-gets-opv-in-loya-wala-kandahar-2-dec17-photo-tuuli-hongisto508576a8892f494f984005b9320222ce.tmb-1920v.jpg',
-      title: "Polio Outbreak",
-      caption: "85% of infants globally received three doses of polio vaccine. Transmission is now restricted to just three countries."
-    },
-    {
-      id: 3,
-      image: '/src/assets/photo-9-un-photo-eskinder-debebe.tmb-479v.jpg',
-      title: "Tetanus",
-      caption: "Three WHO regions have eliminated maternal and neonatal tetanus. The disease is preventable through hygienic practices."
-    }
-  ];
-
-  const revealVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+  const handleSlideChange = (swiper: any) => {
+    setActiveSlide(swiper.realIndex);
+    setIsExpanded(false);
   };
+
+  const revealVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
   return (
     <div id="home" className="bg-transparent pb-12 font-poppins">
       <m.section 
         initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} 
         transition={{ duration: 0.5 }} variants={revealVariants} 
-        className="theme-card border-x-0 border-t-0 pt-12 md:pt-16 pb-8 md:pb-12 px-4 md:px-6 mb-8 shadow-none rounded-none font-montserrat"
+        className="pt-12 md:pt-16 pb-8 md:pb-12 px-4 md:px-6 mb-4 font-montserrat"
       >
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 text-center md:text-left">
           <div className="flex-1">
-            <h1 className="text-3xl md:text-5xl font-black leading-tight mb-4 text-black dark:text-white">Global Health <span className="text-brand-red">Surveillance</span></h1>
-            <p className="text-lg md:text-xl text-black dark:text-gray-400 font-light italic">"Surveillance Beyond Borders."</p>
+            <h1 className="text-4xl md:text-6xl font-black leading-tight mb-2 text-black dark:text-white tracking-tighter">
+              Global Health <span className="text-brand-red">Surveillance</span>
+            </h1>
+            <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 font-medium italic opacity-80">"Surveillance Beyond Borders."</p>
           </div>
-          <div className="relative scale-50 sm:scale-75 md:scale-100 h-24 md:h-auto">
-            <div className="section-banner"></div>
+          <div className="relative hidden md:block">
+            <div className="section-banner opacity-20"></div>
             {[1, 2, 3, 4, 5, 6, 7].map((num) => <Star key={num} id={`star-${num}`} />)}
           </div>
         </div>
       </m.section>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        {/* Carousel Card */}
-        <m.div className="lg:col-span-2 w-full" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}>
-          <div className="theme-card rounded-3xl p-4 md:p-6 overflow-hidden flex flex-col">
-            <h2 className="text-base md:text-lg font-bold uppercase mb-4 text-black dark:text-white font-montserrat tracking-wider">Latest Global Outbreak</h2>
-            
-            {/* Improved responsive aspect ratio container */}
-            <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 aspect-video md:aspect-[16/9] lg:h-[400px]">
-              <Swiper 
-                modules={[Autoplay, Pagination, EffectFade]}
-                effect="fade"
-                loop={true} 
-                autoplay={{ delay: 4000, disableOnInteraction: false }} 
-                pagination={{ clickable: true }} 
-                className="w-full h-full"
-              >
-                {carouselSlides.map((slide) => (
-                  <SwiperSlide key={slide.id}>
-                    <div className="relative w-full h-full">
-                      <img 
-                        src={slide.image} 
-                        alt={slide.title} 
-                        className="w-full h-full object-cover" 
-                        loading="eager"
-                      />
-                      {/* Gradient overlay with responsive text sizing */}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 md:p-8 text-white">
-                        <h3 className="text-base md:text-xl font-bold text-brand-orange mb-1">{slide.title}</h3>
-                        <p className="text-xs md:text-sm opacity-90 leading-tight md:leading-normal max-w-2xl">{slide.caption}</p>
-                      </div>
-                    </div>
-                  </SwiperSlide>
-                ))}
-              </Swiper>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <m.div className="lg:col-span-8 w-full h-full" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}>
+          <div 
+            className="theme-card rounded-[2rem] p-5 md:p-8 flex flex-col h-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm"
+            onMouseEnter={() => swiperRef.current?.autoplay.stop()}
+            onMouseLeave={() => swiperRef.current?.autoplay.start()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col">
+                <h2 className="text-xs md:text-base font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em]">REAL-TIME</h2>
+                <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Global Outbreaks</h3>
+              </div>
             </div>
+            
+            {outbreakLoading ? (
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-800 aspect-video flex flex-col items-center justify-center bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="w-10 h-10 border-4 border-brand-red border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Synchronizing Intelligence...</p>
+              </div>
+            ) : outbreakSlides.length > 0 ? (
+              <div className="flex flex-col h-full">
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-200 dark:shadow-none mb-6">
+                  <Swiper 
+                    onSwiper={(swiper) => (swiperRef.current = swiper)}
+                    modules={[Autoplay, Pagination, EffectFade]}
+                    effect="fade"
+                    loop={true} 
+                    autoplay={{ delay: 6000, disableOnInteraction: false }} 
+                    pagination={{ clickable: true, bulletActiveClass: 'swiper-pagination-bullet-active !bg-brand-orange' }} 
+                    onSlideChange={handleSlideChange}
+                    className="w-full aspect-video lg:h-[450px]"
+                  >
+                    {outbreakSlides.map((slide) => (
+                      <SwiperSlide key={slide.id}>
+                        <div className="relative w-full h-full bg-slate-900">
+                          <img src={slide.image} alt={slide.title} className="w-full h-full object-cover opacity-70 transition-transform duration-[2000ms] hover:scale-105" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/20 to-transparent" />
+                          <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-6 md:p-10 text-white">
+                             <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                                <span className="h-[2px] w-6 sm:w-8 bg-brand-orange"></span>
+                                <p className="text-[9px] md:text-xs text-brand-orange font-black uppercase tracking-widest">
+                                  {new Date(slide.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                </p>
+                             </div>
+                            <h3 className="text-lg sm:text-2xl md:text-4xl font-bold leading-tight mb-2 drop-shadow-md line-clamp-2">{slide.title}</h3>
+                          </div>
+                        </div>
+                      </SwiperSlide>
+                    ))}
+                  </Swiper>
+                </div>
+
+                <div className="mt-auto bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-100 dark:border-slate-800/50">
+                  <m.div 
+                    initial={false}
+                    animate={{ height: isExpanded ? "auto" : "2.8em" }}
+                    className="overflow-hidden relative mb-4"
+                  >
+                    <p className={`text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed ${!isExpanded ? 'line-clamp-2' : ''}`}>
+                      {outbreakSlides[activeSlide]?.caption}
+                    </p>
+                  </m.div>
+                  
+                  {/* Action Bar: Stacks on mobile, Rows on small screens up */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
+                    <button 
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="w-full sm:w-auto text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 hover:text-brand-orange transition-colors flex items-center justify-center gap-1 group"
+                    >
+                      {isExpanded ? "Show Less" : "Read Full Context"} 
+                      <span className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'group-hover:translate-y-0.5'}`}>↓</span>
+                    </button>
+                    
+                    <a 
+                      href={outbreakSlides[activeSlide]?.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-red text-[10px] font-black uppercase text-white hover:bg-red-700 transition-all shadow-lg shadow-red-200 dark:shadow-none active:scale-95"
+                    >
+                      Search Official Report
+                      <span className="text-sm">↗</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border-2 border-dashed border-slate-100 dark:border-slate-800 aspect-video flex items-center justify-center text-slate-400 text-sm font-medium italic">No active outbreaks reported.</div>
+            )}
           </div>
         </m.div>
-        
-        {/* Regional Threat Card */}
-        <m.div className="w-full" initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.1 }} variants={revealVariants}>
-          <div className="theme-card rounded-3xl p-6 h-fit flex flex-col">
-            <h2 className="text-base md:text-lg font-bold mb-6 uppercase border-b border-gray-100 dark:border-gray-800 pb-4 text-black dark:text-white font-montserrat tracking-wider">Regional <span className="text-brand-orange">Threat Level</span></h2>
-            <div className="space-y-6">
+
+        <m.div className="lg:col-span-4 w-full h-full" initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.1 }} variants={revealVariants}>
+          <div className="theme-card rounded-[2rem] p-6 md:p-8 flex flex-col h-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+            <div className="mb-8">
+              <h2 className="text-sm font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em] mb-1">Risk Assessment</h2>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Regional <span className="text-brand-orange">Threat Level</span></h3>
+            </div>
+            
+            <div className="space-y-7">
               {isLoading ? (
-                <div className="flex justify-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div></div>
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-100 dark:border-slate-800 border-t-brand-orange"></div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Analyzing Hazards...</p>
+                </div>
               ) : (
                 <>
                   <AnimatePresence mode="popLayout">
                     {regionalThreatData.map((item) => (
-                      <m.div key={item.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <div className="flex justify-between text-xs md:text-sm mb-2">
-                          <span className="font-semibold text-gray-700 dark:text-gray-300">{item.region} (<Counter value={item.threatLevel} />%)</span>
-                          <span className={`font-bold animate-pulse ${item.threatLevel > 70 ? 'text-brand-red' : 'text-brand-orange'}`}>{item.status}</span>
+                      <m.div key={item.id} layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="group">
+                        <div className="flex justify-between items-end mb-2.5">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter mb-0.5">Region</span>
+                            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{item.region}</span>
+                          </div>
+                          <div className="text-right">
+                             <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">Index</span>
+                             <span className={`text-xs font-black tracking-widest uppercase ${item.threatLevel > 70 ? 'text-brand-red' : 'text-brand-orange'}`}>
+                               {item.status} · <Counter value={item.threatLevel} />%
+                             </span>
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 md:h-2 rounded-full overflow-hidden">
-                          <m.div initial={{ width: 0 }} whileInView={{ width: `${item.threatLevel}%` }} transition={{ duration: 1 }} className={`${item.threatLevel > 70 ? 'bg-brand-red' : 'bg-brand-orange'} h-full`} />
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden p-[2px]">
+                          <m.div 
+                            initial={{ width: 0 }} 
+                            whileInView={{ width: `${item.threatLevel}%` }} 
+                            transition={{ duration: 1.2, ease: "circOut" }} 
+                            className={`${item.threatLevel > 70 ? 'bg-brand-red shadow-[0_0_12px_rgba(255,46,46,0.4)]' : 'bg-brand-orange shadow-[0_0_12px_rgba(255,165,0,0.4)]'} h-full rounded-full`} 
+                          />
                         </div>
                       </m.div>
                     ))}
                   </AnimatePresence>
-                  <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 opacity-60">
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Data Source: <span className="font-bold">WHO APIs</span>. Updated: {lastUpdated}</p>
+                  
+                  <div className="mt-auto pt-8 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-start gap-3 opacity-60 grayscale hover:grayscale-0 transition-all">
+                      <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold text-xs uppercase tracking-widest">WHO</div>
+                      <p className="text-[9px] leading-relaxed text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
+                        Official Surveillance Data provided by WHO APIs.<br />
+                        <span className="text-brand-orange">Last Updated: {lastUpdated}</span>
+                      </p>
+                    </div>
                   </div>
                 </>
               )}
