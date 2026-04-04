@@ -99,13 +99,6 @@ const Footer = () => {
                   {platformDescriptions[activePlatform]}
                 </p>
               </div>
-
-              <button 
-                onClick={() => setActivePlatform(null)}
-                className="w-full py-4 bg-brand-red text-white rounded-2xl font-bold text-sm hover:bg-brand-red/90 transition-all shadow-lg shadow-brand-red/20"
-              >
-                Return to Dashboard
-              </button>
             </div>
           </div>
         </div>
