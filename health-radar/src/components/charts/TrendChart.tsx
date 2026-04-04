@@ -4,12 +4,12 @@ import { formatWHOData } from '../../utils/healthDataFormat';
 
 interface TrendChartProps {
   indicatorCode?: string;
-  countryCode?: string; 
+  countryCode?: string;
   title?: string;
-  description?: string; 
+  description?: string;
 }
 
-const TrendChart: React.FC<TrendChartProps> = ({ 
+const TrendChart: React.FC<TrendChartProps> = ({
   indicatorCode = 'WHOSIS_000001',
   countryCode = 'PHL',
   title = "Health Progress",
@@ -69,16 +69,13 @@ const TrendChart: React.FC<TrendChartProps> = ({
     <div className="flex flex-col h-full w-full bg-white dark:bg-slate-900/40 p-4 md:p-6 transition-colors duration-300">
       <div className="mb-4 md:mb-6">
         <div className="flex items-center justify-between mb-2">
-          <span className={`px-2 py-1 rounded text-[9px] md:text-[10px] font-black uppercase tracking-widest ${
-            trend === 'rising' ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'
-          }`}>
+          <span className={`px-2 py-1 rounded text-[9px] md:text-[10px] font-black uppercase tracking-widest ${trend === 'rising' ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'
+            }`}>
             {trend === 'rising' ? '📈 Cases Increasing' : '📉 Cases Declining'}
           </span>
           <span className="text-[9px] md:text-[10px] font-mono text-slate-400 uppercase">{indicatorCode}</span>
         </div>
-        
-        {/* Changed h-14 to min-h-[3.5rem] so long titles don't overlap on small screens */}
-        <h3 className="text-slate-900 dark:text-white text-lg md:text-xl font-bold leading-tight line-clamp-2 min-h-[3.5rem]">{title}</h3>
+        <h3 className="text-slate-900 dark:text-white text-lg md:text-xl font-bold leading-tight min-h-[4rem] flex items-center">{title}</h3>
         <p className="text-slate-500 dark:text-slate-400 text-[11px] md:text-xs mt-1 md:mt-2 leading-relaxed italic">{description}</p>
       </div>
 
@@ -88,41 +85,41 @@ const TrendChart: React.FC<TrendChartProps> = ({
           <AreaChart data={data} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
             <defs>
               <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/5" />
-            <XAxis 
-              dataKey="year" 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fill: 'currentColor', fontSize: 9, fontWeight: 600 }} 
+            <XAxis
+              dataKey="year"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: 'currentColor', fontSize: 9, fontWeight: 600 }}
               className="text-slate-400 dark:text-slate-500"
-              minTickGap={15} // Prevents overlapping years on narrow screens
+              minTickGap={15} 
             />
-            <YAxis 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fill: 'currentColor', fontSize: 9 }} 
-              className="text-slate-400 dark:text-slate-500" 
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: 'currentColor', fontSize: 9 }}
+              className="text-slate-400 dark:text-slate-500"
             />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: '#0f172a', 
-                border: '1px solid rgba(255,255,255,0.1)', 
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#0f172a',
+                border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '12px',
                 fontSize: '11px'
               }}
               itemStyle={{ color: '#ef4444', fontWeight: 'bold', padding: 0 }}
               labelStyle={{ color: '#94a3b8', marginBottom: '2px' }}
             />
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke="#ef4444" 
-              strokeWidth={2} // Thinner line for mobile clarity
-              fill="url(#colorRisk)" 
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="#ef4444"
+              strokeWidth={2} 
+              fill="url(#colorRisk)"
               activeDot={{ r: 5, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
               dot={{ r: 3, fill: '#ef4444', opacity: 0.5 }}
               animationDuration={1200}
@@ -137,8 +134,8 @@ const TrendChart: React.FC<TrendChartProps> = ({
           Traveler Guidance
         </h4>
         <p className="text-slate-500 dark:text-slate-400 text-[10px] md:text-[11px] leading-snug">
-          {trend === 'rising' 
-            ? "Caution: Upward trajectory detected. Ensure vaccinations are up to date before arrival." 
+          {trend === 'rising'
+            ? "Caution: Upward trajectory detected. Ensure vaccinations are up to date before arrival."
             : "Data shows a stable or downward trend, but standard hygiene and local health protocols should remain a priority."}
         </p>
       </div>
