@@ -175,9 +175,9 @@ const Home = () => {
       </m.section>
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <m.div className="lg:col-span-8 w-full h-full" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}>
+        <m.div className="lg:col-span-8 w-full" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}>
           <div 
-            className="theme-card rounded-[2rem] p-5 md:p-8 flex flex-col h-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm"
+            className="theme-card rounded-[2rem] p-5 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm"
             onMouseEnter={() => swiperRef.current?.autoplay.stop()}
             onMouseLeave={() => swiperRef.current?.autoplay.start()}
           >
@@ -265,8 +265,8 @@ const Home = () => {
           </div>
         </m.div>
 
-        <m.div className="lg:col-span-4 w-full h-full" initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.1 }} variants={revealVariants}>
-          <div className="theme-card rounded-[2rem] p-6 md:p-8 flex flex-col h-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <m.div className="lg:col-span-4 w-full" initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.1 }} variants={revealVariants}>
+          <div className="theme-card rounded-[2rem] p-6 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
             <div className="mb-8">
               <h2 className="text-sm font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em] mb-1">Risk Assessment</h2>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">Regional <span className="text-brand-orange">Threat Level</span></h3>
@@ -307,15 +307,20 @@ const Home = () => {
                     ))}
                   </AnimatePresence>
                   
-                  <div className="mt-auto pt-8 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-start gap-3 opacity-60 grayscale hover:grayscale-0 transition-all">
-                      <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold text-xs uppercase tracking-widest">WHO</div>
+                      <img
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/WHO_logo.svg/1024px-WHO_logo.svg.png"
+                        alt="WHO Logo"
+                        className="w-6 h-6 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://www.svgrepo.com/show/306988/world-health-organization.svg";
+                        }}
+                      />
                       <p className="text-[9px] leading-relaxed text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
                         Official Surveillance Data provided by WHO APIs.<br />
                         <span className="text-brand-orange">Last Updated: {lastUpdated}</span>
                       </p>
                     </div>
-                  </div>
                 </>
               )}
             </div>
