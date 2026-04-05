@@ -1,10 +1,22 @@
 import React, { useState, useMemo, useEffect, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
 import iso from 'iso-3166-1';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { healthService } from '../services/healthService';
 import type TrendChartType from '../components/charts/TrendChart';
 import type ComparisonChartType from '../components/charts/ComparisonChart';
+
+const preloadCharts = () => {
+  import('../components/charts/TrendChart');
+  import('../components/charts/ComparisonChart');
+};
+
+const ChartSkeleton = () => (
+  <div className="w-full h-full p-8 flex flex-col gap-4 animate-pulse">
+    <div className="h-4 w-32 bg-slate-200 dark:bg-white/10 rounded" />
+    <div className="flex-1 bg-slate-100 dark:bg-white/5 rounded-2xl" />
+  </div>
+);
 
 const TrendChart = lazy(() => import('../components/charts/TrendChart')) as React.LazyExoticComponent<typeof TrendChartType>;
 const ComparisonChart = lazy(() => import('../components/charts/ComparisonChart')) as React.LazyExoticComponent<typeof ComparisonChartType>;
@@ -23,6 +35,134 @@ const getRootName = (fullName: string) => {
   const commonDiseases = ['hiv', 'malaria', 'tuberculosis', 'cholera', 'dengue', 'measles', 'covid', 'ebola', 'zika', 'yellow fever', 'hepatitis', 'polio', 'meningitis', 'leprosy'];
   const lowerName = fullName.toLowerCase();
   return commonDiseases.find(d => lowerName.includes(d)) || fullName;
+};
+
+const isUsefulIndicator = (data: any[]): boolean => {
+  if (!data || data.length < 2) return false;
+  const nonZero = data.filter(item => item._safeValue > 0);
+  return nonZero.length >= 1; 
+};
+
+const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode }) => {
+  const [data, setData] = useState<any[]>([]);
+  const [fetchDate, setFetchDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    const indicators = [
+      { name: 'COVID-19', code: 'COVID_19_CASES' }, { name: 'Malaria', code: 'MALARIA_EST_CASES' },
+      { name: 'Influenza', code: 'RS_196' }, { name: 'Measles', code: 'WHS3_62' },
+      { name: 'Dengue', code: 'NTD_DENGUE_CASES' }, { name: 'Tuberculosis', code: 'MDG_0000000001' },
+      { name: 'Cholera', code: 'CHOLERA_0000000001' }, { name: 'Zika Virus', code: 'ZIKA_CASES' },
+      { name: 'Yellow Fever', code: 'WHS3_52' }, { name: 'Hepatitis B', code: 'WHS3_48' },
+      { name: 'Meningitis', code: 'WHS3_40' }, { name: 'Polio', code: 'WHS3_63' },
+      { name: 'HIV/AIDS', code: 'HIV_0000000001' }, { name: 'Leprosy', code: 'NTD_LEPROSY_CASES' }
+    ];
+
+    const fetchData = async () => {
+      const results = await Promise.all(indicators.map(async (ind) => {
+        try {
+          const raw = await healthService.checkIndicatorStatus(ind.code, countryCode);
+          if (raw && raw.length >= 2) {
+            const currentRecord = raw[0];
+            const prevRecord = raw[1];
+            const currentVal = currentRecord._safeValue || 0;
+            const prevVal = prevRecord._safeValue || 0;
+            const currentYear = currentRecord.TimeDim || "2024"; 
+
+            if (currentVal > 0 || prevVal > 0) {
+              const velocity = prevVal > 0 ? ((currentVal - prevVal) / prevVal) * 100 : 0;
+              return { 
+                name: ind.name, 
+                velocity: parseFloat(velocity.toFixed(1)), 
+                current: currentVal, 
+                year: String(currentYear)
+              };
+            }
+          }
+        } catch (err) { return null; }
+        return null;
+      }));
+
+      const filtered = results
+        .filter((r): r is any => r !== null)
+        .sort((a, b) => b.velocity - a.velocity);
+      
+      setData(filtered);
+      setFetchDate(new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+    };
+
+    fetchData();
+  }, [countryCode]);
+
+  if (data.length === 0) return null;
+
+  return (
+    <div className="bg-white dark:bg-slate-900/50 p-6 md:p-10 rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-2xl mb-12 animate-in fade-in slide-in-from-bottom-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="bg-brand-red/10 text-brand-red text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-[0.2em] border border-brand-red/20">TREND ANALYSIS</span>
+            <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Source: WHO GHO API</span>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white font-montserrat tracking-tight">Real-Time <span className="text-brand-red">Disease Surge Tracker</span></h2>
+        </div>
+        <div className="bg-slate-100 dark:bg-white/5 px-4 py-2 rounded-2xl border dark:border-white/5">
+          <p className="text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">Last System Sync</p>
+          <p className="text-xs font-mono text-brand-red font-bold">{fetchDate}</p>
+        </div>
+      </div>
+
+      <div className="h-[450px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ right: 280, left: 10 }}>
+            <XAxis type="number" hide domain={['dataMin - 20', 'dataMax + 20']} />
+            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#475569', fontWeight: 900 }} width={130} />
+            <Tooltip 
+              cursor={{ fill: 'rgba(239, 68, 68, 0.04)' }} 
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const d = payload[0].payload;
+                  return (
+                    <div className="bg-slate-950 p-4 rounded-2xl border border-white/20 shadow-2xl min-w-[200px]">
+                      <p className="text-white font-black text-xs mb-3 border-b border-white/10 pb-2 uppercase tracking-widest">{d.name}</p>
+                      <p className={`text-xs font-black ${d.velocity < 0 ? 'text-emerald-400' : 'text-brand-red'}`}>
+                        SHIFT: {d.velocity > 0 ? '+' : ''}{d.velocity}% ({d.year})
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Bar dataKey="velocity" radius={[0, 8, 8, 0]} barSize={20}>
+              {data.map((entry, i) => (
+                <Cell key={i} fill={entry.velocity < 0 ? '#10b981' : '#ef4444'} fillOpacity={1 - (i * 0.04)} />
+              ))}
+              <LabelList dataKey="velocity" content={(props: any) => {
+                  const { x, y, width, value, index, height } = props;
+                  const item = data[index];
+                  if (!item) return null;
+                  const isNeg = value < 0;
+                  const textAnchorX = x + width + 15;
+                  const centerY = y + height / 2;
+                  return (
+                    <g>
+                      <text x={textAnchorX} y={centerY} fill={isNeg ? '#10b981' : '#ef4444'} fontSize="11" fontWeight="900" fontFamily="monospace" dominantBaseline="middle">
+                        {value > 0 ? '+' : ''}{value}%
+                      </text>
+                      <text x={textAnchorX + 55} y={centerY} fill="#475569" className="dark:fill-slate-400" fontSize="11" fontWeight="700" fontFamily="monospace" dominantBaseline="middle">
+                        · {item.year} ({item.current.toLocaleString()} cases)
+                      </text>
+                    </g>
+                  );
+                }}
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
 };
 
 const DefaultHealthDashboard: React.FC = () => {
@@ -103,11 +243,6 @@ const DefaultHealthDashboard: React.FC = () => {
   );
 };
 
-const isUsefulIndicator = (data: any[]): boolean => {
-  if (!data || data.length < 2) return false;
-  const nonZero = data.filter(item => item._safeValue > 0);
-  return nonZero.length >= 2;
-};
 
 const Trends: React.FC = () => {
   const navigate = useNavigate();
@@ -117,6 +252,12 @@ const Trends: React.FC = () => {
   const [dynamicDiseases, setDynamicDiseases] = useState<{ name: string, code: string }[]>([]);
   const [isSearchingData, setIsSearchingData] = useState(false);
   const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
+
+  useEffect(() => {
+    if (activeCountry || searchQuery.length > 2) {
+      preloadCharts();
+    }
+  }, [activeCountry, searchQuery]);
 
   useEffect(() => {
     if (!activeCountry) {
@@ -180,7 +321,6 @@ const Trends: React.FC = () => {
           const chunk = pool.slice(i, i + CONCURRENCY_LIMIT);
           const chunkResults = await Promise.all(
             chunk.map(async (ind) => {
-              // KEEPING YOUR EXACT LOGIC
               const root = getRootName(ind.IndicatorName);
               if (usedDiseaseNames.has(root)) return null;
 
@@ -199,14 +339,16 @@ const Trends: React.FC = () => {
             })
           );
 
+          let foundNew = false;
           for (const res of chunkResults) {
             if (res && results.length < 4 && !usedDiseaseNames.has(res.root)) {
               results.push({ name: res.name, code: res.code });
               usedDiseaseNames.add(res.root);
+              foundNew = true; 
             }
           }
 
-          if (isMounted && results.length > 0) {
+          if (isMounted && foundNew) {
             setDynamicDiseases([...results]);
           }
         }
@@ -305,18 +447,15 @@ const Trends: React.FC = () => {
           </div>
         )}
 
-        {isSearchingData && dynamicDiseases.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-slate-400">
-            <div className="w-10 h-10 border-4 border-brand-red border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="animate-pulse font-medium">Performing Deep Risk Assessment...</p>
-          </div>
-        ) : activeCountry && dynamicDiseases.length > 0 ? (
+        {activeCountry && <PathogenVelocityIndex countryCode={activeCountry} />}
+
+        {activeCountry && (dynamicDiseases.length > 0 || isSearchingData) ? (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch animate-in fade-in slide-in-from-bottom-4 duration-500">
               {dynamicDiseases.map((disease) => (
-                <div key={disease.code} className="group relative flex flex-col bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-white/5 overflow-hidden min-h-[450px] transition-all has-[.no-data-signal]:hidden">
+                <div key={disease.code} className="group relative flex flex-col bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-white/5 overflow-hidden min-h-[450px] transition-all">
                   <div className="p-6 pb-0 flex justify-between items-start gap-4 min-h-[4rem]">
-                    <span className="bg-brand-red/10 text-brand-red text-[10px] font-black px-3 py-1 rounded-full border border-brand-red/20"> RISK INDICATOR </span>
+                    <span className="bg-brand-red/10 text-brand-red text-[10px] font-black px-3 py-1 rounded-full border border-brand-red/20"> HISTORICAL TREND </span>
                     <a
                       href={`https://www.google.com/search?q=${encodeURIComponent(`${disease.name} cases in ${searchQuery} WHO report`)}`}
                       target="_blank"
@@ -327,34 +466,45 @@ const Trends: React.FC = () => {
                     </a>
                   </div>
                   <div className="flex-1 p-4 pt-0">
-                    <Suspense fallback={<div className="h-full flex items-center justify-center"><div className="w-6 h-6 border-2 border-brand-red border-t-transparent rounded-full animate-spin" /></div>}>
+                    <Suspense fallback={<ChartSkeleton />}>
                       <TrendChart countryCode={activeCountry} indicatorCode={disease.code} title={disease.name} />
                     </Suspense>
                   </div>
                 </div>
               ))}
+
+              {isSearchingData && dynamicDiseases.length < 4 && (
+                <div className="min-h-[450px] border-2 border-dashed border-slate-100 dark:border-white/5 rounded-3xl flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-brand-red border-t-transparent rounded-full animate-spin" />
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Analyzing Indicators...</p>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="mt-12 space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-              <div className="text-center lg:text-left border-b border-slate-100 dark:border-white/5 pb-6">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Cross-Border Benchmarking</h2>
-                <p className="text-slate-500 text-sm italic">Comparing {searchQuery} against discovered global peers.</p>
+            {dynamicDiseases.length > 0 && (
+              <div className="mt-12 space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+                <div className="text-center lg:text-left border-b border-slate-100 dark:border-white/5 pb-6">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Cross-Border Benchmarking</h2>
+                  <p className="text-slate-500 text-sm italic">Comparing {searchQuery} against discovered global peers.</p>
+                </div>
+                <div className="grid grid-cols-1 gap-8">
+                  {[
+                    { name: "Tuberculosis Incidence", code: "MDG_0000000001" },
+                    { name: "Measles Surveillance", code: "WHS3_62" },
+                    { name: "Malaria Reported Cases", code: "MALARIA_EST_CASES" }
+                  ].map((disease) => (
+                    <Suspense key={disease.code} fallback={<div className="h-80 bg-slate-50 dark:bg-slate-900/20 rounded-[2.5rem] animate-pulse" />}>
+                      <ComparisonChart activeCountryCode={activeCountry} indicatorCode={disease.code} indicatorName={disease.name} />
+                    </Suspense>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-1 gap-8">
-                {[
-                  { name: "Tuberculosis Incidence", code: "MDG_0000000001" },
-                  { name: "Measles Surveillance", code: "WHS3_62" },
-                  { name: "Malaria Reported Cases", code: "MALARIA_EST_CASES" }
-                ].map((disease) => (
-                  <Suspense key={disease.code} fallback={<div className="h-80 flex items-center justify-center bg-slate-50 dark:bg-slate-900/20 rounded-[2.5rem]"><div className="w-6 h-6 border-2 border-brand-red border-t-transparent rounded-full animate-spin" /></div>}>
-                    <ComparisonChart activeCountryCode={activeCountry} indicatorCode={disease.code} indicatorName={disease.name} />
-                  </Suspense>
-                ))}
-              </div>
-            </div>
+            )}
           </>
         ) : (
-          <DefaultHealthDashboard />
+          !activeCountry && <DefaultHealthDashboard />
         )}
       </div>
     </div>

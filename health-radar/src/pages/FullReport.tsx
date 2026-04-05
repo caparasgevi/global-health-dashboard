@@ -30,13 +30,11 @@ const FullReport: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    import('../components/charts/TrendChart');
+
     const handleScroll = () => setShowBackToTop(window.scrollY > 400);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    return () => { observer.current?.disconnect(); };
   }, []);
 
   useEffect(() => {
@@ -46,7 +44,6 @@ const FullReport: React.FC = () => {
 
     const discoverFullData = async () => {
       setIsLoading(true);
-
       let finalVerifiedList: { name: string, code: string }[] = [];
       const usedRoots = new Set<string>();
 
@@ -85,6 +82,7 @@ const FullReport: React.FC = () => {
           if (newBatch.length > 0 && isMounted) {
             finalVerifiedList = [...finalVerifiedList, ...newBatch];
             setActiveDiseases([...finalVerifiedList]);
+            if (i === 0) setIsLoading(false);
           }
         }
       } finally {
@@ -96,7 +94,7 @@ const FullReport: React.FC = () => {
     };
 
     discoverFullData();
-    return () => { isMounted = false; controller.abort(); };
+    return () => { isMounted = false; controller.abort(); observer.current?.disconnect(); };
   }, [countryCode]);
 
   const lastElementRef = useCallback((node: HTMLDivElement) => {
@@ -106,7 +104,7 @@ const FullReport: React.FC = () => {
       if (entries[0].isIntersecting && visibleCount < activeDiseases.length) {
         setVisibleCount(prev => prev + 6);
       }
-    }, { rootMargin: '400px' });
+    }, { rootMargin: '600px' });
     if (node) observer.current.observe(node);
   }, [isLoading, activeDiseases.length, visibleCount]);
 
@@ -118,15 +116,16 @@ const FullReport: React.FC = () => {
         <header className="mb-10">
           <button
             onClick={() => {
-              navigate('/');
+              navigate('/#trends');
+
               setTimeout(() => {
                 const element = document.getElementById('trends');
                 if (element) {
-                  element.scrollIntoView({ behavior: 'smooth' });
+                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
                   window.scrollTo({ top: 800, behavior: 'smooth' });
                 }
-              }, 100);
+              }, 50);
             }}
             className="mb-4 flex items-center gap-2 text-slate-500 hover:text-brand-red font-bold transition-colors cursor-pointer"
           >
@@ -178,17 +177,10 @@ const FullReport: React.FC = () => {
       {showBackToTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-8 right-8 z-50 p-4 bg-brand-red text-white rounded-full shadow-2xl transition-all hover:scale-110 active:scale-90 animate-in fade-in zoom-in duration-300 group"
+          className="fixed bottom-8 right-8 z-50 p-4 bg-brand-red text-white rounded-full shadow-2xl transition-all hover:scale-110 active:scale-90"
           aria-label="Scroll to top"
         >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-6 w-6 transition-transform group-hover:-translate-y-1" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor" 
-            strokeWidth={3}
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
           </svg>
         </button>
