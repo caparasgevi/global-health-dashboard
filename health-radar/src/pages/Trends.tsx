@@ -40,12 +40,20 @@ const getRootName = (fullName: string) => {
 const isUsefulIndicator = (data: any[]): boolean => {
   if (!data || data.length < 2) return false;
   const nonZero = data.filter(item => item._safeValue > 0);
-  return nonZero.length >= 1; 
+  return nonZero.length >= 1;
 };
 
 const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode }) => {
   const [data, setData] = useState<any[]>([]);
   const [fetchDate, setFetchDate] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const indicators = [
@@ -67,14 +75,14 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
             const prevRecord = raw[1];
             const currentVal = currentRecord._safeValue || 0;
             const prevVal = prevRecord._safeValue || 0;
-            const currentYear = currentRecord.TimeDim || "2024"; 
+            const currentYear = currentRecord.TimeDim || "2024";
 
             if (currentVal > 0 || prevVal > 0) {
               const velocity = prevVal > 0 ? ((currentVal - prevVal) / prevVal) * 100 : 0;
-              return { 
-                name: ind.name, 
-                velocity: parseFloat(velocity.toFixed(1)), 
-                current: currentVal, 
+              return {
+                name: ind.name,
+                velocity: parseFloat(velocity.toFixed(1)),
+                current: currentVal,
                 year: String(currentYear)
               };
             }
@@ -86,7 +94,7 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
       const filtered = results
         .filter((r): r is any => r !== null)
         .sort((a, b) => b.velocity - a.velocity);
-      
+
       setData(filtered);
       setFetchDate(new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
     };
@@ -97,65 +105,94 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
   if (data.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-slate-900/50 p-6 md:p-10 rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-2xl mb-12 animate-in fade-in slide-in-from-bottom-4">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-        <div>
+    <div className="bg-white dark:bg-slate-900/50 p-6 md:p-10 rounded-3xl md:rounded-[2.5rem] border border-slate-200 dark:border-white/5 shadow-2xl mb-12 animate-in fade-in slide-in-from-bottom-4">
+      <div className="flex flex-col md:flex-row justify-between items-center md:items-center mb-8 md:mb-10 gap-6 text-center md:text-left">
+        <div className="flex flex-col items-center md:items-start">
           <div className="flex items-center gap-2 mb-2">
-            <span className="bg-brand-red/10 text-brand-red text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-[0.2em] border border-brand-red/20">TREND ANALYSIS</span>
-            <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Source: WHO GHO API</span>
+            <span className="bg-brand-red/10 text-brand-red text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-[0.2em] border border-brand-red/20">TREND ANALYSIS</span>
+            <span className="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hidden xs:inline">WHO GHO API</span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white font-montserrat tracking-tight">Real-Time <span className="text-brand-red">Disease Surge Tracker</span></h2>
+          <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white font-montserrat tracking-tight">
+            Real-Time <span className="text-brand-red">Surge Tracker</span>
+          </h2>
         </div>
-        <div className="bg-slate-100 dark:bg-white/5 px-4 py-2 rounded-2xl border dark:border-white/5">
-          <p className="text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">Last System Sync</p>
+
+        <div className="bg-slate-100 dark:bg-white/5 px-6 py-2 md:px-4 md:py-2 rounded-xl md:rounded-2xl border dark:border-white/5 min-w-[140px]">
+          <p className="text-[8px] md:text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">Last System Sync</p>
           <p className="text-xs font-mono text-brand-red font-bold">{fetchDate}</p>
         </div>
       </div>
 
-      <div className="h-[450px] w-full">
+      <div className="h-[500px] md:h-[450px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ right: 280, left: 10 }}>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{
+              right: isMobile ? 40 : 280,
+              left: 0,
+              top: 10,
+              bottom: 10
+            }}
+          >
             <XAxis type="number" hide domain={['dataMin - 20', 'dataMax + 20']} />
-            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#475569', fontWeight: 900 }} width={130} />
-            <Tooltip 
-              cursor={{ fill: 'rgba(239, 68, 68, 0.04)' }} 
+            <YAxis
+              dataKey="name"
+              type="category"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: isMobile ? 10 : 11, fill: '#475569', fontWeight: 900 }}
+              width={isMobile ? 80 : 130}
+            />
+            <Tooltip
+              cursor={{ fill: 'rgba(239, 68, 68, 0.04)' }}
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
                   const d = payload[0].payload;
                   return (
-                    <div className="bg-slate-950 p-4 rounded-2xl border border-white/20 shadow-2xl min-w-[200px]">
-                      <p className="text-white font-black text-xs mb-3 border-b border-white/10 pb-2 uppercase tracking-widest">{d.name}</p>
-                      <p className={`text-xs font-black ${d.velocity < 0 ? 'text-emerald-400' : 'text-brand-red'}`}>
+                    <div className="bg-slate-950 p-3 md:p-4 rounded-xl border border-white/20 shadow-2xl min-w-[160px]">
+                      <p className="text-white font-black text-[10px] md:text-xs mb-2 border-b border-white/10 pb-1 md:pb-2 uppercase tracking-widest">{d.name}</p>
+                      <p className={`text-[10px] md:text-xs font-black ${d.velocity < 0 ? 'text-emerald-400' : 'text-brand-red'}`}>
                         SHIFT: {d.velocity > 0 ? '+' : ''}{d.velocity}% ({d.year})
                       </p>
+                      <p className="text-slate-400 text-[9px] font-mono mt-1">{d.current.toLocaleString()} CASES</p>
                     </div>
                   );
                 }
                 return null;
               }}
             />
-            <Bar dataKey="velocity" radius={[0, 8, 8, 0]} barSize={20}>
+            <Bar dataKey="velocity" radius={[0, 8, 8, 0]} barSize={isMobile ? 14 : 20}>
               {data.map((entry, i) => (
-                <Cell key={i} fill={entry.velocity < 0 ? '#10b981' : '#ef4444'} fillOpacity={1 - (i * 0.04)} />
+                <Cell key={i} fill={entry.velocity < 0 ? '#10b981' : '#ef4444'} fillOpacity={1 - (i * 0.03)} />
               ))}
               <LabelList dataKey="velocity" content={(props: any) => {
-                  const { x, y, width, value, index, height } = props;
-                  const item = data[index];
-                  if (!item) return null;
-                  const isNeg = value < 0;
-                  const textAnchorX = x + width + 15;
-                  const centerY = y + height / 2;
+                const { x, y, width, value, index, height } = props;
+                const item = data[index];
+                if (!item) return null;
+                const isNeg = value < 0;
+                const textAnchorX = x + width + 10;
+                const centerY = y + height / 2;
+
+                if (isMobile) {
                   return (
-                    <g>
-                      <text x={textAnchorX} y={centerY} fill={isNeg ? '#10b981' : '#ef4444'} fontSize="11" fontWeight="900" fontFamily="monospace" dominantBaseline="middle">
-                        {value > 0 ? '+' : ''}{value}%
-                      </text>
-                      <text x={textAnchorX + 55} y={centerY} fill="#475569" className="dark:fill-slate-400" fontSize="11" fontWeight="700" fontFamily="monospace" dominantBaseline="middle">
-                        · {item.year} ({item.current.toLocaleString()} cases)
-                      </text>
-                    </g>
+                    <text x={textAnchorX} y={centerY} fill={isNeg ? '#10b981' : '#ef4444'} fontSize="9" fontWeight="900" fontFamily="monospace" dominantBaseline="middle">
+                      {value > 0 ? '+' : ''}{value}%
+                    </text>
                   );
-                }}
+                }
+
+                return (
+                  <g>
+                    <text x={textAnchorX} y={centerY} fill={isNeg ? '#10b981' : '#ef4444'} fontSize="11" fontWeight="900" fontFamily="monospace" dominantBaseline="middle">
+                      {value > 0 ? '+' : ''}{value}%
+                    </text>
+                    <text x={textAnchorX + 55} y={centerY} fill="#475569" className="dark:fill-slate-400" fontSize="11" fontWeight="700" fontFamily="monospace" dominantBaseline="middle">
+                      · {item.year} ({item.current.toLocaleString()} cases)
+                    </text>
+                  </g>
+                );
+              }}
               />
             </Bar>
           </BarChart>
@@ -344,7 +381,7 @@ const Trends: React.FC = () => {
             if (res && results.length < 4 && !usedDiseaseNames.has(res.root)) {
               results.push({ name: res.name, code: res.code });
               usedDiseaseNames.add(res.root);
-              foundNew = true; 
+              foundNew = true;
             }
           }
 
