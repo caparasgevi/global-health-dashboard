@@ -25,10 +25,14 @@ const FullReport: React.FC = () => {
   const [activeDiseases, setActiveDiseases] = useState<{ name: string, code: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(12);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const observer = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    const handleScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -42,10 +46,12 @@ const FullReport: React.FC = () => {
 
     const discoverFullData = async () => {
       setIsLoading(true);
+
+      let finalVerifiedList: { name: string, code: string }[] = [];
+      const usedRoots = new Set<string>();
+
       try {
         const indicators = await healthService.getRankedIndicators({ signal: controller.signal });
-        const usedRoots = new Set<string>();
-        let validAccumulator: { name: string, code: string }[] = [];
 
         const getRoot = (name: string) => {
           const common = ['hiv', 'malaria', 'tuberculosis', 'cholera', 'dengue', 'measles', 'covid', 'ebola', 'zika', 'yellow fever', 'hepatitis', 'polio', 'meningitis', 'leprosy', 'influenza'];
@@ -53,37 +59,39 @@ const FullReport: React.FC = () => {
           return common.find(d => lower.includes(d)) || name;
         };
 
-        const chunkSize = 8;
+        const chunkSize = 12;
         for (let i = 0; i < indicators.length; i += chunkSize) {
           if (!isMounted) break;
-          const chunk = indicators.slice(i, i + chunkSize);
 
+          const chunk = indicators.slice(i, i + chunkSize);
           const chunkResults = await Promise.all(chunk.map(async (ind) => {
             try {
               const data = await healthService.checkIndicatorStatus(ind.IndicatorCode, countryCode, { signal: controller.signal });
-              if (isUsefulIndicator(data)) return { name: ind.IndicatorName, code: ind.IndicatorCode };
-              return null;
+              return isUsefulIndicator(data) ? { name: ind.IndicatorName, code: ind.IndicatorCode } : null;
             } catch { return null; }
           }));
 
-          const verifiedItems: { name: string, code: string }[] = [];
+          const newBatch: { name: string, code: string }[] = [];
           for (const item of chunkResults) {
             if (item) {
               const root = getRoot(item.name);
               if (!usedRoots.has(root)) {
                 usedRoots.add(root);
-                verifiedItems.push(item);
+                newBatch.push(item);
               }
             }
           }
 
-          if (verifiedItems.length > 0 && isMounted) {
-            validAccumulator = [...validAccumulator, ...verifiedItems];
-            setActiveDiseases([...validAccumulator]);
+          if (newBatch.length > 0 && isMounted) {
+            finalVerifiedList = [...finalVerifiedList, ...newBatch];
+            setActiveDiseases([...finalVerifiedList]);
           }
         }
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setActiveDiseases([...finalVerifiedList]);
+        }
       }
     };
 
@@ -105,10 +113,23 @@ const FullReport: React.FC = () => {
   const previewDiseases = useMemo(() => activeDiseases.slice(0, visibleCount), [activeDiseases, visibleCount]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 transition-colors duration-300 relative">
       <div className="max-w-7xl mx-auto">
         <header className="mb-10">
-          <button onClick={() => navigate('/#trends')} className="mb-4 flex items-center gap-2 text-slate-500 hover:text-brand-red font-bold transition-colors">
+          <button
+            onClick={() => {
+              navigate('/');
+              setTimeout(() => {
+                const element = document.getElementById('trends');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  window.scrollTo({ top: 800, behavior: 'smooth' });
+                }
+              }, 100);
+            }}
+            className="mb-4 flex items-center gap-2 text-slate-500 hover:text-brand-red font-bold transition-colors cursor-pointer"
+          >
             ← Back to Dashboard
           </button>
           <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">
@@ -153,6 +174,25 @@ const FullReport: React.FC = () => {
           </div>
         )}
       </div>
+
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-8 right-8 z-50 p-4 bg-brand-red text-white rounded-full shadow-2xl transition-all hover:scale-110 active:scale-90 animate-in fade-in zoom-in duration-300 group"
+          aria-label="Scroll to top"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="h-6 w-6 transition-transform group-hover:-translate-y-1" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor" 
+            strokeWidth={3}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 };

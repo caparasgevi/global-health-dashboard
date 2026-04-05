@@ -165,7 +165,6 @@ const Trends: React.FC = () => {
 
     const findActiveDiseases = async () => {
       setIsSearchingData(true);
-      setDynamicDiseases([]);
 
       try {
         const indicators = await healthService.getRankedIndicators({ signal: controller.signal });
@@ -179,9 +178,9 @@ const Trends: React.FC = () => {
           if (!isMounted || results.length >= 4) break;
 
           const chunk = pool.slice(i, i + CONCURRENCY_LIMIT);
-
           const chunkResults = await Promise.all(
             chunk.map(async (ind) => {
+              // KEEPING YOUR EXACT LOGIC
               const root = getRootName(ind.IndicatorName);
               if (usedDiseaseNames.has(root)) return null;
 
@@ -195,20 +194,23 @@ const Trends: React.FC = () => {
                 if (isUsefulIndicator(data)) {
                   return { name: ind.IndicatorName, code: ind.IndicatorCode, root };
                 }
-              } catch (e) {
-                return null;
-              }
+              } catch { return null; }
               return null;
             })
           );
+
           for (const res of chunkResults) {
             if (res && results.length < 4 && !usedDiseaseNames.has(res.root)) {
               results.push({ name: res.name, code: res.code });
               usedDiseaseNames.add(res.root);
             }
           }
-          if (isMounted) setDynamicDiseases([...results]);
+
+          if (isMounted && results.length > 0) {
+            setDynamicDiseases([...results]);
+          }
         }
+
         if (isMounted && results.length === 0) {
           setDynamicDiseases([{ name: "Life Expectancy at Birth", code: "WHOSIS_000001" }]);
         }
