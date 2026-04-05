@@ -12,6 +12,9 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
   const navItems = ['Home', 'About', 'Global Map', 'Country Statistics', 'Trends', 'Risk Scores', 'Our Team'];
   const [activeItem, setActiveItem] = useState('Home');
 
+  // ✅ added (for safe fallback instead of innerHTML)
+  const [logoError, setLogoError] = useState(false);
+
   useEffect(() => {
     if (location.pathname === '/full-report') {
       setActiveItem('Trends');
@@ -101,16 +104,33 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         
         {/* Logo Section */}
-        <div 
-          className="flex items-center gap-3 cursor-pointer group" 
+        <div
+          className="flex items-center gap-3 cursor-pointer group"
           onClick={() => scrollToSection('Home')}
         >
-          <div className="relative w-12 h-10 bg-brand-red rounded-xl flex items-center justify-center text-white font-bold text-[10px] tracking-tighter shadow-lg shadow-brand-red/20 group-hover:scale-105 group-active:scale-95 transition-transform duration-200">
-            LOGO
-            <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="relative w-12 h-10 flex items-center justify-center group-hover:scale-105 group-active:scale-95 transition-transform duration-200 overflow-hidden">
+            
+            {!logoError ? (
+              <img
+                src={isDark ? "/LogoInvert.png" : "/Logo.png"}
+                alt="HealthRadar Logo"
+                className="w-full h-full object-contain transition-all duration-300"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <span className={`text-[10px] font-bold ${isDark ? 'text-white/70' : 'text-black/70'}`}>
+                HR
+              </span>
+            )}
+
+            <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           </div>
+
           <span className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white font-montserrat">
-            Health<span className="text-brand-red inline-block group-hover:translate-x-0.5 transition-transform">Radar</span>
+            Health
+            <span className="text-brand-red inline-block group-hover:translate-x-0.5 transition-transform">
+              Radar
+            </span>
           </span>
         </div>
         
@@ -153,6 +173,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
             </svg>
           </button>
         </div>
+
       </div>
     </header>
   );
