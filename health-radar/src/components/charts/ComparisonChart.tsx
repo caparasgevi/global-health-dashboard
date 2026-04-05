@@ -9,7 +9,7 @@ interface ComparisonChartProps {
   indicatorName?: string;
 }
 
-const ComparisonChart: React.FC<ComparisonChartProps> = ({ 
+const ComparisonChart: React.FC<ComparisonChartProps> = ({
   activeCountryCode = 'PHL',
   indicatorCode = 'WHS3_62',
   indicatorName = 'Infectious Disease Surveillance'
@@ -21,14 +21,14 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
     // Normalize code for comparison
     const indicator = code.toUpperCase();
 
-    if (indicator.includes('MDG_0000000001')) { 
+    if (indicator.includes('MDG_0000000001')) {
       return [
         { code: 'IND', name: 'India', color: '#38bdf8' },
         { code: 'IDN', name: 'Indonesia', color: '#fbbf24' }
       ];
     }
 
-    if (indicator.includes('WHS3_62')) { 
+    if (indicator.includes('WHS3_62')) {
       return [
         { code: 'NGA', name: 'Nigeria', color: '#38bdf8' },
         { code: 'PAK', name: 'Pakistan', color: '#fbbf24' }
@@ -49,17 +49,17 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
   };
 
   const formatYAxis = (value: number) => {
-      if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
-      if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
-      return value.toString();
-    };
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+    return value.toString();
+  };
 
   const countries = useMemo(() => {
     const found = iso.whereAlpha3(activeCountryCode);
-    const activeEntry = { 
-      code: activeCountryCode, 
-      name: found?.country ?? activeCountryCode, 
-      color: '#f43f5e' 
+    const activeEntry = {
+      code: activeCountryCode,
+      name: found?.country ?? activeCountryCode,
+      color: '#f43f5e'
     };
     return [activeEntry, ...getBenchmarks(indicatorCode)];
   }, [activeCountryCode, indicatorCode]);
@@ -78,7 +78,13 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
           ).then(res => res.json())
         );
 
-        const responses = await Promise.all(requests);
+        const responses = await Promise.all(
+          requests.map(p => p.catch(e => {
+            console.error("Single Country Fetch Fail:", e);
+            return null; 
+          }))
+        );
+        
         const yearlyData: any = {};
 
         responses.forEach((resData, index) => {
@@ -130,16 +136,16 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
             <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', fontSize: '11px', color: '#fff' }} itemStyle={{ padding: '2px 0' }} cursor={{ stroke: '#64748b', strokeWidth: 1, strokeDasharray: '4 4' }} />
             <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ paddingTop: '24px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }} />
             {countries.map(c => (
-              <Line 
+              <Line
                 key={c.code}
-                type="monotone" 
-                dataKey={c.code} 
+                type="monotone"
+                dataKey={c.code}
                 name={c.name}
-                stroke={c.color} 
+                stroke={c.color}
                 strokeWidth={c.code === activeCountryCode ? 3 : 2}
                 dot={{ r: 3, fill: c.color, strokeWidth: 1, stroke: '#fff' }}
                 activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
-                connectNulls 
+                connectNulls
                 animationDuration={1500}
               />
             ))}
