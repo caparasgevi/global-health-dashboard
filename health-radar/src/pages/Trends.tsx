@@ -131,16 +131,27 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
         <div className="flex flex-col items-center md:items-start">
           <div className="flex items-center gap-2 mb-2">
             <span className="bg-brand-red/10 text-brand-red text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-[0.2em] border border-brand-red/20">TREND ANALYSIS</span>
-            <span className="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hidden xs:inline">WHO GHO API</span>
+            <span className="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hidden xs:inline flex items-center gap-1">
+              <span className="w-1 h-1 bg-slate-400 rounded-full animate-pulse" />
+              WHO GHO API SOURCE
+            </span>
           </div>
           <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white font-montserrat tracking-tight">
             Real-Time <span className="text-brand-red">Disease Surge Tracker</span>
           </h2>
         </div>
 
-        <div className="bg-slate-100 dark:bg-white/5 px-6 py-2 md:px-4 md:py-2 rounded-xl md:rounded-2xl border dark:border-white/5 min-w-[140px]">
-          <p className="text-[8px] md:text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">Last System Sync</p>
-          <p className="text-xs font-mono text-brand-red font-bold">{fetchDate}</p>
+        <div className="flex gap-3">
+          {/* NEW: WHO PARTNER BADGE */}
+          <div className="hidden lg:flex flex-col justify-center items-end px-4 py-2 border-r border-slate-200 dark:border-white/10">
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">UPSTREAM PROVIDER</p>
+            <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">WHO API</p>
+          </div>
+
+          <div className="bg-slate-100 dark:bg-white/5 px-6 py-2 md:px-4 md:py-2 rounded-xl md:rounded-2xl border dark:border-white/5 min-w-[140px]">
+            <p className="text-[8px] md:text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">Last System Sync</p>
+            <p className="text-xs font-mono text-brand-red font-bold">{fetchDate}</p>
+          </div>
         </div>
       </div>
 
@@ -326,6 +337,13 @@ const Trends: React.FC = () => {
   const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
   const [visibleCount, setVisibleCount] = useState(4);
   const observer = useRef<IntersectionObserver | null>(null);
+  const showGlobalDashboard = () => {
+    setActiveCountry('');
+    setSearchQuery('');
+    setDynamicDiseases([]);
+    sessionStorage.removeItem('health_radar_query');
+    sessionStorage.removeItem('health_radar_country');
+  };
 
   useEffect(() => {
     if (activeCountry || searchQuery.length > 2) {
@@ -480,6 +498,17 @@ const Trends: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4">
+            {activeCountry && (
+              <button
+                onClick={showGlobalDashboard}
+                className="w-full sm:w-auto px-5 py-3 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-all border border-slate-200 dark:border-white/10 flex items-center justify-center gap-2 group"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Return
+              </button>
+            )}
             <button
               disabled={!activeCountry}
               onClick={() => navigate(`/full-report?country=${activeCountry}&query=${encodeURIComponent(searchQuery)}`)}
@@ -498,6 +527,7 @@ const Trends: React.FC = () => {
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className="bg-slate-100 dark:bg-slate-900 border-none rounded-2xl text-slate-900 dark:text-white px-4 py-3 w-full font-medium focus:ring-2 focus:ring-brand-red/20"
               />
+
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden">
                   {suggestions.map((c) => (
@@ -534,7 +564,7 @@ const Trends: React.FC = () => {
               ))}
             </div>
             {lastUpdatedString && (
-              <p className="text-[10px] text-right mt-3 text-slate-400 italic">Source data last updated: {lastUpdatedString}</p>
+              <p className="text-[10px] text-right mt-3 text-slate-400 italic">Official Data provided by WHO API. Last updated: {lastUpdatedString}</p>
             )}
           </div>
         )}
