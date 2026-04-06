@@ -9,7 +9,7 @@ const TrendChart = lazy(() => import('../components/charts/TrendChart')) as Reac
  * @section Senior Config & Cache
  */
 const CONFIG = {
-  TARGET_MIN: 30, 
+  TARGET_MIN: 30,
   CHUNK_SIZE: 12,
   INITIAL_VISIBLE: 12,
   INITIAL_PAINT_LIMIT: 6,
@@ -17,7 +17,7 @@ const CONFIG = {
   SCROLL_THRESHOLD: 400,
   RETRY_LIMIT: 3,
   OBSERVER_MARGIN: '400px',
-  KEYWORDS: ['hiv','malaria','tuberculosis','cholera','dengue','measles','covid','ebola','zika','yellow fever','hepatitis','polio','meningitis','leprosy','influenza','aids','sars','flu']
+  KEYWORDS: ['hiv', 'malaria', 'tuberculosis', 'cholera', 'dengue', 'measles', 'covid', 'ebola', 'zika', 'yellow fever', 'hepatitis', 'polio', 'meningitis', 'leprosy', 'influenza', 'aids', 'sars', 'flu']
 };
 
 const DISCOVERY_CACHE = new Map<string, { name: string, code: string }[]>();
@@ -38,8 +38,8 @@ function useEliteObserver(callback: () => void, hasMore: boolean) {
 
   return useCallback((node: HTMLElement | null) => {
     if (!node || !observerRef.current) return;
-    observerRef.current.disconnect(); 
-    observerRef.current.observe(node); 
+    observerRef.current.disconnect();
+    observerRef.current.observe(node);
   }, []);
 }
 
@@ -50,58 +50,59 @@ function useDiscoveryEngine(countryCode: string) {
   const [retryCount, setRetryCount] = useState(0);
 
   const discover = useCallback(async (signal: AbortSignal) => {
-    if (DISCOVERY_CACHE.has(countryCode)) return;
+    if (DISCOVERY_CACHE.get(countryCode)) return;
 
     setIsSearching(true);
     setError(null);
     const usedRoots = new Set<string>();
     let totalFound = 0;
+    let localFoundItems: { name: string, code: string }[] = [];
 
     try {
       const indicators = await healthService.getRankedIndicators({ signal });
-
       for (let i = 0; i < indicators.length; i += CONFIG.CHUNK_SIZE) {
         if (signal.aborted || totalFound >= CONFIG.TARGET_MIN) break;
 
         const chunk = indicators.slice(i, i + CONFIG.CHUNK_SIZE);
-        const results = await Promise.all(chunk.map(async (ind) => {
-          try {
-            const status = await healthService.checkIndicatorStatus(ind.IndicatorCode, countryCode, { signal });
-            return (Array.isArray(status) && status.length >= 2) ? { name: ind.IndicatorName, code: ind.IndicatorCode } : null;
-          } catch { return null; }
+
+        const results = await Promise.allSettled(chunk.map(async (ind) => {
+          const status = await healthService.checkIndicatorStatus(ind.IndicatorCode, countryCode, { signal });
+          if (Array.isArray(status) && status.length >= 2) {
+            return { name: ind.IndicatorName, code: ind.IndicatorCode };
+          }
+          throw new Error('Incomplete data');
         }));
 
-        const batch = results.filter((item): item is { name: string, code: string } => {
-          if (!item || totalFound >= CONFIG.TARGET_MIN) return false;
-          const root = CONFIG.KEYWORDS.find(k => item.name.toLowerCase().includes(k)) || item.name;
-          if (usedRoots.has(root)) return false;
-          usedRoots.add(root);
-          totalFound++;
-          return true;
-        });
-
-        if (batch.length > 0 && !signal.aborted) {
-          setData(prev => {
-            const next = [...prev, ...batch];
-            DISCOVERY_CACHE.set(countryCode, next);
-            return next;
+        const validBatch = results
+          .filter((res): res is PromiseFulfilledResult<{ name: string, code: string }> => res.status === 'fulfilled')
+          .map(res => res.value)
+          .filter(item => {
+            const root = CONFIG.KEYWORDS.find(k => item.name.toLowerCase().includes(k)) || item.name;
+            if (usedRoots.has(root)) return false;
+            usedRoots.add(root);
+            totalFound++;
+            return true;
           });
-          
-          if (totalFound >= CONFIG.INITIAL_PAINT_LIMIT) {
-            setIsSearching(false);
-          }
+
+        if (validBatch.length > 0 && !signal.aborted) {
+          localFoundItems = [...localFoundItems, ...validBatch];
+
+          setData([...localFoundItems]);
+          DISCOVERY_CACHE.set(countryCode, [...localFoundItems]);
         }
       }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         if (retryCount < CONFIG.RETRY_LIMIT) {
-          setTimeout(() => setRetryCount(p => p + 1), Math.pow(2, retryCount) * 1000);
+          setTimeout(() => setRetryCount(p => p + 1), 1000);
         } else {
-          setError("Database synchronization failed.");
+          setError("Data synchronization partial or failed.");
         }
       }
     } finally {
-      if (!signal.aborted) setIsSearching(false);
+      if (!signal.aborted) {
+        setIsSearching(false);
+      }
     }
   }, [countryCode, retryCount]);
 
@@ -129,7 +130,7 @@ const FullReport: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    import('../components/charts/TrendChart'); 
+    import('../components/charts/TrendChart');
     const handleScroll = () => setShowBackToTop(window.scrollY > CONFIG.SCROLL_THRESHOLD);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -141,10 +142,10 @@ const FullReport: React.FC = () => {
 
   const hasMoreToDisplay = visibleCount < activeDiseases.length;
   const lastElementRef = useEliteObserver(loadMore, hasMoreToDisplay);
-  
-  const previewDiseases = useMemo(() => 
-    activeDiseases.slice(0, visibleCount), 
-  [activeDiseases, visibleCount]);
+
+  const previewDiseases = useMemo(() =>
+    activeDiseases.slice(0, visibleCount),
+    [activeDiseases, visibleCount]);
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 transition-colors duration-300 relative" aria-label={`Health risk report for ${searchQuery}`}>
@@ -169,7 +170,7 @@ const FullReport: React.FC = () => {
           <p className="text-slate-500 mt-2 text-lg font-medium">
             Surveillance report for <span className="text-slate-900 dark:text-white underline decoration-brand-red/30 underline-offset-4">{searchQuery}</span>
           </p>
-          
+
           {/* SEO/Accessibility: Announce dynamic results to Screen Readers */}
           <div className="sr-only" aria-live="polite">
             {activeDiseases.length > 0 ? `Found ${activeDiseases.length} health risk indicators.` : 'Searching for indicators...'}
@@ -198,10 +199,10 @@ const FullReport: React.FC = () => {
                 >
                   <div className="p-6 pb-0 flex justify-between items-start">
                     <span className="bg-brand-red/10 text-brand-red text-[10px] font-black px-3 py-1 rounded-full uppercase border border-brand-red/10">Risk Indicator</span>
-                    <a 
-                      href={`https://www.google.com/search?q=${encodeURIComponent(`${disease.name} cases in ${searchQuery}`)}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(`${disease.name} cases in ${searchQuery}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-[10px] font-bold uppercase tracking-widest bg-brand-red text-white px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                       aria-label={`Search Google for more info on ${disease.name}`}
                     >
@@ -217,12 +218,12 @@ const FullReport: React.FC = () => {
                 </article>
               ))}
             </div>
-            
+
             {isSearching && activeDiseases.length > 0 && (
               <div className="flex justify-center pb-20" aria-busy="true">
                 <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-6 py-3 rounded-full border border-slate-200 dark:border-white/5 shadow-xl">
-                   <div className="w-4 h-4 border-2 border-brand-red border-t-transparent rounded-full animate-spin" aria-hidden="true" />
-                   <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Engine scanning for more threats...</span>
+                  <div className="w-4 h-4 border-2 border-brand-red border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Engine scanning for more threats...</span>
                 </div>
               </div>
             )}
