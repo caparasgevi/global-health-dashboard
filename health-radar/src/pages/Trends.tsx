@@ -20,10 +20,6 @@ const ChartSkeleton = () => (
 
 const TrendChart = lazy(() => import('../components/charts/TrendChart')) as React.LazyExoticComponent<typeof TrendChartType>;
 const ComparisonChart = lazy(() => import('../components/charts/ComparisonChart')) as React.LazyExoticComponent<typeof ComparisonChartType>;
-
-// ✅ PERF: Module-level cache keyed by "indicatorCode:countryCode".
-// Shared by PathogenVelocityIndex and the discovery loop — if either
-// has already fetched a pair, the other resolves instantly from memory.
 const indicatorCache = new Map<string, any[]>();
 
 const getCachedIndicator = async (
@@ -73,8 +69,6 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
   }, []);
 
   useEffect(() => {
-    // ✅ PERF: AbortController — stale fetches from a previous country are
-    // cancelled on cleanup so they can never overwrite the new country's data.
     const controller = new AbortController();
 
     const indicators = [
@@ -88,8 +82,6 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
     ];
 
     const fetchData = async () => {
-      // ✅ PERF: Uses getCachedIndicator — any indicator already fetched by the
-      // discovery loop for this country resolves from cache with zero network cost.
       const results = await Promise.all(indicators.map(async (ind) => {
         try {
           const raw = await getCachedIndicator(ind.code, countryCode, { signal: controller.signal });
@@ -128,7 +120,6 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
 
     fetchData();
 
-    // ✅ PERF: Abort in-flight requests when countryCode changes
     return () => controller.abort();
   }, [countryCode]);
 
@@ -143,7 +134,7 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
             <span className="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hidden xs:inline">WHO GHO API</span>
           </div>
           <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white font-montserrat tracking-tight">
-            Real-Time <span className="text-brand-red">Surge Tracker</span>
+            Real-Time <span className="text-brand-red">Disease Surge Tracker</span>
           </h2>
         </div>
 
@@ -325,7 +316,6 @@ const DefaultHealthDashboard: React.FC = () => {
   );
 };
 
-
 const Trends: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem('health_radar_query') || '');
@@ -397,7 +387,6 @@ const Trends: React.FC = () => {
         const results: { name: string, code: string }[] = [];
         const usedDiseaseNames = new Set<string>();
 
-        // ✅ PERF: Increased from 6 to 10 — fewer loop iterations to reach 4 results
         const CONCURRENCY_LIMIT = 10;
         const pool = indicators.slice(0, 80);
 
@@ -411,8 +400,6 @@ const Trends: React.FC = () => {
               if (usedDiseaseNames.has(root)) return null;
 
               try {
-                // ✅ PERF: Uses shared cache — if PathogenVelocityIndex already
-                // fetched this pair, resolves instantly with no network call
                 const data = await getCachedIndicator(
                   ind.IndicatorCode,
                   activeCountry,
@@ -529,10 +516,10 @@ const Trends: React.FC = () => {
           <div className="mb-12">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2 duration-500">
               {[
-                { label: 'Active Cases', value: liveStats.active, color: 'text-amber-500', desc: 'Current patients undergoing treatment or isolation.' },
+                { label: 'Active Cases', value: liveStats.active, color: 'text-red-500', desc: 'Current patients undergoing treatment or isolation.' },
                 { label: 'Today Cases', value: liveStats.todayCases, color: 'text-brand-red', desc: 'New laboratory-confirmed cases reported in the last 24h.' },
-                { label: 'Recovered', value: liveStats.recovered, color: 'text-emerald-500', desc: 'Total individuals cleared of infection since outbreak start.' },
-                { label: 'Critical', value: liveStats.critical, color: 'text-purple-500', desc: 'Patients currently requiring intensive care or ventilation.' }
+                { label: 'Recovered', value: liveStats.recovered, color: 'text-red-500', desc: 'Total individuals cleared of infection since outbreak start.' },
+                { label: 'Critical', value: liveStats.critical, color: 'text-red-500', desc: 'Patients currently requiring intensive care or ventilation.' }
               ].map((stat, i) => (
                 <div key={i} className="group bg-slate-50 dark:bg-slate-900/40 p-5 rounded-2xl border border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20 transition-all flex flex-col h-full">
                   <div className="flex justify-between items-start mb-2">

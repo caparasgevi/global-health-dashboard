@@ -19,8 +19,8 @@ const DISCOVERY_CONFIG = {
   CHUNK_SIZE: 12,
   INITIAL_PAINT_LIMIT: 6,
   KEYWORDS: [
-    'hiv', 'malaria', 'tuberculosis', 'cholera', 'dengue', 'measles', 'covid', 
-    'ebola', 'zika', 'yellow fever', 'hepatitis', 'polio', 'meningitis', 
+    'hiv', 'malaria', 'tuberculosis', 'cholera', 'dengue', 'measles', 'covid',
+    'ebola', 'zika', 'yellow fever', 'hepatitis', 'polio', 'meningitis',
     'leprosy', 'influenza', 'aids', 'sars', 'flu'
   ]
 };
@@ -39,11 +39,6 @@ const getDiseaseRoot = (name: string): string => {
  * @section Custom Hooks (Elite Abstraction)
  */
 
-/**
- * Hook: useIntersectionObserver
- * Elite Pattern: Instance is created once and persists via ref. 
- * Disconnects and reconnects only when the target node changes.
- */
 function useIntersectionObserver(callback: () => void, isLoading: boolean) {
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -60,10 +55,6 @@ function useIntersectionObserver(callback: () => void, isLoading: boolean) {
   }, [callback, isLoading]);
 }
 
-/**
- * Hook: useDiseaseDiscovery
- * Manages the "Hunt & Gather" protocol with built-in deduplication and batching.
- */
 function useDiseaseDiscovery(countryCode: string) {
   const [data, setData] = useState<{ name: string, code: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -141,10 +132,9 @@ const FullReport: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(12);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-  // Performance Optimization: Prefetch and Scroll Setup
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    import('../components/charts/TrendChart'); // Prefetch heavy bundle
+    import('../components/charts/TrendChart');
 
     const handleScroll = () => setShowBackToTop(window.scrollY > SCROLL_CONFIG.THRESHOLD);
     window.addEventListener('scroll', handleScroll);
@@ -157,9 +147,9 @@ const FullReport: React.FC = () => {
 
   const lastElementRef = useIntersectionObserver(loadMore, isLoading);
 
-  const previewDiseases = useMemo(() => 
-    activeDiseases.slice(0, visibleCount), 
-  [activeDiseases, visibleCount]);
+  const previewDiseases = useMemo(() =>
+    activeDiseases.slice(0, visibleCount),
+    [activeDiseases, visibleCount]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 transition-colors duration-300 relative">
@@ -178,10 +168,10 @@ const FullReport: React.FC = () => {
             ← Back to Dashboard
           </button>
           <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">
-            Full <span className="text-brand-red">Risk Analysis</span>
+            Full Historical Trend <span className="text-brand-red">Analysis</span>
           </h1>
           <p className="text-slate-500 mt-2 text-lg font-medium">
-            Surveillance report for <span className="text-slate-900 dark:text-white underline decoration-brand-red/30 underline-offset-4">{searchQuery}</span>
+            Dynamic report for <span className="text-slate-900 dark:text-white underline decoration-brand-red/30 underline-offset-4">{searchQuery}</span>
           </p>
         </header>
 
@@ -205,7 +195,7 @@ const FullReport: React.FC = () => {
                 className="group flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/5 overflow-hidden min-h-[450px] shadow-sm hover:shadow-md transition-all has-[.no-data-signal]:hidden"
               >
                 <div className="p-6 pb-0 flex justify-between items-start">
-                  <span className="bg-brand-red/10 text-brand-red text-[10px] font-black px-3 py-1 rounded-full uppercase border border-brand-red/10">Risk Indicator</span>
+                  <span className="bg-brand-red/10 text-brand-red text-[10px] font-black px-3 py-1 rounded-full border border-brand-red/20"> HISTORICAL TREND </span>
                   <a
                     href={`https://www.google.com/search?q=${encodeURIComponent(`${disease.name} cases in ${searchQuery} WHO report`)}`}
                     target="_blank"
