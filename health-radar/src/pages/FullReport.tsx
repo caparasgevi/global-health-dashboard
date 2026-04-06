@@ -16,7 +16,7 @@ const CONFIG = {
   LOAD_STEP: 6,
   SCROLL_THRESHOLD: 400,
   RETRY_LIMIT: 3,
-  OBSERVER_MARGIN: '400px', // Performance Tweak: Reduced from 800px to avoid excessive offscreen renders
+  OBSERVER_MARGIN: '400px',
   KEYWORDS: ['hiv','malaria','tuberculosis','cholera','dengue','measles','covid','ebola','zika','yellow fever','hepatitis','polio','meningitis','leprosy','influenza','aids','sars','flu']
 };
 
