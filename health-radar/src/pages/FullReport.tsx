@@ -10,9 +10,8 @@ const TrendChart = lazy(() => import('../components/charts/TrendChart')) as Reac
  */
 const CONFIG = {
   TARGET_MIN: 30,
-  CHUNK_SIZE: 12,
+  CHUNK_SIZE: 4, 
   INITIAL_VISIBLE: 12,
-  INITIAL_PAINT_LIMIT: 6,
   LOAD_STEP: 6,
   SCROLL_THRESHOLD: 400,
   RETRY_LIMIT: 3,
@@ -50,16 +49,16 @@ function useDiscoveryEngine(countryCode: string) {
   const [retryCount, setRetryCount] = useState(0);
 
   const discover = useCallback(async (signal: AbortSignal) => {
-    if (DISCOVERY_CACHE.get(countryCode)) return;
+    if (DISCOVERY_CACHE.has(countryCode)) return;
 
     setIsSearching(true);
     setError(null);
     const usedRoots = new Set<string>();
     let totalFound = 0;
-    let localFoundItems: { name: string, code: string }[] = [];
 
     try {
       const indicators = await healthService.getRankedIndicators({ signal });
+      
       for (let i = 0; i < indicators.length; i += CONFIG.CHUNK_SIZE) {
         if (signal.aborted || totalFound >= CONFIG.TARGET_MIN) break;
 
@@ -70,7 +69,7 @@ function useDiscoveryEngine(countryCode: string) {
           if (Array.isArray(status) && status.length >= 2) {
             return { name: ind.IndicatorName, code: ind.IndicatorCode };
           }
-          throw new Error('Incomplete data');
+          throw new Error('No data');
         }));
 
         const validBatch = results
@@ -85,11 +84,14 @@ function useDiscoveryEngine(countryCode: string) {
           });
 
         if (validBatch.length > 0 && !signal.aborted) {
-          localFoundItems = [...localFoundItems, ...validBatch];
-
-          setData([...localFoundItems]);
-          DISCOVERY_CACHE.set(countryCode, [...localFoundItems]);
+          setData(prev => {
+            const updated = [...prev, ...validBatch];
+            DISCOVERY_CACHE.set(countryCode, updated);
+            return updated;
+          });
         }
+
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
@@ -100,9 +102,7 @@ function useDiscoveryEngine(countryCode: string) {
         }
       }
     } finally {
-      if (!signal.aborted) {
-        setIsSearching(false);
-      }
+      if (!signal.aborted) setIsSearching(false);
     }
   }, [countryCode, retryCount]);
 
@@ -130,7 +130,6 @@ const FullReport: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    import('../components/charts/TrendChart');
     const handleScroll = () => setShowBackToTop(window.scrollY > CONFIG.SCROLL_THRESHOLD);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -148,19 +147,12 @@ const FullReport: React.FC = () => {
     [activeDiseases, visibleCount]);
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 transition-colors duration-300 relative" aria-label={`Health risk report for ${searchQuery}`}>
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 transition-colors duration-300 relative">
       <div className="max-w-7xl mx-auto">
         <header className="mb-10">
           <button
-            onClick={() => {
-              navigate('/#trends');
-              setTimeout(() => {
-                const el = document.getElementById('trends');
-                el ? el.scrollIntoView({ behavior: 'smooth' }) : window.scrollTo({ top: 800, behavior: 'smooth' });
-              }, 50);
-            }}
+            onClick={() => navigate('/#trends')}
             className="mb-4 flex items-center gap-2 text-slate-500 hover:text-brand-red font-bold transition-colors cursor-pointer"
-            aria-label="Return to main dashboard"
           >
             ← Back to Dashboard
           </button>
@@ -170,48 +162,40 @@ const FullReport: React.FC = () => {
           <p className="text-slate-500 mt-2 text-lg font-medium">
             Surveillance report for <span className="text-slate-900 dark:text-white underline decoration-brand-red/30 underline-offset-4">{searchQuery}</span>
           </p>
-
-          {/* SEO/Accessibility: Announce dynamic results to Screen Readers */}
-          <div className="sr-only" aria-live="polite">
-            {activeDiseases.length > 0 ? `Found ${activeDiseases.length} health risk indicators.` : 'Searching for indicators...'}
-          </div>
         </header>
 
-        {error ? (
-          <div className="h-96 flex flex-col items-center justify-center text-center" role="alert">
+        {error && activeDiseases.length === 0 ? (
+          <div className="h-96 flex flex-col items-center justify-center text-center">
             <p className="text-slate-500 mb-6 font-medium">{error}</p>
-            <button onClick={retry} className="bg-brand-red text-white px-8 py-2 rounded-full font-bold uppercase text-[10px] tracking-[2px] hover:scale-105 transition-all">Retry Protocol</button>
+            <button onClick={retry} className="bg-brand-red text-white px-8 py-2 rounded-full font-bold uppercase text-[10px] tracking-[2px]">Retry Protocol</button>
           </div>
         ) : activeDiseases.length === 0 && isSearching ? (
-          <div className="h-96 flex flex-col items-center justify-center" aria-busy="true" aria-label="Loading report data">
+          <div className="h-96 flex flex-col items-center justify-center">
             <div className="w-12 h-12 border-4 border-brand-red border-t-transparent rounded-full animate-spin mb-4" />
             <p className="animate-pulse font-medium text-slate-400">Scanning Database...</p>
           </div>
         ) : (
-          <section aria-label="Risk Indicator Grid">
+          <section>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
               {previewDiseases.map((disease, index) => (
                 <article
                   key={disease.code}
                   ref={index === previewDiseases.length - 1 ? lastElementRef : null}
-                  className="group flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/5 overflow-hidden min-h-[450px] shadow-sm hover:shadow-md transition-all has-[.no-data-signal]:hidden"
-                  aria-labelledby={`title-${disease.code}`}
+                  className="group flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/5 overflow-hidden min-h-[450px] shadow-sm hover:shadow-md transition-all"
                 >
                   <div className="p-6 pb-0 flex justify-between items-start">
                     <span className="bg-brand-red/10 text-brand-red text-[10px] font-black px-3 py-1 rounded-full uppercase border border-brand-red/10">Risk Indicator</span>
                     <a
-                      href={`https://www.google.com/search?q=${encodeURIComponent(`${disease.name} cases in ${searchQuery}`)}`}
+                      href={`https://www.google.com/search?q=${encodeURIComponent(`${disease.name} in ${searchQuery}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[10px] font-bold uppercase tracking-widest bg-brand-red text-white px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label={`Search Google for more info on ${disease.name}`}
                     >
                       Google Search ↗
                     </a>
                   </div>
                   <div className="flex-1 p-4 pt-0">
-                    <h2 id={`title-${disease.code}`} className="sr-only">{disease.name} trend chart</h2>
-                    <Suspense fallback={<div className="h-full flex items-center justify-center" aria-hidden="true"><div className="w-6 h-6 border-2 border-brand-red border-t-transparent rounded-full animate-spin" /></div>}>
+                    <Suspense fallback={<div className="h-full flex items-center justify-center"><div className="w-6 h-6 border-2 border-brand-red border-t-transparent rounded-full animate-spin" /></div>}>
                       <TrendChart countryCode={countryCode} indicatorCode={disease.code} title={disease.name} />
                     </Suspense>
                   </div>
@@ -219,11 +203,11 @@ const FullReport: React.FC = () => {
               ))}
             </div>
 
-            {isSearching && activeDiseases.length > 0 && (
-              <div className="flex justify-center pb-20" aria-busy="true">
+            {isSearching && (
+              <div className="flex justify-center pb-20">
                 <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-6 py-3 rounded-full border border-slate-200 dark:border-white/5 shadow-xl">
-                  <div className="w-4 h-4 border-2 border-brand-red border-t-transparent rounded-full animate-spin" aria-hidden="true" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Engine scanning for more threats...</span>
+                  <div className="w-4 h-4 border-2 border-brand-red border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Scanning for more threats...</span>
                 </div>
               </div>
             )}
@@ -234,10 +218,9 @@ const FullReport: React.FC = () => {
       {showBackToTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-8 right-8 z-50 p-4 bg-brand-red text-white rounded-full shadow-2xl transition-all hover:scale-110 active:scale-90"
-          aria-label="Scroll back to top"
+          className="fixed bottom-8 right-8 z-50 p-4 bg-brand-red text-white rounded-full shadow-2xl transition-all"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
         </button>
       )}
     </main>
