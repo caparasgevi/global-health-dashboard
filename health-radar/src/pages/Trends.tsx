@@ -337,7 +337,7 @@ const Trends: React.FC = () => {
   const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
   const [visibleCount, setVisibleCount] = useState(4);
   const observer = useRef<IntersectionObserver | null>(null);
-  const showGlobalDashboard = () => {
+  const returnButton = () => {
     setActiveCountry('');
     setSearchQuery('');
     setDynamicDiseases([]);
@@ -500,13 +500,13 @@ const Trends: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-center gap-4">
             {activeCountry && (
               <button
-                onClick={showGlobalDashboard}
-                className="w-full sm:w-auto px-5 py-3 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-all border border-slate-200 dark:border-white/10 flex items-center justify-center gap-2 group"
+                onClick={returnButton}
+                className="w-fit sm:w-auto px-4 py-2 md:px-5 md:py-3 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-all border border-slate-200 dark:border-white/10 flex items-center justify-center gap-2 group shrink-0"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 md:h-3.5 md:w-3.5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
-                Return
+                <span>Return</span>
               </button>
             )}
             <button
