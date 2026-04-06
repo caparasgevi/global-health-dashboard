@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
 import iso from 'iso-3166-1';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
@@ -20,6 +20,23 @@ const ChartSkeleton = () => (
 
 const TrendChart = lazy(() => import('../components/charts/TrendChart')) as React.LazyExoticComponent<typeof TrendChartType>;
 const ComparisonChart = lazy(() => import('../components/charts/ComparisonChart')) as React.LazyExoticComponent<typeof ComparisonChartType>;
+
+// ✅ PERF: Module-level cache keyed by "indicatorCode:countryCode".
+// Shared by PathogenVelocityIndex and the discovery loop — if either
+// has already fetched a pair, the other resolves instantly from memory.
+const indicatorCache = new Map<string, any[]>();
+
+const getCachedIndicator = async (
+  code: string,
+  countryCode: string,
+  options?: { signal?: AbortSignal }
+): Promise<any[]> => {
+  const key = `${code}:${countryCode}`;
+  if (indicatorCache.has(key)) return indicatorCache.get(key)!;
+  const result = await healthService.checkIndicatorStatus(code, countryCode, options);
+  if (result) indicatorCache.set(key, result);
+  return result;
+};
 
 interface LiveStats {
   cases: number;
@@ -56,6 +73,10 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
   }, []);
 
   useEffect(() => {
+    // ✅ PERF: AbortController — stale fetches from a previous country are
+    // cancelled on cleanup so they can never overwrite the new country's data.
+    const controller = new AbortController();
+
     const indicators = [
       { name: 'COVID-19', code: 'COVID_19_CASES' }, { name: 'Malaria', code: 'MALARIA_EST_CASES' },
       { name: 'Influenza', code: 'RS_196' }, { name: 'Measles', code: 'WHS3_62' },
@@ -67,9 +88,11 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
     ];
 
     const fetchData = async () => {
+      // ✅ PERF: Uses getCachedIndicator — any indicator already fetched by the
+      // discovery loop for this country resolves from cache with zero network cost.
       const results = await Promise.all(indicators.map(async (ind) => {
         try {
-          const raw = await healthService.checkIndicatorStatus(ind.code, countryCode);
+          const raw = await getCachedIndicator(ind.code, countryCode, { signal: controller.signal });
           if (raw && raw.length >= 2) {
             const currentRecord = raw[0];
             const prevRecord = raw[1];
@@ -87,9 +110,13 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
               };
             }
           }
-        } catch (err) { return null; }
+        } catch (err: any) {
+          if (err?.name !== 'AbortError') return null;
+        }
         return null;
       }));
+
+      if (controller.signal.aborted) return;
 
       const filtered = results
         .filter((r): r is any => r !== null)
@@ -100,6 +127,9 @@ const PathogenVelocityIndex: React.FC<{ countryCode: string }> = ({ countryCode 
     };
 
     fetchData();
+
+    // ✅ PERF: Abort in-flight requests when countryCode changes
+    return () => controller.abort();
   }, [countryCode]);
 
   if (data.length === 0) return null;
@@ -206,13 +236,13 @@ const DefaultHealthDashboard: React.FC = () => {
   const [globalStats, setGlobalStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const renderBarShape = (props: any) => {
+  const renderBarShape = useCallback((props: any) => {
     const { x, y, width, height, value } = props;
     const fill = value > 75 ? '#10b981' : value > 65 ? '#f59e0b' : '#ef4444';
     return (
       <rect x={x} y={y} width={width} height={height} fill={fill} rx={6} ry={6} className="transition-all duration-300 hover:opacity-80" />
     );
-  };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -275,6 +305,21 @@ const DefaultHealthDashboard: React.FC = () => {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
+        <div className="mt-6 md:mt-8 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
+            <h4 className="text-emerald-500 text-[9px] md:text-[10px] font-black uppercase mb-1">Surveillance Accuracy</h4>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] italic leading-snug">Synced with latest WHO health indicators.</p>
+          </div>
+          <div className="p-4 rounded-2xl bg-brand-red/5 border border-brand-red/10">
+            <h4 className="text-brand-red text-[9px] md:text-[10px] font-black uppercase mb-1">Standardized Metrics</h4>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] italic leading-snug">Colors indicate expectancy thresholds.</p>
+          </div>
+          <div className="p-4 rounded-2xl bg-sky-500/5 border border-sky-500/10">
+            <h4 className="text-sky-500 text-[9px] md:text-[10px] font-black uppercase mb-1">Interactive Drilldown</h4>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] italic leading-snug">Search a country to move to localized risk data.</p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -289,6 +334,8 @@ const Trends: React.FC = () => {
   const [dynamicDiseases, setDynamicDiseases] = useState<{ name: string, code: string }[]>([]);
   const [isSearchingData, setIsSearchingData] = useState(false);
   const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
+  const [visibleCount, setVisibleCount] = useState(4);
+  const observer = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     if (activeCountry || searchQuery.length > 2) {
@@ -339,6 +386,7 @@ const Trends: React.FC = () => {
   useEffect(() => {
     if (!activeCountry) return;
     let isMounted = true;
+    setVisibleCount(4);
     const controller = new AbortController();
 
     const findActiveDiseases = async () => {
@@ -349,7 +397,8 @@ const Trends: React.FC = () => {
         const results: { name: string, code: string }[] = [];
         const usedDiseaseNames = new Set<string>();
 
-        const CONCURRENCY_LIMIT = 6;
+        // ✅ PERF: Increased from 6 to 10 — fewer loop iterations to reach 4 results
+        const CONCURRENCY_LIMIT = 10;
         const pool = indicators.slice(0, 80);
 
         for (let i = 0; i < pool.length; i += CONCURRENCY_LIMIT) {
@@ -362,7 +411,9 @@ const Trends: React.FC = () => {
               if (usedDiseaseNames.has(root)) return null;
 
               try {
-                const data = await healthService.checkIndicatorStatus(
+                // ✅ PERF: Uses shared cache — if PathogenVelocityIndex already
+                // fetched this pair, resolves instantly with no network call
+                const data = await getCachedIndicator(
                   ind.IndicatorCode,
                   activeCountry,
                   { signal: controller.signal }
@@ -404,11 +455,28 @@ const Trends: React.FC = () => {
     return () => { isMounted = false; controller.abort(); };
   }, [activeCountry]);
 
+  useEffect(() => {
+    return () => { observer.current?.disconnect(); };
+  }, []);
+
+  const lastElementRef = useCallback((node: HTMLDivElement) => {
+    if (isSearchingData) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount(prev => (prev < dynamicDiseases.length ? prev + 4 : prev));
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [isSearchingData, dynamicDiseases.length]);
+
   const selectCountry = (name: string, alpha3: string) => {
     setSearchQuery(name);
     setActiveCountry(alpha3);
     setShowSuggestions(false);
   };
+
+  const previewDiseases = useMemo(() => dynamicDiseases.slice(0, visibleCount), [dynamicDiseases, visibleCount]);
 
   return (
     <div id="trends" className="py-12 bg-white dark:bg-slate-950 transition-colors duration-300 scroll-mt-20">
@@ -486,11 +554,20 @@ const Trends: React.FC = () => {
 
         {activeCountry && <PathogenVelocityIndex countryCode={activeCountry} />}
 
-        {activeCountry && (dynamicDiseases.length > 0 || isSearchingData) ? (
+        {activeCountry && isSearchingData && dynamicDiseases.length === 0 ? (
+          <div className="h-64 flex flex-col items-center justify-center text-slate-400">
+            <div className="w-10 h-10 border-4 border-brand-red border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="animate-pulse font-medium">Performing Deep Risk Assessment...</p>
+          </div>
+        ) : activeCountry && (dynamicDiseases.length > 0 || isSearchingData) ? (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {dynamicDiseases.map((disease) => (
-                <div key={disease.code} className="group relative flex flex-col bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-white/5 overflow-hidden min-h-[450px] transition-all">
+              {previewDiseases.map((disease, index) => (
+                <div
+                  key={disease.code}
+                  ref={index === previewDiseases.length - 1 ? lastElementRef : null}
+                  className="group relative flex flex-col bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-white/5 overflow-hidden min-h-[450px] transition-all"
+                >
                   <div className="p-6 pb-0 flex justify-between items-start gap-4 min-h-[4rem]">
                     <span className="bg-brand-red/10 text-brand-red text-[10px] font-black px-3 py-1 rounded-full border border-brand-red/20"> HISTORICAL TREND </span>
                     <a
