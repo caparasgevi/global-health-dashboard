@@ -1,177 +1,358 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { Map, MapMarker, MarkerContent, type MapRef } from "../components/ui/Map";
-
-// Using disease.sh for real-time global health data
-const API_URL = "https://disease.sh/v3/covid-19/countries";
+import React, { useEffect, useRef, useState } from "react";
+import { Map, MapMarker, type MapRef } from "../components/ui/Map";
+import { healthService } from "../services/healthService";
+import {
+  AlertTriangle,
+  ShieldAlert,
+  X,
+  Search,
+  Skull,
+  Activity,
+} from "lucide-react";
 
 type OutbreakPoint = {
-  id: string;
+  id: string; // ISO3
   country: string;
   latitude: number;
   longitude: number;
-  cases: number;
-  region?: string;
+  iso2: string;
 };
+
+type IllnessData = {
+  name: string;
+  value: number;
+  year: number | string;
+  type: "Acute" | "Chronic";
+};
+
+type LiveAlert = {
+  title: string;
+  date: string;
+  url: string;
+  summary: string;
+};
+
+const ACUTE_KEYWORDS = [
+  "MALARIA",
+  "DENGUE",
+  "CHOLERA",
+  "MEASLES",
+  "FEVER",
+  "EBOLA",
+  "ZIKA",
+  "OUTBREAK",
+  "TUBERCULOSIS",
+];
 
 const GlobalMap: React.FC = () => {
   const mapRef = useRef<MapRef | null>(null);
   const [outbreaks, setOutbreaks] = useState<OutbreakPoint[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // 1. Fetch Real Data from API
+  const [selectedCountry, setSelectedCountry] = useState<OutbreakPoint | null>(
+    null
+  );
+  const [healthRisks, setHealthRisks] = useState<IllnessData[]>([]);
+  const [liveAlerts, setLiveAlerts] = useState<LiveAlert[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   useEffect(() => {
-    const fetchData = async () => {
+    const initMapData = async () => {
       try {
-        const response = await fetch(API_URL);
+        const response = await fetch("https://disease.sh/v3/covid-19/countries");
         const data = await response.json();
-        
-        const normalized = data.map((item: any) => ({
-          id: item.countryInfo.iso3 || item.country,
+
+        const points = data.map((item: any) => ({
+          id: item.countryInfo.iso3,
+          iso2: item.countryInfo.iso2,
           country: item.country,
           latitude: item.countryInfo.lat,
           longitude: item.countryInfo.long,
-          cases: item.cases,
-          region: item.continent,
         }));
-        
-        setOutbreaks(normalized);
-      } catch (error) {
-        console.error("Failed to fetch health data", error);
-      } finally {
-        setLoading(false);
+
+        setOutbreaks(points);
+      } catch (e) {
+        console.error("Map initialization failed", e);
       }
     };
-    fetchData();
+
+    initMapData();
   }, []);
 
-  const suggestions = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return outbreaks
-      .filter(o => o.country.toLowerCase().includes(q))
-      .slice(0, 6);
-  }, [outbreaks, searchQuery]);
+  const fetchSpecificRisks = async (country: OutbreakPoint) => {
+    setIsSearching(true);
+    setHealthRisks([]);
+    setLiveAlerts([]);
 
-  const topOutbreaks = useMemo(() => {
-    return [...outbreaks].sort((a, b) => b.cases - a.cases).slice(0, 5);
-  }, [outbreaks]);
+    try {
+      const [alerts, allIndicators] = await Promise.all([
+        healthService.getOutbreakNews(3),
+        healthService.getRankedIndicators(),
+      ]);
 
-  // 2. Responsive Fly-To Logic
-  const flyToCountry = useCallback((target: OutbreakPoint) => {
+      setLiveAlerts(
+        (alerts || []).map((a: any) => ({
+          title: a.title || "WHO outbreak update",
+          date: a.date || "",
+          url: a.url || "",
+          summary: a.summary || "",
+        }))
+      );
+
+      const candidateIndicators = (allIndicators || []).slice(0, 80);
+
+      const results = await Promise.allSettled(
+        candidateIndicators.map(async (ind: any) => {
+          const stats = await healthService.checkIndicatorStatus(
+            ind.IndicatorCode,
+            country.id
+          );
+
+          const latest = stats?.[0];
+          if (!latest) return null;
+
+          const rawValue =
+            latest._safeValue ?? latest.NumericValue ?? latest.Value ?? null;
+
+          const numericValue =
+            rawValue === null || rawValue === undefined
+              ? null
+              : Number(rawValue);
+
+          const indicatorName = String(
+            ind.IndicatorName || ind.IndicatorCode || ""
+          ).toUpperCase();
+
+          const isAcute = ACUTE_KEYWORDS.some((k) =>
+            indicatorName.includes(k)
+          );
+
+          return {
+            name: ind.IndicatorName || ind.IndicatorCode,
+            value: Number.isFinite(numericValue as number)
+              ? (numericValue as number)
+              : 0,
+            year: latest.TimeDim ?? "N/A",
+            type: isAcute ? "Acute" : "Chronic",
+          } as IllnessData;
+        })
+      );
+
+      const finalData = results
+        .map((r) => (r.status === "fulfilled" ? r.value : null))
+        .filter((r): r is IllnessData => r !== null)
+        .sort((a, b) => {
+          if (a.type === "Acute" && b.type !== "Acute") return -1;
+          if (a.type !== "Acute" && b.type === "Acute") return 1;
+          return b.value - a.value;
+        });
+
+      setHealthRisks(finalData.slice(0, 6));
+    } catch (error) {
+      console.error("Data fetch failed", error);
+      setHealthRisks([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleCountrySelect = (target: OutbreakPoint) => {
     setSearchQuery(target.country);
     setShowSuggestions(false);
+    setSelectedCountry(target);
+
     mapRef.current?.flyTo({
       center: [target.longitude, target.latitude],
       zoom: 4,
-      essential: true,
-      duration: 2000
+      duration: 2000,
     });
-  }, []);
 
-  const getSeverity = (cases: number) => {
-    if (cases > 1000000) return "high";
-    if (cases > 100000) return "medium";
-    return "low";
+    fetchSpecificRisks(target);
   };
 
   return (
-    <section 
-      id="global-map" 
+    <section
+      id="global-map"
       className="py-12 bg-white dark:bg-slate-950 transition-colors duration-300 scroll-mt-20"
     >
       <div className="max-w-7xl mx-auto px-4">
-        {/* HEADER SECTION */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
-          <div className="text-center lg:text-left">
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-white font-montserrat">
-              Global <span className="text-brand-red">Disease Map</span>
-            </h1>
-            <p className="mt-2 text-slate-500 dark:text-slate-400 max-w-lg">
-              Real-time visualization of global health data and outbreak concentrations across the globe.
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            Global <span className="text-brand-red">Health Risk</span>{" "}
+            Intelligence
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Authentic WHO disease surveillance and high-risk regional monitoring.
+          </p>
         </div>
 
-        {/* MAP CONTAINER */}
-        <div className="relative h-[600px] lg:h-[780px] w-full overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-xl dark:border-white/10">
-          
-          {/* MAP COMPONENT */}
+        <div className="relative h-[650px] w-full overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-2xl dark:border-white/10">
           <Map ref={mapRef}>
-            {outbreaks.map((point) => (
-              <MapMarker 
-                key={point.id} 
-                longitude={point.longitude} 
-                latitude={point.latitude} 
-                onClick={() => flyToCountry(point)}
+            {outbreaks.map((p) => (
+              <MapMarker
+                key={p.id}
+                longitude={p.longitude}
+                latitude={p.latitude}
+                onClick={() => handleCountrySelect(p)}
               >
-                <MarkerContent>
-                  <div className="group relative flex flex-col items-center">
-                    <div className={`h-3 w-3 rounded-full border-2 border-white shadow-lg transition-transform group-hover:scale-150 ${
-                      getSeverity(point.cases) === 'high' ? 'bg-red-500' : 
-                      getSeverity(point.cases) === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
-                    }`} />
-                    <div className="pointer-events-none absolute bottom-full mb-2 hidden group-hover:block z-50">
-                      <div className="rounded-lg bg-slate-900 px-2 py-1 text-[10px] text-white shadow-xl whitespace-nowrap">
-                        {point.country}: {point.cases.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                </MarkerContent>
+                <div className="h-3 w-3 rounded-full bg-red-600 border border-white/50 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />
               </MapMarker>
             ))}
           </Map>
 
-          {/* SEARCH UI (Absolute positioned over map) */}
-          <div className="absolute left-6 top-6 z-20 w-80 pointer-events-auto">
-            <div className="rounded-2xl border border-white/10 bg-slate-950/90 p-4 backdrop-blur-md">
-              <h2 className="text-sm font-bold text-white uppercase tracking-widest text-cyan-400">Health Radar</h2>
-              <p className="text-xs text-slate-400 mb-3">Live Outbreak Tracking</p>
-              <div className="relative">
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  placeholder="Search country..."
-                  className="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white outline-none ring-1 ring-white/20 focus:ring-cyan-500"
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute mt-2 w-full rounded-xl bg-slate-900 border border-white/10 shadow-2xl overflow-hidden">
-                    {suggestions.map(s => (
-                      <button 
-                        key={s.id} 
-                        onClick={() => flyToCountry(s)}
-                        className="w-full px-4 py-2 text-left text-xs text-slate-300 hover:bg-white/10 transition-colors"
+          {/* SEARCH BOX */}
+          <div className="absolute top-6 left-6 z-20 w-80">
+            <div className="bg-slate-950 border border-white/20 p-4 rounded-2xl">
+              <div className="flex items-center gap-2 mb-3 text-brand-red font-bold text-[10px] uppercase tracking-widest">
+                <Search size={14} /> Regional Search
+              </div>
+
+              <input
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:ring-1 focus:ring-red-500"
+                placeholder="Search country..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+              />
+
+              {showSuggestions && (
+                <div className="mt-2 bg-slate-900 border border-white/10 rounded-xl max-h-48 overflow-y-auto">
+                  {outbreaks
+                    .filter((o) =>
+                      o.country.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .slice(0, 6)
+                    .map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => handleCountrySelect(s)}
+                        className="w-full text-left px-4 py-2 text-xs text-slate-300 hover:bg-red-900/30"
                       >
                         {s.country}
                       </button>
                     ))}
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* HOTSPOTS LIST (Bottom Right) */}
-          <div className="absolute bottom-6 right-6 z-20 w-64 pointer-events-auto hidden md:block">
-            <div className="rounded-2xl border border-white/10 bg-slate-950/90 p-4 backdrop-blur-md text-white">
-              <h3 className="text-[10px] font-bold uppercase text-slate-500 mb-3 tracking-tighter">Top Hotspots</h3>
-              <div className="space-y-3">
-                {topOutbreaks.map((o, i) => (
-                  <div 
-                    key={o.id} 
-                    onClick={() => flyToCountry(o)} 
-                    className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-1 rounded transition-colors"
-                  >
-                    <span className="text-xs">{i+1}. {o.country}</span>
-                    <span className="text-xs font-mono text-red-400">{(o.cases / 1000000).toFixed(1)}M</span>
+          {/* RISK INFORMATION PANEL */}
+          {selectedCountry && (
+            <div className="absolute top-6 right-6 bottom-6 z-20 w-80">
+              <div className="h-full bg-slate-950 border border-white/20 rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+                <div className="p-5 border-b border-white/10 flex justify-between items-center bg-slate-900/50">
+                  <div>
+                    <h2 className="text-xl font-bold text-white">
+                      {selectedCountry.country}
+                    </h2>
+                    <p className="text-[10px] text-red-500 font-mono font-bold uppercase tracking-tighter">
+                      Diagnostic Intelligence
+                    </p>
                   </div>
-                ))}
+                  <button
+                    onClick={() => setSelectedCountry(null)}
+                    className="p-2 hover:bg-white/10 rounded-full"
+                  >
+                    <X size={18} className="text-slate-400" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">
+                  {isSearching ? (
+                    <div className="flex flex-col items-center justify-center h-full gap-3">
+                      <div className="h-8 w-8 border-2 border-red-500/20 border-t-red-600 rounded-full animate-spin" />
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest">
+                        Scanning Global Registries...
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {liveAlerts.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-amber-500 text-[10px] font-bold uppercase italic">
+                            <Activity size={14} /> Active Emergency Alerts
+                          </div>
+
+                          {liveAlerts.map((alert, i) => (
+                            <a
+                              key={i}
+                              href={alert.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 hover:bg-amber-500/15 transition"
+                            >
+                              <p className="text-[11px] text-amber-200 leading-tight font-medium mb-1">
+                                {alert.title}
+                              </p>
+                              <p className="text-[9px] text-amber-500/70 font-mono">
+                                {alert.date}
+                              </p>
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 text-red-500 text-[10px] font-bold uppercase">
+                        <Skull size={14} /> Validated Health Threats
+                      </div>
+
+                      {healthRisks.length > 0 ? (
+                        healthRisks.map((risk, i) => (
+                          <div
+                            key={i}
+                            className={`rounded-xl p-4 border transition-all ${
+                              risk.type === "Acute"
+                                ? "bg-red-500/5 border-red-500/20 shadow-inner"
+                                : "bg-white/5 border-white/10"
+                            }`}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <span
+                                className={`text-[10px] font-bold uppercase tracking-tight leading-relaxed ${
+                                  risk.type === "Acute"
+                                    ? "text-red-400"
+                                    : "text-slate-400"
+                                }`}
+                              >
+                                {risk.name}
+                              </span>
+                              {risk.type === "Acute" ? (
+                                <AlertTriangle
+                                  size={14}
+                                  className="text-red-500"
+                                />
+                              ) : (
+                                <ShieldAlert
+                                  size={14}
+                                  className="text-slate-500"
+                                />
+                              )}
+                            </div>
+
+                            <div className="flex justify-between items-end">
+                              <span className="text-2xl font-mono text-white">
+                                {risk.value.toLocaleString()}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                CY-{risk.year}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-xs text-slate-300">
+                          No quantified indicator values were returned for this
+                          country. Try another country or search a disease name
+                          later when you add illness search.
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </section>
