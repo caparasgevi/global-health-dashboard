@@ -11,19 +11,25 @@ import FullReport from './pages/FullReport';
 
 /**
  * RESET MANAGER
- * Handles the redirect to Home and the scroll reset on every fresh mount.
+ * Handles the redirect to Home, scroll reset, and session cleanup on hard reload.
  */
 const ResetManager = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Force reset to home on every reload
+    const navEntries = window.performance.getEntriesByType('navigation');
+    const isReload = navEntries.length > 0 && (navEntries[0] as PerformanceNavigationTiming).type === 'reload';
+
+    if (isReload) {
+      sessionStorage.removeItem('health_radar_query');
+      sessionStorage.removeItem('health_radar_country');
+    }
+
     if (location.pathname !== '/') {
       navigate('/', { replace: true });
     }
     
-    // Disable browser scroll memory and snap to top
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
@@ -34,19 +40,14 @@ const ResetManager = () => {
 };
 
 function App() {
-  // 1. SESSION RESET STATE
-  // Always initialize to false (Light Mode) to ignore previous sessions
   const [isDark, setIsDark] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 2. LOADING DELAY (Optional Preloader logic)
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  // 3. THEME SYNC
-  // This updates the HTML class based on the 'isDark' state
   useEffect(() => {
     const html = document.documentElement;
     if (isDark) {
@@ -68,7 +69,6 @@ function App() {
               key="main-app-content"
               className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins"
             >
-              {/* Pass the state to the Header toggle */}
               <Header isDark={isDark} setIsDark={setIsDark} />
 
               <main className="flex-grow container mx-auto px-4 py-8">

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, LineChart, Legend } from 'recharts';
 import iso from 'iso-3166-1';
-import { formatWHOData } from '../../utils/healthDataFormat';
+import { healthService } from '../../services/healthService';
 
 interface ComparisonChartProps {
   activeCountryCode?: string;
@@ -18,30 +18,25 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
   const [loading, setLoading] = useState(true);
 
   const getBenchmarks = (code: string) => {
-    // Normalize code for comparison
     const indicator = code.toUpperCase();
-
     if (indicator.includes('MDG_0000000001')) {
       return [
         { code: 'IND', name: 'India', color: '#38bdf8' },
         { code: 'IDN', name: 'Indonesia', color: '#fbbf24' }
       ];
     }
-
     if (indicator.includes('WHS3_62')) {
       return [
         { code: 'NGA', name: 'Nigeria', color: '#38bdf8' },
         { code: 'PAK', name: 'Pakistan', color: '#fbbf24' }
       ];
     }
-
     if (indicator.includes('MALARIA') || indicator.includes('WHS3_48')) {
       return [
         { code: 'COD', name: 'DR Congo', color: '#38bdf8' },
         { code: 'UGA', name: 'Uganda', color: '#fbbf24' }
       ];
     }
-
     return [
       { code: 'ZAF', name: 'South Africa', color: '#38bdf8' },
       { code: 'BRA', name: 'Brazil', color: '#fbbf24' }
@@ -71,40 +66,40 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        const requests = countries.map(c =>
-          fetch(
-            `/gho-api/${indicatorCode}?$format=json&$filter=SpatialDim eq '${c.code}'`,
-            { signal: controller.signal }
-          ).then(res => res.json())
+        const requests = countries.map(c => 
+          healthService.checkIndicatorStatus(indicatorCode, c.code, { signal: controller.signal })
         );
 
-        const responses = await Promise.all(
-          requests.map(p => p.catch(e => {
-            console.error("Single Country Fetch Fail:", e);
-            return null; 
-          }))
-        );
+        const responses = await Promise.all(requests);
         
-        const yearlyData: any = {};
+        const yearlyDataMap: Record<string, any> = {};
 
         responses.forEach((resData, index) => {
           const countryCode = countries[index].code;
-          if (resData && resData.value) {
-            const cleaned = formatWHOData(resData.value);
-            cleaned.forEach((item: any) => {
-              if (!yearlyData[item.year]) {
-                yearlyData[item.year] = { year: item.year };
+          
+          // Safety check for array returned from backend
+          if (resData && Array.isArray(resData)) {
+            resData.forEach((item: any) => {
+              const year = item.TimeDim;
+              const val = item._safeValue;
+              
+              if (!yearlyDataMap[year]) {
+                yearlyDataMap[year] = { year: Number(year) };
               }
-              yearlyData[item.year][countryCode] = item.value;
+              yearlyDataMap[year][countryCode] = val;
             });
           }
         });
 
         if (isMounted) {
-          setData(Object.values(yearlyData).sort((a: any, b: any) => a.year - b.year));
+          const formattedData = Object.values(yearlyDataMap)
+            .sort((a: any, b: any) => a.year - b.year);
+          setData(formattedData);
         }
       } catch (error: any) {
-        if (error?.name !== 'AbortError') console.error("Triad Fetch Error:", error);
+        if (error?.name !== 'AbortError' && error?.name !== 'CanceledError') {
+          console.error("Benchmark Fetch Error:", error);
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -115,26 +110,44 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
   }, [countries, indicatorCode]);
 
   if (loading) return (
-    <div className="h-[300px] md:h-[400px] flex items-center justify-center bg-slate-100/50 dark:bg-slate-900/20 rounded-3xl border border-slate-200 dark:border-white/5 animate-pulse text-[10px] tracking-widest text-slate-500 font-mono">
+    <div className="h-[450px] flex items-center justify-center bg-slate-100/50 dark:bg-slate-900/20 rounded-[2rem] border border-dashed border-slate-300 dark:border-white/10 animate-pulse text-[10px] tracking-widest text-slate-500 font-mono">
       FETCHING BENCHMARK DATA...
     </div>
   );
 
   return (
-    <div className="w-full h-[350px] md:h-[450px] bg-white/50 dark:bg-slate-950/40 p-4 md:p-8 rounded-[2rem] border border-slate-200 dark:border-white/5 backdrop-blur-xl shadow-2xl transition-colors duration-300">
-      <div className="mb-4 md:mb-8">
-        <h3 className="text-slate-900 dark:text-white text-lg md:text-xl font-bold tracking-tight uppercase tracking-tighter">Comparative Analysis</h3>
+    // FIXED: Container height must be a concrete value (px) or h-full within a fixed parent to avoid -1 Recharts warning
+    <div className="w-full h-[450px] bg-white/50 dark:bg-slate-950/40 p-4 md:p-8 rounded-[2rem] border border-slate-200 dark:border-white/5 backdrop-blur-xl shadow-2xl transition-colors duration-300 flex flex-col">
+      <div className="mb-4">
+        <h3 className="text-slate-900 dark:text-white text-lg md:text-xl font-bold tracking-tight uppercase">Comparative Analysis</h3>
         <p className="text-brand-red text-xs font-black uppercase tracking-widest">{indicatorName}</p>
       </div>
 
-      <div className="w-full h-[70%] md:h-[75%]">
+      <div className="flex-1 w-full min-h-0"> {/* min-h-0 is vital for ResponsiveContainer in Flexbox */}
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/5" />
-            <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: 'currentColor', fontSize: 10 }} className="text-slate-400 dark:text-slate-500" minTickGap={20} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: 'currentColor', fontSize: 10 }} className="text-slate-400 dark:text-slate-500" width={50} tickFormatter={formatYAxis} />
-            <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', fontSize: '11px', color: '#fff' }} itemStyle={{ padding: '2px 0' }} cursor={{ stroke: '#64748b', strokeWidth: 1, strokeDasharray: '4 4' }} />
-            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ paddingTop: '24px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }} />
+          <LineChart data={data} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="8 8" vertical={false} strokeOpacity={0.1} />
+            <XAxis 
+              dataKey="year" 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fill: '#64748b', fontSize: 10 }} 
+            />
+            <YAxis 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fill: '#64748b', fontSize: 10 }} 
+              tickFormatter={formatYAxis}
+            />
+            <Tooltip 
+              contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', fontSize: '11px', color: '#fff' }} 
+              itemStyle={{ padding: '2px 0' }} 
+            />
+            <Legend 
+              verticalAlign="bottom" 
+              iconType="circle" 
+              wrapperStyle={{ paddingTop: '20px', fontSize: '9px', fontWeight: 800 }} 
+            />
             {countries.map(c => (
               <Line
                 key={c.code}
@@ -142,11 +155,10 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
                 dataKey={c.code}
                 name={c.name}
                 stroke={c.color}
-                strokeWidth={c.code === activeCountryCode ? 3 : 2}
-                dot={{ r: 3, fill: c.color, strokeWidth: 1, stroke: '#fff' }}
-                activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                strokeWidth={c.code === activeCountryCode ? 4 : 2}
+                dot={{ r: 2 }}
+                activeDot={{ r: 5 }}
                 connectNulls
-                animationDuration={1500}
               />
             ))}
           </LineChart>
