@@ -1,42 +1,17 @@
 import axios from 'axios';
 
-const PEXELS_API_KEY = import.meta.env.VITE_PEXELS_API_KEY;
-const BASE_URL = "/gho-api/";
-const DISEASE_SH_BASE_URL = "https://disease.sh"; 
+// Point this to your new Express server
+const BACKEND_URL = "http://localhost:5000/api"; 
 
 let cachedIndicators: any[] | null = null;
 let _indicatorFetchPromise: Promise<any[]> | null = null; 
-
-// FIX: This now correctly caches results per country + indicator
 const verificationCache: Record<string, any[]> = {};
 
-const apiClient = axios.create({
-  baseURL: BASE_URL,
+// ONE client to rule them all. No more separate Pexels, News, or Disease.sh clients!
+const backendClient = axios.create({
+  baseURL: BACKEND_URL,
   timeout: 15000 
 });
-
-const newsClient = axios.create({
-  baseURL: "/who-news/"
-});
-
-const diseaseShClient = axios.create({
-  baseURL: DISEASE_SH_BASE_URL
-});
-
-const pexelsClient = axios.create({
-  baseURL: "https://api.pexels.com/v1",
-  headers: {
-    Authorization: PEXELS_API_KEY
-  }
-});
-
-export {
-  apiClient,
-  newsClient,
-  diseaseShClient,
-  pexelsClient,
-  PEXELS_API_KEY
-};
 
 export const getCachedIndicators = () => cachedIndicators;
 
@@ -47,7 +22,7 @@ const BLACKLIST = ['ALCOHOL', 'TOBACCO', 'SMOKING', 'OBESITY', 'FRUIT', 'VEGETAB
 export const healthService = {
   getLiveCountryStats: async (code: string) => {
     try {
-      const res = await diseaseShClient.get(`v3/covid-19/countries/${code.toUpperCase()}?strict=false`);
+      const res = await backendClient.get(`/country-stats/${code}`);
       return res.data;
     } catch { return null; }
   },
@@ -58,7 +33,7 @@ export const healthService = {
     if (!_indicatorFetchPromise) {
       _indicatorFetchPromise = (async () => {
         try {
-          const res = await apiClient.get(`Indicator?$format=json`);
+          const res = await backendClient.get(`/indicators`);
           const indicators = res.data?.value;
           if (!indicators || !Array.isArray(indicators)) return [{ IndicatorCode: 'MALARIA_EST_CASES', IndicatorName: 'Malaria Surveillance' }];
 
@@ -88,8 +63,10 @@ export const healthService = {
   },
 
   getGlobalBaseline: async (options?: { signal?: AbortSignal }) => {
-    const res = await apiClient.get(`WHOSIS_000001?$filter=TimeDim eq 2021 and SpatialDimType eq 'REGION'`, { signal: options?.signal });
-    return res.data.value;
+    try {
+      const res = await backendClient.get(`/global-baseline`, { signal: options?.signal });
+      return res.data;
+    } catch { return []; }
   },
 
   checkIndicatorStatus: async (code: string, country: string, options?: { signal?: AbortSignal }) => {
@@ -97,8 +74,8 @@ export const healthService = {
     if (verificationCache[cacheKey]) return verificationCache[cacheKey];
 
     try {
-      const res = await apiClient.get(`${code}?$format=json&$filter=SpatialDim eq '${country.toUpperCase()}'&$orderby=TimeDim desc&$top=10`, { signal: options?.signal });
-      const processed = (res.data.value || []).map((item: any) => ({
+      const res = await backendClient.get(`/indicator-status/${country}/${code}`, { signal: options?.signal });
+      const processed = (res.data || []).map((item: any) => ({
         ...item, 
         _safeValue: item.NumericValue != null ? Number(item.NumericValue) : (Number(item.Value) || 0)
       }));
@@ -112,36 +89,19 @@ export const healthService = {
   },
 
   getRelevantImage: async (query: string) => {
-  try {
-    const res = await pexelsClient.get(`/search`, { 
-      params: { 
-        query: `${query} medical disease`, 
-        per_page: 1, 
-        orientation: 'landscape' 
-      } 
-    });
-    return res.data.photos[0]?.src?.large || '';
-  } catch { return ''; }
-},
+    try {
+      const res = await backendClient.get(`/relevant-image`, { params: { query } });
+      return res.data.imageUrl || '';
+    } catch { return ''; }
+  },
 
   getOutbreakNews: async (limit = 5, options?: { signal?: AbortSignal }) => {
     try {
-      const res = await newsClient.get('api/news/diseaseoutbreaknews', { 
-        signal: options?.signal, 
-        params: { 
-          '$top': limit, 
-          '$select': 'Id,Title,PublicationDateAndTime,Summary,ItemDefaultUrl', 
-          '$orderby': 'PublicationDateAndTime desc', 
-          'sf_culture': 'en' 
-        } 
+      const res = await backendClient.get(`/outbreak-news`, { 
+        signal: options?.signal,
+        params: { limit }
       });
-      return (res.data?.value || []).map((i: any) => ({ 
-        id: i.Id, 
-        title: i.Title, 
-        date: i.PublicationDateAndTime, 
-        summary: i.Summary || '', 
-        url: i.ItemDefaultUrl ? `https://www.who.int${i.ItemDefaultUrl}` : '' 
-      }));
+      return res.data || [];
     } catch { return []; }
   }
 };
