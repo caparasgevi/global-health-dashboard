@@ -8,6 +8,7 @@ import About from './pages/About';
 import Trends from './pages/Trends';
 import GlobalMap from './pages/GlobalMap';
 import FullReport from './pages/FullReport';
+import OurTeam from './pages/OurTeam';
 
 /**
  * RESET MANAGER
@@ -77,8 +78,10 @@ function App() {
                     <>
                       <Home />
                       <About />
-                      <GlobalMap />
+                      {/* Pass isDark to GlobalMap for theme syncing */}
+                      <GlobalMap isDark={isDark} />
                       <Trends />
+                      <OurTeam />
                     </>
                   } />
                   <Route path="/full-report" element={<FullReport />} />

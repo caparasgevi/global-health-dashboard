@@ -22,9 +22,15 @@ export const useMap = () => useContext(MapContext);
 interface MapProps {
   children?: React.ReactNode;
   className?: string;
+  theme?: "light" | "dark";
 }
 
-export const Map = forwardRef<MapRef, MapProps>(({ children, className = "" }, ref) => {
+const MAP_STYLES = {
+  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+};
+
+export const Map = forwardRef<MapRef, MapProps>(({ children, className = "", theme = "dark" }, ref) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<MapLibreMap | null>(null);
   const [mapReady, setMapReady] = useState<MapLibreMap | null>(null);
@@ -38,15 +44,15 @@ export const Map = forwardRef<MapRef, MapProps>(({ children, className = "" }, r
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
 
-    // We use a clean, dark-themed base style to match your HealthRadar UI
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      style: MAP_STYLES[theme],
       center: [20, 20],
       zoom: 1.8,
       attributionControl: false,
     });
 
+    // FIXED: Positioned to Top-Right
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
     map.on("load", () => {
@@ -62,11 +68,27 @@ export const Map = forwardRef<MapRef, MapProps>(({ children, className = "" }, r
     };
   }, []);
 
+  useEffect(() => {
+    if (mapInstance.current) {
+      mapInstance.current.setStyle(MAP_STYLES[theme]);
+    }
+  }, [theme]);
+
   return (
     <MapContext.Provider value={mapReady}>
       <div className={`relative h-full w-full ${className}`}>
+        {/* CSS Override to sync Zoom Control theme */}
+        <style>{`
+          .maplibregl-ctrl-group {
+            background: ${theme === 'dark' ? '#0f172a !important' : '#ffffff !important'};
+            border: 1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} !important;
+          }
+          .maplibregl-ctrl-group button span {
+            filter: ${theme === 'dark' ? 'invert(1)' : 'none'};
+          }
+        `}</style>
+        
         <div ref={mapContainer} className="absolute inset-0 h-full w-full" />
-        {/* The UI layer must allow clicks to pass through to the map unless a button is hit */}
         <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
           {children}
         </div>
@@ -81,14 +103,8 @@ export const MapMarker = ({ longitude, latitude, onClick, children }: any) => {
 
   useEffect(() => {
     if (!map || !markerElRef.current) return;
-
-    const marker = new maplibregl.Marker({
-      element: markerElRef.current,
-      anchor: "bottom",
-    })
-      .setLngLat([longitude, latitude])
-      .addTo(map);
-
+    const marker = new maplibregl.Marker({ element: markerElRef.current, anchor: "bottom" })
+      .setLngLat([longitude, latitude]).addTo(map);
     return () => { marker.remove(); };
   }, [map, longitude, latitude]);
 
