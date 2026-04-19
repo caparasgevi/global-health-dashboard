@@ -78,7 +78,8 @@ function App() {
                     <>
                       <Home />
                       <About />
-                      <GlobalMap />
+                      {/* Pass isDark to GlobalMap for theme syncing */}
+                      <GlobalMap isDark={isDark} />
                       <Trends />
                       <OurTeam />
                     </>
