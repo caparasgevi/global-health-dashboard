@@ -91,75 +91,99 @@ const Home = () => {
         const seenRegions = new Set();
         const uniqueProcessedData: any[] = [];
 
-        for (const item of rawData) {
-          const regionCode = item.SpatialDim;
+        if (Array.isArray(rawData)) {
+          for (const item of rawData) {
+            const regionCode = item.SpatialDim;
 
-          if (regionNames[regionCode] && !seenRegions.has(regionCode)) {
-            seenRegions.add(regionCode);
+            if (regionNames[regionCode] && !seenRegions.has(regionCode)) {
+              seenRegions.add(regionCode);
 
-            const value = Math.min(Math.round(item.NumericValue || 0), 100);
-            uniqueProcessedData.push({
-              id: regionCode,
-              region: regionNames[regionCode],
-              threatLevel: value,
-              status: value > 80 ? "Critical" : value > 60 ? "High" : value > 40 ? "Moderate" : "Low"
-            });
+              const value = Math.min(Math.round(item.NumericValue || 0), 100);
+              uniqueProcessedData.push({
+                id: regionCode,
+                region: regionNames[regionCode],
+                threatLevel: value,
+                status: value > 80 ? "Critical" : value > 60 ? "High" : value > 40 ? "Moderate" : "Low"
+              });
+            }
+
+            if (uniqueProcessedData.length === 6) break;
           }
-
-          if (uniqueProcessedData.length === 6) break;
         }
 
         if (isMounted) {
           setRegionalThreatData(uniqueProcessedData);
-          setLastUpdated(new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric' }));
+          setLastUpdated(new Date().toLocaleString('en-US', { 
+            hour: 'numeric', 
+            minute: 'numeric', 
+            hour12: true, 
+            month: 'short', 
+            day: 'numeric' 
+          }));
         }
       } catch (error: any) {
-        if (error?.name !== 'AbortError') console.error("Regional fetch error:", error);
+        const isCancel = error?.name === 'AbortError' || 
+                        error?.name === 'CanceledError' || 
+                        error?.code === 'ERR_CANCELED';
+        
+        if (!isCancel) {
+          console.error("Regional fetch error:", error);
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
     };
+
     fetchRegionalData();
-    return () => { isMounted = false; controller.abort(); };
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   useEffect(() => {
     let isMounted = true;
     let intervalId: ReturnType<typeof setInterval>;
-    const controller = new AbortController();
 
     const fetchOutbreaks = async () => {
       setOutbreakLoading(true);
       try {
-        const news = await healthService.getOutbreakNews(10, { signal: controller.signal });
-        const slides: OutbreakSlide[] = await Promise.all(
-          news.map(async (item: any, index: number) => {
-            const searchKeyword = item.title.split('-')[0].trim();
-            const pexelsImg = await healthService.getRelevantImage(`${searchKeyword} ${index}`);
-            return {
-              id: item.id,
-              title: item.title,
-              date: item.date,
-              image: pexelsImg ? `${pexelsImg}?sig=${item.id}` : `https://images.unsplash.com/photo-1584118624012-df456d49ecaa?sig=${item.id}`,
-              url: `https://www.google.com/search?q=${encodeURIComponent(item.title + " WHO Report")}`,
-              caption: item.summary.replace(/<[^>]+>/g, '').trim()
-            };
-          })
-        );
+        const news = await healthService.getOutbreakNews(10);
+        
         if (isMounted) {
+          const slides = news.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            date: new Date(item.date).toLocaleDateString('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
+            }),
+            image: item.image,
+            url: item.url,
+            caption: item.summary ? item.summary.replace(/<[^>]+>/g, '').trim() : 'No details available.'
+          }));
+
           setOutbreakSlides(slides);
           setActiveSlide(0);
         }
       } catch (err: any) {
-        if (err?.name !== 'AbortError') console.error('Outbreak fetch failed:', err);
+        console.error('Outbreak fetch failed:', err);
       } finally {
         if (isMounted) setOutbreakLoading(false);
       }
     };
 
     fetchOutbreaks();
-    intervalId = setInterval(() => { if (isMounted) fetchOutbreaks(); }, REFRESH_INTERVAL_MS);
-    return () => { isMounted = false; controller.abort(); clearInterval(intervalId); };
+    intervalId = setInterval(() => { 
+      if (isMounted) fetchOutbreaks(); 
+    }, REFRESH_INTERVAL_MS);
+
+    return () => { 
+      isMounted = false; 
+      clearInterval(intervalId); 
+    };
   }, []);
 
   const handleSlideChange = (swiper: any) => {
