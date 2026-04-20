@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BACKEND_URL = "https://my-backend-api-es7e.onrender.com/api";
+// Vite automatically knows if it is running locally or in production
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 let cachedIndicators: any[] | null = null;
 let _indicatorFetchPromise: Promise<any[]> | null = null; 

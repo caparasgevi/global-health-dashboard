@@ -156,14 +156,15 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       if (item.country) staticMap.set(item.country.toLowerCase(), item);
     });
 
-    // BUG FIX 1: Prevent external API downtime from crashing the Promise.all
+    // FIX 1: Add ?$format=json to WHO API so it never returns XML strings
     const [diseaseResponse, whoResponse] = await Promise.all([
       axios.get('https://disease.sh/v3/covid-19/countries?strict=false', { timeout: 8000 }).catch(() => ({ data: [] })),
-      axios.get(`${GHO_BASE_URL}DIMENSION/COUNTRY/DimensionValues`, { timeout: 8000 }).catch(() => ({ data: { value: [] } }))
+      axios.get(`${GHO_BASE_URL}DIMENSION/COUNTRY/DimensionValues?$format=json`, { timeout: 8000 }).catch(() => ({ data: { value: [] } }))
     ]);
 
-    const diseaseData = diseaseResponse.data;
-    const whoCountries = whoResponse.data.value || [];
+    // FIX 2: Safely ensure they are arrays to prevent .forEach from crashing
+    const diseaseData = Array.isArray(diseaseResponse.data) ? diseaseResponse.data : [];
+    const whoCountries = Array.isArray(whoResponse.data?.value) ? whoResponse.data.value : [];
 
     const masterRoster = new Map();
     const diseaseMap = new Map();
@@ -181,14 +182,23 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       }
     });
 
+    // FIX 3: Ultimate Fallback! If both live APIs fail/timeout, build the roster from local JSON so the table is NEVER blank.
+    if (masterRoster.size === 0) {
+      staticHealthData.forEach(item => {
+        if (item.country) {
+          const fallbackIso = item.flagCode || item.country.substring(0,3).toUpperCase();
+          masterRoster.set(fallbackIso, { iso3: fallbackIso, name: item.country });
+        }
+      });
+    }
+
     const riskData = Array.from(masterRoster.values()).map((countryObj: any) => {
       const iso3 = countryObj.iso3;
-      const name = countryObj.name || ''; // Ensure name is never undefined
+      const name = countryObj.name || ''; 
 
       const liveData = diseaseMap.get(iso3) || {};
       const iso2 = liveData.countryInfo?.iso2;
       
-      // BUG FIX 2: Safely lowercase the name
       const nameLower = name ? name.toLowerCase() : '';
       const staticData = staticMap.get(iso2) || staticMap.get(nameLower) || {};
 
@@ -221,7 +231,7 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       };
     });
 
-    const validCountries = riskData.filter((c: any) => c.id && c.id.length === 3);
+    const validCountries = riskData.filter((c: any) => c.id && c.id.length >= 2);
     const sortedRisks = validCountries.sort((a: any, b: any) => b.score - a.score);
 
     res.json(sortedRisks);
