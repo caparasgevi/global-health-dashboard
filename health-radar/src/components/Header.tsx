@@ -132,8 +132,6 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
           </span>
         </div>
         
-        
-
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center bg-gray-100/50 dark:bg-gray-800/40 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
           {navItems.map((item) => (
@@ -153,25 +151,9 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
             </button>
           ))}
         </nav>
-        
-        
 
         {/* Action Buttons */}
-        <button
-  onClick={() => navigate('/signup')}
-  className="flex items-center justify-center px-4 py-2 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 active:scale-95"
->
-  Sign Up
-</button>
         <div className="flex items-center gap-3">
-
-          <button
-            onClick={() => navigate('/login')}
-            className="px-4 py-2 rounded-xl bg-brand-red text-white text-sm font-semibold hover:bg-red-700 transition"
-          >
-            Login
-          </button>
-          
           <button 
             onClick={() => setIsDark(!isDark)}
             className="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all duration-300"
