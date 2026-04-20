@@ -242,7 +242,9 @@ app.get('/api/relevant-image', async (req: Request, res: Response) => {
   const query = req.query.query;
   const apiKey = process.env.PEXELS_API_KEY;
 
-  if (!apiKey) return res.status(500).json({ error: 'Pexels API key is missing.' });
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Pexels API key is missing.' });
+  }
 
   try {
     const response = await axios.get('https://api.pexels.com/v1/search', {
@@ -257,20 +259,25 @@ app.get('/api/relevant-image', async (req: Request, res: Response) => {
 
 app.get('/api/outbreak-news', async (req: Request, res: Response) => {
   const limit = req.query.limit || 5;
+  
   const apiKey = process.env.PEXELS_API_KEY;
 
   try {
     const response = await axios.get('https://www.who.int/api/news/diseaseoutbreaknews', {
       params: { 
-        '$top': limit, '$select': 'Id,Title,PublicationDateAndTime,Summary,ItemDefaultUrl', 
-        '$orderby': 'PublicationDateAndTime desc', 'sf_culture': 'en' 
+        '$top': limit,
+        '$select': 'Id,Title,PublicationDateAndTime,Summary,ItemDefaultUrl',
+        '$orderby': 'PublicationDateAndTime desc',
+        'sf_culture': 'en'
       },
       timeout: 12000,
     });
 
     const newsItems = response.data?.value || [];
+
     const formattedNews = await Promise.all(newsItems.map(async (i: any) => {
       let imageUrl = 'https://images.pexels.com/photos/3992933/pexels-photo-3992933.jpeg'; 
+      
       if (apiKey) {
         try {
           const imageRes = await axios.get('https://api.pexels.com/v1/search', {
@@ -278,10 +285,16 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
             headers: { Authorization: apiKey }
           });
           imageUrl = imageRes.data.photos[0]?.src?.large || imageUrl;
-        } catch (e) {}
+        } catch (e) {
+          console.warn(`Pexels fetch failed for: ${i.Title}`);
+        }
       }
+
       return {
-        id: i.Id, title: i.Title, date: i.PublicationDateAndTime, image: imageUrl,
+        id: i.Id,
+        title: i.Title,
+        date: i.PublicationDateAndTime,
+        image: imageUrl,
         summary: i.Summary ? i.Summary.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '',
         url: i.ItemDefaultUrl ? `https://www.who.int${i.ItemDefaultUrl}` : 'https://www.who.int/emergencies/disease-outbreak-news',
       };
