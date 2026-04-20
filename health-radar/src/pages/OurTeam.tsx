@@ -22,7 +22,7 @@ const teamMembers: TeamMember[] = [
     name: "Mark Gevi S. Caparas",
     role: "Project Lead | Full-Stack Engineer",
     contribution:
-      "Establishes foundational architecture for frontend and backend systems. Orchestrates API development and leads the implementation of the Home, About, and Trends modules.",
+      "Establishes foundational architecture for frontend and backend systems. Integrates API development and leads the implementation of the Home, About, and Trends pages.",
     image: geviImg,
     hoverImage: geviImg,
   },
@@ -40,7 +40,7 @@ const teamMembers: TeamMember[] = [
     name: "Ahlyssa Shane D. Dela Cruz",
     role: "Frontend Visualization Engineer",
     contribution:
-      "Develops the Country Statistics module and analytical interfaces. Conducts data assessment of disease outbreaks to create high-fidelity, visually appealing visualizations.",
+      "Develops the Country Statistics page and analytical interfaces. Conducts data assessment of disease outbreaks to create high-precision, visually appealing visualizations.",
     image: shaneImg,
     hoverImage: shaneImg,
   },
@@ -49,7 +49,7 @@ const teamMembers: TeamMember[] = [
     name: "Elijah M. Laquindanum",
     role: "Database Administrator & Backend Engineer",
     contribution:
-      "Primary lead for database management and secure user authentication. Ensures robust data architecture and seamless backend-to-frontend communication.",
+      "Primary lead for database management and secure user authentication. Ensures scalable data architecture and seamless backend-to-frontend communication.",
     image: elijahImg,
     hoverImage: elijahImg,
   },
@@ -102,18 +102,18 @@ const OurTeam: React.FC = () => {
                 e.stopPropagation();
                 setIsRevealed(true);
               }}
-              className="cursor-pointer group relative rounded-3xl overflow-hidden w-full max-w-4xl h-[300px] md:h-[450px] shadow-2xl border border-white/20"
+              className="cursor-pointer group relative rounded-3xl overflow-hidden w-full max-w-4xl h-[250px] sm:h-[350px] md:h-[450px] shadow-2xl border border-white/20 bg-gray-200 dark:bg-gray-800"
             >
               <img
                 src={teamImg}
                 alt="Group Preview"
-                className="w-full h-full object-cover object-top md:object-center transition-transform duration-1000 group-hover:scale-110"
+                className="w-full h-full object-contain md:object-cover object-center transition-transform duration-1000 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col items-center justify-end pb-8 md:pb-12 opacity-100 transition-opacity">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent flex flex-col items-center justify-end pb-6 md:pb-12 opacity-100 transition-opacity">
                 <motion.span
                   animate={{ y: [0, -5, 0] }}
                   transition={{ repeat: Infinity, duration: 2 }}
-                  className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-6 py-2 md:px-8 md:py-3 rounded-full text-sm md:text-base font-bold shadow-xl border border-white/10 hover:bg-[var(--color-brand-red)] hover:text-white transition-colors"
+                  className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-5 py-2 md:px-8 md:py-3 rounded-full text-xs md:text-base font-bold shadow-xl border border-white/10 hover:bg-[var(--color-brand-red)] hover:text-white transition-colors"
                 >
                   Discover the Team
                 </motion.span>
