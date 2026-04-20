@@ -1,8 +1,6 @@
 import axios from 'axios';
 
-const BACKEND_URL = import.meta.env.DEV 
-  ? "http://localhost:5000/api" 
-  : "/api"; 
+const BACKEND_URL = "https://my-backend-api-es7e.onrender.com/api";
 
 let cachedIndicators: any[] | null = null;
 let _indicatorFetchPromise: Promise<any[]> | null = null; 

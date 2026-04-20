@@ -8,7 +8,8 @@ import path from 'path';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+// Render assigns a random port; this line ensures we use it.
+const PORT = Number(process.env.PORT) || 5000;
 const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 
 app.use(cors());
@@ -23,9 +24,10 @@ try {
   console.warn('⚠️ Could not load healthiest-countries-2026.json. Ensure it is in the root backend folder.');
 }
 
-let threatCache: any[] | null = null;
-let lastFetchTime = 0;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+// Root Route - Crucial for Render's Health Check
+app.get('/', (req, res) => {
+  res.send('Health Radar API is Live and Running.');
+});
 
 app.get('/api/status', (req: Request, res: Response) => {
   res.json({ message: 'Health Radar backend is online and tracking.' });
@@ -37,7 +39,23 @@ app.get('/api/country-stats/:code', async (req: Request, res: Response) => {
     const response = await axios.get(`https://disease.sh/v3/covid-19/countries/${countryCode}?strict=false`);
     res.json(response.data);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch country stats from upstream provider.' });
+    res.status(500).json({ error: 'Failed to fetch country stats.' });
+  }
+});
+
+app.get('/api/indicator-status/:country/:code', async (req: Request, res: Response) => {
+  const { country, code } = req.params;
+  try {
+    const response = await axios.get(
+      `${GHO_BASE_URL}${code}?$format=json&$filter=SpatialDim eq '${String(country).toUpperCase()}'&$orderby=TimeDim desc&$top=10`,
+      { timeout: 10000 }
+    );
+    
+    const data = response.data?.value || [];
+    res.json(data);
+  } catch (error) {
+    console.error(`WHO API error for ${code} in ${country}`);
+    res.json([]); 
   }
 });
 
@@ -60,9 +78,16 @@ app.get('/api/indicators', async (req: Request, res: Response) => {
   }
 });
 
+// Global baseline logic with local caching
+let threatCache: any[] | null = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 60 * 60 * 1000; 
+
 app.get('/api/global-baseline', async (req: Request, res: Response) => {
   const now = Date.now();
-  if (threatCache && now - lastFetchTime < CACHE_DURATION) return res.json(threatCache);
+  if (threatCache && now - lastFetchTime < CACHE_DURATION) {
+    return res.json(threatCache);
+  }
 
   const THREAT_INDICATORS = [
     { code: 'MALARIA_EST_INCIDENCE', weight: 0.25, ceiling: 350 },
@@ -87,7 +112,9 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
         try {
           const res = await axios.get(`${GHO_BASE_URL}${ind.code}?$format=json&$filter=SpatialDimType eq 'REGION'`, { timeout: 8000 });
           return { code: ind.code, data: res.data?.value || [] };
-        } catch (e) { return { code: ind.code, data: [] }; }
+        } catch (e) {
+          return { code: ind.code, data: [] };
+        }
       })
     );
 
@@ -98,7 +125,9 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
       THREAT_INDICATORS.forEach((ind) => {
         const set = datasetResponses.find((r) => r.code === ind.code);
         const data = set ? set.data : [];
-        const regRecords = data.filter((d: any) => d.SpatialDim === reg.code).sort((a: any, b: any) => b.TimeDim - a.TimeDim);
+        const regRecords = data
+          .filter((d: any) => d.SpatialDim === reg.code)
+          .sort((a: any, b: any) => b.TimeDim - a.TimeDim);
 
         if (regRecords.length > 0) {
           const rawValue = Number(regRecords[0].NumericValue || regRecords[0].Value || 0);
@@ -108,7 +137,7 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
         }
       });
 
-      const finalRawValue = activeWeights > 0 ? (totalWeightedScore / activeWeights) * 1.0 : 0;
+      const finalRawValue = activeWeights > 0 ? (totalWeightedScore / activeWeights) : 0;
       const displayValue = finalRawValue > 0 ? Math.max(finalRawValue, 12.5) : 6.0;
 
       return { SpatialDim: reg.code, NumericValue: parseFloat(displayValue.toFixed(1)) };
@@ -117,7 +146,9 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
     threatCache = results;
     lastFetchTime = now;
     res.json(results);
-  } catch (error) { res.json(threatCache || []); }
+  } catch (error) {
+    res.json(threatCache || []);
+  }
 });
 
 app.get('/api/indicator-status/:country/:code', async (req: Request, res: Response) => {
@@ -216,7 +247,9 @@ app.get('/api/relevant-image', async (req: Request, res: Response) => {
   const query = req.query.query;
   const apiKey = process.env.PEXELS_API_KEY;
 
-  if (!apiKey) return res.status(500).json({ error: 'Pexels API key is missing.' });
+  if (!apiKey) {
+    return res.json({ imageUrl: 'https://images.pexels.com/photos/3992933/pexels-photo-3992933.jpeg' });
+  }
 
   try {
     const response = await axios.get('https://api.pexels.com/v1/search', {
@@ -226,7 +259,9 @@ app.get('/api/relevant-image', async (req: Request, res: Response) => {
     });
     const imageUrl = response.data.photos[0]?.src?.large || '';
     res.json({ imageUrl });
-  } catch (error) { res.status(500).json({ error: 'Failed to fetch image from Pexels.' }); }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch image.' });
+  }
 });
 
 app.get('/api/outbreak-news', async (req: Request, res: Response) => {
@@ -261,13 +296,14 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
       };
     }));
     res.json(formattedNews);
-  } catch (error) { res.status(500).json([]); }
+  } catch (error) {
+    res.status(500).json([]);
+  }
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-  });
-}
+// Final Fix: Listen on 0.0.0.0 regardless of environment
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 export default app;
