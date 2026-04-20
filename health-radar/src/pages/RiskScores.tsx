@@ -22,8 +22,6 @@ const RiskScores = () => {
 
   const [countryStats, setCountryStats] = useState<any | null>(null);
   const [historyData, setHistoryData] = useState<any[]>([]); 
-  
-  // NEW STATE: Holds our WHO Endemic Data
   const [endemicData, setEndemicData] = useState<any>({ malaria: 'N/A', tb: 'N/A', cholera: 'N/A' });
   const [isStatsLoading, setIsStatsLoading] = useState(false);
 
@@ -35,7 +33,12 @@ const RiskScores = () => {
       setIsLoading(true);
       const data = await healthService.getRiskScores();
       if (isMounted) {
-        setRiskData(data);
+        // NEW: Stamp the true global rank onto the data before saving it to state
+        const rankedData = data.map((country: any, idx: number) => ({
+          ...country,
+          globalRank: idx + 1
+        }));
+        setRiskData(rankedData);
         setIsLoading(false);
       }
     };
@@ -48,14 +51,12 @@ const RiskScores = () => {
     if (selectedCountry) {
       setIsStatsLoading(true);
       const fetchDeepDive = async () => {
-        
-        // UPGRADED: We now fetch COVID data AND 3 WHO Endemic Indicators simultaneously!
         const [stats, historyObj, malariaRes, choleraRes, tbRes] = await Promise.all([
           healthService.getLiveCountryStats(selectedCountry.id),
           healthService.getHistoricalData(selectedCountry.id),
           healthService.getEndemicData(selectedCountry.id, 'MALARIA_EST_INCIDENCE'),
           healthService.getEndemicData(selectedCountry.id, 'CHOLERA_0000000001'),
-          healthService.getEndemicData(selectedCountry.id, 'WHS3_62') // TB Indicator
+          healthService.getEndemicData(selectedCountry.id, 'WHS3_62')
         ]);
         
         if (isMounted) {
@@ -71,7 +72,6 @@ const RiskScores = () => {
             setHistoryData([]); 
           }
 
-          // Parse the WHO data. The API returns an array, we grab the most recent [0] value
           const formatVal = (dataArr: any[]) => dataArr[0]?.NumericValue ? Number(dataArr[0].NumericValue).toLocaleString(undefined, { maximumFractionDigits: 1 }) : 'N/A';
           
           setEndemicData({
@@ -155,20 +155,22 @@ const RiskScores = () => {
                     <table className="w-full text-left border-collapse relative">
                       <thead className="sticky top-0 bg-white dark:bg-slate-900 z-10 shadow-sm">
                         <tr className="border-b border-slate-200 dark:border-slate-800">
-                          <th className="pb-3 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white dark:bg-slate-900">Rank</th>
+                          {/* UPDATED HEADER */}
+                          <th className="pb-3 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white dark:bg-slate-900">Global Rank</th>
                           <th className="pb-3 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white dark:bg-slate-900">Nation</th>
                           <th className="pb-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right bg-white dark:bg-slate-900">Score</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredLeaderboard.map((country, idx) => (
+                        {filteredLeaderboard.map((country) => (
                           <tr 
                             key={country.id} 
                             onClick={() => setSelectedCountry(country)}
                             className="group border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 cursor-pointer transition-colors"
                           >
+                            {/* UPDATED CELL: Uses the stamped globalRank */}
                             <td className="py-4 text-sm font-mono text-slate-500">
-                              {String(idx + 1).padStart(2, '0')}
+                              #{String(country.globalRank).padStart(2, '0')}
                             </td>
                             <td className="py-4 font-bold text-slate-900 dark:text-white group-hover:text-brand-red transition-colors">{country.name}</td>
                             <td className="py-4 text-right">
@@ -305,7 +307,7 @@ const RiskScores = () => {
                   </div>
                 </div>
 
-                {/* 3. NEW: ENDEMIC DISEASE SURVEILLANCE CARD */}
+                {/* 3. ENDEMIC DISEASE SURVEILLANCE CARD */}
                 <div className="theme-card rounded-3xl p-6 md:col-span-2 border-t-4 border-emerald-500/50">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -322,21 +324,18 @@ const RiskScores = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Malaria */}
                       <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
                         <Bug size={16} className="text-brand-orange mb-2" />
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Malaria Incidence</p>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">{endemicData.malaria}</p>
                         <p className="text-[10px] text-slate-500 mt-1">Cases per 1,000 population</p>
                       </div>
-                      {/* TB */}
                       <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
                         <Activity size={16} className="text-brand-red mb-2" />
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tuberculosis Incidence</p>
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">{endemicData.tb}</p>
                         <p className="text-[10px] text-slate-500 mt-1">Cases per 100,000 population</p>
                       </div>
-                      {/* Cholera */}
                       <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
                         <AlertTriangle size={16} className="text-amber-500 mb-2" />
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cholera Outbreaks</p>
@@ -359,7 +358,6 @@ const RiskScores = () => {
                     <div className="flex flex-col md:flex-row items-center justify-around gap-4 text-center">
                       
                       {(() => {
-                        // Grab the exact 3 integers from our new backend logic
                         const sysVal = selectedCountry.metrics?.systemic || 0;
                         const endVal = selectedCountry.metrics?.endemic || 0;
                         const livVal = selectedCountry.metrics?.live || 0;
@@ -367,7 +365,6 @@ const RiskScores = () => {
 
                         return (
                           <>
-                            {/* PART 1: SYSTEMIC */}
                             <div>
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Systemic Infrastructure</p>
                               <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">{sysVal}</p>
@@ -375,7 +372,6 @@ const RiskScores = () => {
                             
                             <div className="text-slate-300 dark:text-slate-700 font-black text-xl">+</div>
                             
-                            {/* PART 2: ENDEMIC */}
                             <div>
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Endemic Burden</p>
                               <p className="text-2xl font-bold text-emerald-500">{endVal}</p>
@@ -383,7 +379,6 @@ const RiskScores = () => {
 
                             <div className="text-slate-300 dark:text-slate-700 font-black text-xl">+</div>
                             
-                            {/* PART 3: LIVE */}
                             <div>
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Live Outbreak Penalty</p>
                               <p className="text-2xl font-bold text-brand-red">{livVal}</p>
@@ -391,7 +386,6 @@ const RiskScores = () => {
                             
                             <div className="text-slate-300 dark:text-slate-700 font-black text-xl">=</div>
 
-                            {/* RESULT */}
                             <div className="bg-white dark:bg-slate-950 p-3 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Final Score</p>
                               <p className="text-3xl font-black text-brand-red">{finalScoreVal}</p>
