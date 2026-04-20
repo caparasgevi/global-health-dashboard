@@ -69,6 +69,7 @@ const teamMembers: TeamMember[] = [
 
 const OurTeam: React.FC = () => {
   const [isRevealed, setIsRevealed] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<number | null>(null);
 
   return (
     <div
@@ -123,52 +124,71 @@ const OurTeam: React.FC = () => {
               animate={{ opacity: 1 }}
               className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8 w-full"
             >
-              {teamMembers.map((member) => (
-                <motion.div
-                  key={member.id}
-                  whileHover={{ y: -10 }}
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: member.id * 0.1, duration: 0.5 }}
-                  className="group relative h-[480px] bg-white dark:bg-[#121212] rounded-2xl overflow-hidden flex flex-col shadow-xl border border-gray-100 dark:border-white/5"
-                >
-                  {/* Image Container */}
-                  <div className="relative w-full h-[340px] overflow-hidden bg-gray-200 dark:bg-gray-800">
-                    <img
-                      src={member.image}
-                      alt={member.name}
-                      className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-0"
-                    />
-                    <img
-                      src={member.hoverImage}
-                      alt={`${member.name} focus`}
-                      className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100 scale-105 group-hover:scale-100"
-                    />
+              {teamMembers.map((member) => {
+                const isActive = selectedMember === member.id;
 
-                    {/* Transparent Contribution Overlay */}
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] p-6 flex flex-col justify-center items-center text-center opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out translate-y-4 group-hover:translate-y-0">
-                      <h4 className="text-[var(--color-brand-red)] text-[11px] uppercase tracking-[0.2em] font-black mb-3 drop-shadow-md">
-                        Core Contributions
-                      </h4>
-                      <div className="w-10 h-[2px] bg-white/30 mb-4 rounded-full" />
-                      <p className="text-white text-[12px] leading-relaxed font-bold drop-shadow-lg px-2">
-                        {member.contribution}
+                return (
+                  <motion.div
+                    key={member.id}
+                    whileHover={{ y: -10 }}
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: member.id * 0.1, duration: 0.5 }}
+                    // Toggle selection on tap for mobile
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedMember(isActive ? null : member.id);
+                    }}
+                    className="group relative h-[480px] bg-white dark:bg-[#121212] rounded-2xl overflow-hidden flex flex-col shadow-xl border border-gray-100 dark:border-white/5 cursor-pointer"
+                  >
+                    <div className="relative w-full h-[340px] overflow-hidden bg-gray-200 dark:bg-gray-800">
+                      {/* Primary Image: Hides on hover OR if active on mobile */}
+                      <img
+                        src={member.image}
+                        alt={member.name}
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-0 ${
+                          isActive ? "opacity-0" : "opacity-100"
+                        }`}
+                      />
+                      {/* Hover/Active Image: Shows on hover OR if active on mobile */}
+                      <img
+                        src={member.hoverImage}
+                        alt={`${member.name} focus`}
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 scale-105 group-hover:scale-100 group-hover:opacity-100 ${
+                          isActive ? "opacity-100 scale-100" : "opacity-0"
+                        }`}
+                      />
+
+                      <div
+                        className={`absolute inset-0 bg-black/70 backdrop-blur-[2px] p-6 flex flex-col justify-center items-center text-center transition-all duration-500 ease-in-out translate-y-4 group-hover:translate-y-0 group-hover:opacity-100 ${
+                          isActive ? "opacity-100 translate-y-0" : "opacity-0"
+                        }`}
+                      >
+                        <h4 className="text-[var(--color-brand-red)] text-[11px] uppercase tracking-[0.2em] font-black mb-3 drop-shadow-md">
+                          Core Contributions
+                        </h4>
+                        <div className="w-10 h-[2px] bg-white/30 mb-4 rounded-full" />
+                        <p className="text-white text-[12px] leading-relaxed font-bold drop-shadow-lg px-2">
+                          {member.contribution}
+                        </p>
+                        {/* Mobile Hint */}
+                        <span className="mt-4 text-[9px] text-white/40 uppercase tracking-widest md:hidden">
+                          Tap to close
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-grow flex flex-col justify-center p-5 text-center bg-white dark:bg-[#121212]">
+                      <h3 className="font-montserrat font-bold text-[14px] lg:text-[15px] leading-tight text-gray-900 dark:text-gray-100">
+                        {member.name}
+                      </h3>
+                      <p className="font-inter text-[11px] font-semibold uppercase tracking-wider mt-2 text-[var(--color-brand-orange)] opacity-90">
+                        {member.role}
                       </p>
                     </div>
-                  </div>
-
-                  {/* Info Section */}
-                  <div className="flex-grow flex flex-col justify-center p-5 text-center bg-white dark:bg-[#121212]">
-                    <h3 className="font-montserrat font-bold text-[14px] lg:text-[15px] leading-tight text-gray-900 dark:text-gray-100">
-                      {member.name}
-                    </h3>
-                    {/* ENHANCED ROLE LABEL */}
-                    <p className="font-inter text-[11px] font-semibold uppercase tracking-wider mt-2 text-[var(--color-brand-orange)] opacity-90">
-                      {member.role}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>
