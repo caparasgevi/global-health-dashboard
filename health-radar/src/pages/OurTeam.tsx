@@ -71,7 +71,9 @@ const OurTeam: React.FC = () => {
   return (
     <div
       id="our-team"
-      className="min-h-screen py-12 md:py-20 px-4 flex flex-col items-center bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-500"
+      className={`py-12 md:py-20 px-4 flex flex-col items-center bg-gray-50 dark:bg-[#0a0a0a] transition-all duration-500 ${
+        isRevealed ? "pb-20" : "pb-10"
+      }`}
       onClick={() => setSelectedMember(null)}
     >
       {/* Header Section */}
@@ -85,8 +87,7 @@ const OurTeam: React.FC = () => {
           <span className="text-[var(--color-brand-red)]">Expert Team</span>
         </motion.h1>
         <p className="text-gray-500 dark:text-gray-400 max-w-lg mx-auto font-medium px-4 text-sm md:text-base">
-          The multidisciplinary innovators behind HealthRadar's predictive
-          surveillance technology.
+          The multidisciplinary team dedicated to advancing HealthRadar's predictive surveillance and public health technology.
         </p>
       </div>
 
@@ -102,21 +103,28 @@ const OurTeam: React.FC = () => {
                 e.stopPropagation();
                 setIsRevealed(true);
               }}
-              className="cursor-pointer group relative rounded-3xl overflow-hidden w-full max-w-4xl h-[250px] sm:h-[350px] md:h-[450px] shadow-2xl border border-white/20 bg-gray-200 dark:bg-gray-800"
+              className="cursor-pointer group relative rounded-3xl overflow-hidden w-full max-w-4xl aspect-[16/9] md:aspect-video shadow-2xl border border-white/20 bg-slate-200 dark:bg-slate-800"
             >
               <img
                 src={teamImg}
                 alt="Group Preview"
-                className="w-full h-full object-contain md:object-cover object-center transition-transform duration-1000 group-hover:scale-105"
+                className="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent flex flex-col items-center justify-end pb-6 md:pb-12 opacity-100 transition-opacity">
-                <motion.span
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col items-center justify-end pb-8 md:pb-16 opacity-100 transition-all duration-500 group-hover:bg-black/40">
+                <motion.div
                   animate={{ y: [0, -5, 0] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-5 py-2 md:px-8 md:py-3 rounded-full text-xs md:text-base font-bold shadow-xl border border-white/10 hover:bg-[var(--color-brand-red)] hover:text-white transition-colors"
+                  transition={{
+                    repeat: Infinity,
+                    duration: 2.5,
+                    ease: "easeInOut",
+                  }}
+                  className="flex flex-col items-center gap-3"
                 >
-                  Discover the Team
-                </motion.span>
+                  <span className="text-white/60 text-[10px] md:text-xs uppercase tracking-[0.3em] font-bold">
+                    Click to reveal the team
+                  </span>
+                </motion.div>
               </div>
             </motion.div>
           ) : (
@@ -128,7 +136,6 @@ const OurTeam: React.FC = () => {
             >
               {teamMembers.map((member) => {
                 const isActive = selectedMember === member.id;
-
                 return (
                   <motion.div
                     key={member.id}
@@ -146,24 +153,15 @@ const OurTeam: React.FC = () => {
                       <img
                         src={member.image}
                         alt={member.name}
-                        className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 group-hover:opacity-0 ${
-                          isActive ? "opacity-0" : "opacity-100"
-                        }`}
+                        className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 group-hover:opacity-0 ${isActive ? "opacity-0" : "opacity-100"}`}
                       />
                       <img
                         src={member.hoverImage}
                         alt={`${member.name} focus`}
-                        className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 scale-105 group-hover:scale-100 group-hover:opacity-100 ${
-                          isActive ? "opacity-100 scale-100" : "opacity-0"
-                        }`}
+                        className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 scale-105 group-hover:scale-100 group-hover:opacity-100 ${isActive ? "opacity-100 scale-100" : "opacity-0"}`}
                       />
-
                       <div
-                        className={`absolute inset-0 bg-black/80 backdrop-blur-[3px] p-6 flex flex-col justify-center items-center text-center transition-all duration-500 ease-in-out ${
-                          isActive
-                            ? "opacity-100 translate-y-0"
-                            : "opacity-0 translate-y-4 md:group-hover:translate-y-0 md:group-hover:opacity-100"
-                        }`}
+                        className={`absolute inset-0 bg-black/80 backdrop-blur-[3px] p-6 flex flex-col justify-center items-center text-center transition-all duration-500 ease-in-out ${isActive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 md:group-hover:translate-y-0 md:group-hover:opacity-100"}`}
                       >
                         <h4 className="text-[var(--color-brand-red)] text-[10px] md:text-[11px] uppercase tracking-[0.2em] font-black mb-3">
                           Core Contributions
@@ -172,12 +170,8 @@ const OurTeam: React.FC = () => {
                         <p className="text-white text-[11px] md:text-[12px] leading-relaxed font-medium px-2">
                           {member.contribution}
                         </p>
-                        <span className="mt-6 text-[9px] text-white/40 uppercase tracking-widest md:hidden">
-                          Tap to close
-                        </span>
                       </div>
                     </div>
-
                     <div className="flex-grow flex flex-col justify-center p-4 md:p-5 text-center bg-white dark:bg-[#121212]">
                       <h3 className="font-montserrat font-bold text-[13px] md:text-[15px] leading-tight text-gray-900 dark:text-gray-100">
                         {member.name}
