@@ -319,6 +319,54 @@ const Home = () => {
               <h2 className="text-sm font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em] mb-1">Risk Assessment</h2>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">Regional <span className="text-brand-orange">Threat Level</span></h3>
             </div>
+
+            {/* ── Indicator basis table (collapsible) ───────────────────────── */}
+            <AnimatePresence initial={false}>
+              {showBasis && (
+                <m.div
+                  key="basis"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden mb-6"
+                >
+                  <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 p-3">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
+                      Composite Score — WHO GHO Indicators
+                    </p>
+
+                    {/* Column headers */}
+                    <div className="grid grid-cols-[1fr_auto] gap-x-3 mb-1 px-1">
+                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-600">Indicator</span>
+                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-600 text-right">Weight</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {THREAT_INDICATORS.map((ind) => (
+                        <div key={ind.code} className="grid grid-cols-[1fr_auto] gap-x-3 items-center px-1 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors">
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300 leading-tight">{ind.label}</p>
+                            <p className="text-[8px] font-medium text-slate-400 dark:text-slate-500 font-mono leading-tight">{ind.code}</p>
+                          </div>
+                          <span className="text-[10px] font-black text-brand-orange tabular-nums">{ind.weight}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Method note */}
+                    <p className="text-[8px] leading-relaxed text-slate-400 dark:text-slate-500 mt-2 pt-2 border-t border-slate-200 dark:border-slate-700/50">
+                      Each indicator is normalised to 0–100 against a disease-specific ceiling, then combined as a weighted average. Only indicators with regional data contribute. Scores &gt; 60 → <span className="text-brand-red font-black">HIGH</span> · &gt; 25 → <span className="text-brand-orange font-black">MODERATE</span> · else <span className="font-black text-slate-500">LOW</span>.
+                    </p>
+
+                    {/* Source */}
+                    <p className="text-[8px] text-slate-400 dark:text-slate-500 mt-1 font-medium">
+                      Source: <span className="font-black">WHO Global Health Observatory</span> — ghoapi.azureedge.net
+                    </p>
+                  </div>
+                </m.div>
+              )}
+            </AnimatePresence>
             
             <div className="space-y-7">
               {isLoading ? (
