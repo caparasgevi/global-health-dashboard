@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
 
     const observerOptions = {
       root: null,
-      rootMargin: '-80px 0px -50% 0px', 
+      rootMargin: '-100px 0px -40% 0px', // Adjusted margin for better trigger timing
       threshold: 0
     };
 
@@ -30,13 +30,15 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const id = entry.target.id;
-          const formattedId = navItems.find(
+          
+          // Improved mapping: finds the navItem that matches the ID
+          const matchedItem = navItems.find(
             item => item.toLowerCase().replace(/\s+/g, '-') === id
           );
           
-          if (formattedId) {
-            setActiveItem(formattedId);
-          } else if (id === 'home') {
+          if (matchedItem) {
+            setActiveItem(matchedItem);
+          } else if (id === 'home' || id === 'hero') {
             setActiveItem('Home');
           }
         }
@@ -45,14 +47,18 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
 
     const observer = new IntersectionObserver(handleIntersect, observerOptions);
 
+    // Observe each section based on formatted navItem names
     navItems.forEach((item) => {
       const elementId = item.toLowerCase().replace(/\s+/g, '-');
       const element = document.getElementById(elementId);
-      if (element) observer.observe(element);
+      if (element) {
+        observer.observe(element);
+      }
     });
 
     const handleScroll = () => {
-      if (window.scrollY < 50 && location.pathname === '/') {
+      // Logic for snapping back to "Home" when at the very top
+      if (window.scrollY < 100 && location.pathname === '/') {
         setActiveItem('Home');
       }
     };
@@ -63,24 +69,22 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
       observer.disconnect();
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [location.pathname]);
+  }, [location.pathname, navItems]); // Added navItems to dependency array
 
   const scrollToSection = (id: string) => {
     setIsMenuOpen(false); 
     if (location.pathname !== '/') {
       navigate('/');
-      setTimeout(() => {
-        executeScroll(id);
-      }, 100);
+      setTimeout(() => executeScroll(id), 150); // Increased timeout slightly for component mount
     } else {
       executeScroll(id);
     }
   };
 
   const executeScroll = (id: string) => {
-    setActiveItem(id);
     if (id === 'Home') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      setActiveItem('Home');
       return;
     }
 
@@ -96,6 +100,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
         top: offsetPosition,
         behavior: 'smooth'
       });
+      setActiveItem(id);
     }
   };
 
@@ -147,7 +152,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
           ))}
         </nav>
 
-        {/* Action Buttons (Theme + Mobile Trigger) */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsDark(!isDark)}
@@ -160,11 +165,9 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
             )}
           </button>
 
-          {/* Triple Line Button (Mobile Menu Trigger) */}
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="flex lg:hidden flex-col justify-center items-center w-10 h-10 rounded-xl bg-brand-red text-white shadow-lg shadow-brand-red/20 active:scale-95 transition-transform"
-            aria-label="Toggle Menu"
           >
             <div className={`w-5 h-0.5 bg-white transition-all duration-300 mb-1 ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
             <div className={`w-5 h-0.5 bg-white transition-all duration-300 mb-1 ${isMenuOpen ? 'opacity-0' : ''}`} />
@@ -173,7 +176,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
         </div>
       </div>
 
-      {/* Mobile Navigation Popup */}
+      {/* Mobile Menu */}
       <div className={`
         lg:hidden fixed inset-x-0 top-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-300 origin-top
         ${isMenuOpen ? 'scale-y-100 opacity-100 visible' : 'scale-y-0 opacity-0 invisible'}
@@ -183,8 +186,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
             <button
               key={item}
               onClick={() => scrollToSection(item)}
-              className={`
-                w-full text-left px-5 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all
+              className={`w-full text-left px-5 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all
                 ${activeItem === item 
                   ? 'bg-brand-red/10 text-brand-red border-l-4 border-brand-red' 
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
