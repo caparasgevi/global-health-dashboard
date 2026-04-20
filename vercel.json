@@ -1,14 +1,20 @@
 {
   "version": 2,
   "functions": {
-    "backend/index.ts": {
-      "runtime": "nodejs22.x"
+    "backend/index.js": {
+      "runtime": "nodejs20.x"
     }
   },
+  "builds": [
+    {
+      "src": "backend/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/backend/index.ts"
+      "destination": "/backend/index.js"
     },
     {
       "source": "/(.*)",
