@@ -210,3 +210,5 @@ const OurTeam: React.FC = () => {
     </div>
   );
 };
+
+export default OurTeam;
