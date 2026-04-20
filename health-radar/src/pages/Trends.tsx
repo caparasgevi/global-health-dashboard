@@ -373,19 +373,9 @@ const Trends: React.FC = () => {
   }, [searchQuery, activeCountry]);
 
   const allCountries = useMemo(() => iso.all(), []);
-
   const suggestions = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 1) return [];
-    
-    const query = searchQuery.toLowerCase();
-    
-    return allCountries
-      .filter(c => 
-        // para magstart sa 1st letter ng country
-        c.country.toLowerCase().startsWith(query)
-      )
-      .sort((a, b) => a.country.localeCompare(b.country)) // for alphabetical purposes only
-      .slice(0, 8);
+    if (!searchQuery || searchQuery.length < 2) return [];
+    return allCountries.filter(c => c.country.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 8);
   }, [searchQuery, allCountries]);
 
   const formatStatValue = (val: number | undefined) => {
@@ -402,26 +392,16 @@ const Trends: React.FC = () => {
   }, [liveStats]);
 
   useEffect(() => {
+    if (!activeCountry) return;
     let isMounted = true;
+    setVisibleCount(4);
     const controller = new AbortController();
 
     const findActiveDiseases = async () => {
-      if (!activeCountry || activeCountry.length !== 3) {
-        if (isMounted) {
-          setDynamicDiseases([]);
-          setIsSearchingData(false);
-        }
-        return;
-      }
-
       setIsSearchingData(true);
-      setVisibleCount(4);
 
       try {
         const indicators = await healthService.getRankedIndicators({ signal: controller.signal });
-        
-        if (!Array.isArray(indicators)) return;
-
         const results: { name: string, code: string }[] = [];
         const usedDiseaseNames = new Set<string>();
 
@@ -447,9 +427,7 @@ const Trends: React.FC = () => {
                 if (isUsefulIndicator(data)) {
                   return { name: ind.IndicatorName, code: ind.IndicatorCode, root };
                 }
-              } catch (e: any) {
-                return null;
-              }
+              } catch { return null; }
               return null;
             })
           );
@@ -472,23 +450,14 @@ const Trends: React.FC = () => {
           setDynamicDiseases([{ name: "Life Expectancy at Birth", code: "WHOSIS_000001" }]);
         }
       } catch (err: any) {
-        const isCancel = err?.name === 'CanceledError' || 
-                         err?.name === 'AbortError' || 
-                         err?.code === 'ERR_CANCELED';
-
-        if (!isCancel && isMounted) {
-          console.error("Discovery failed:", err);
-        }
+        if (err?.name !== 'AbortError') console.error("Discovery failed:", err);
       } finally {
         if (isMounted) setIsSearchingData(false);
       }
     };
 
     findActiveDiseases();
-    return () => { 
-      isMounted = false; 
-      controller.abort(); 
-    };
+    return () => { isMounted = false; controller.abort(); };
   }, [activeCountry]);
 
   useEffect(() => {
@@ -515,195 +484,162 @@ const Trends: React.FC = () => {
   const previewDiseases = useMemo(() => dynamicDiseases.slice(0, visibleCount), [dynamicDiseases, visibleCount]);
 
   return (
-  <div id="trends" className="py-12 bg-white dark:bg-slate-950 transition-colors duration-300 scroll-mt-20">
-    <div className="max-w-7xl mx-auto px-4">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
-        <div className="text-center lg:text-left">
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-white font-montserrat">
-            Health Risk <span className="text-brand-red">Analysis</span>
-          </h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-400 max-w-2xl text-lg font-poppins">
-            {activeCountry ? (
-              <>Dynamic report for <span className="font-bold text-slate-900 dark:text-white underline decoration-brand-red/30">{searchQuery}</span></>
-            ) : "Select a destination to initiate a comprehensive screening for infectious outbreaks."}
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto relative">
-          {/* Return Button */}
-          {activeCountry && (
+    <div id="trends" className="py-12 bg-white dark:bg-slate-950 transition-colors duration-300 scroll-mt-20">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
+          <div className="text-center lg:text-left">
+            <h1 className="text-4xl font-bold text-slate-900 dark:text-white font-montserrat">
+              Health Risk <span className="text-brand-red">Analysis</span>
+            </h1>
+            <p className="mt-2 text-slate-600 dark:text-slate-400 max-w-2xl text-lg font-poppins">
+              {activeCountry ? (
+                <>Dynamic report for <span className="font-bold text-slate-900 dark:text-white underline decoration-brand-red/30">{searchQuery}</span></>
+              ) : "Select a destination to initiate a comprehensive screening for infectious outbreaks."}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            {activeCountry && (
+              <button
+                onClick={returnButton}
+                className="w-fit sm:w-auto px-4 py-2 md:px-5 md:py-3 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-all border border-slate-200 dark:border-white/10 flex items-center justify-center gap-2 group shrink-0"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 md:h-3.5 md:w-3.5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Return</span>
+              </button>
+            )}
             <button
-              onClick={returnButton}
-              className="w-full sm:w-auto px-4 py-2 md:px-5 md:py-3 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-all border border-slate-200 dark:border-white/10 flex items-center justify-center gap-2 group shrink-0"
+              disabled={!activeCountry}
+              onClick={() => navigate(`/full-report?country=${activeCountry}&query=${encodeURIComponent(searchQuery)}`)}
+              className="px-6 py-3 bg-brand-red text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-brand-red/90 transition-all disabled:opacity-30 flex items-center gap-2"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 md:h-3.5 md:w-3.5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              <span>Return</span>
+              {isSearchingData && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              View Full List
             </button>
-          )}
+            <div className="relative w-full max-sm">
+              <input
+                type="text"
+                placeholder="Enter a country name"
+                value={searchQuery}
+                onFocus={() => setShowSuggestions(true)}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                className="bg-slate-100 dark:bg-slate-900 border-none rounded-2xl text-slate-900 dark:text-white px-4 py-3 w-full font-medium focus:ring-2 focus:ring-brand-red/20"
+              />
 
-          {/* Full Report Button */}
-          <button
-            disabled={!activeCountry}
-            onClick={() => navigate(`/full-report?country=${activeCountry}&query=${encodeURIComponent(searchQuery)}`)}
-            className="w-full sm:w-auto px-6 py-3 bg-brand-red text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-brand-red/90 transition-all disabled:opacity-30 flex items-center justify-center gap-2 shrink-0"
-          >
-            {isSearchingData && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-            View Full List
-          </button>
-
-          <div className="relative w-full max-w-sm">
-          <input
-            type="text"
-            placeholder="Enter a country name"
-            value={searchQuery}
-            autoComplete="off"
-            onFocus={() => {
-              if (searchQuery.length >= 2) {
-                setShowSuggestions(true);
-              }
-            }}
-            onChange={(e) => {
-              const val = e.target.value;
-              setSearchQuery(val);
-              if (activeCountry) {
-                setActiveCountry('');
-                setDynamicDiseases([]);
-              }
-              setShowSuggestions(true);
-            }}
-            onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
-            className="bg-slate-100 dark:bg-slate-900 border-none rounded-2xl text-slate-900 dark:text-white px-4 py-3 w-full font-medium focus:ring-2 focus:ring-brand-red/20 outline-none"
-          />
-
-            {/* Suggestions Dropdown */}
-            {showSuggestions && suggestions.length > 0 && (
-              <div 
-                className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-y-auto max-h-[300px] transition-all"
-                style={{ zIndex: 9999 }}
-              >
-                {suggestions.map((c) => (
-                  <button 
-                    key={c.alpha3} 
-                    onMouseDown={(e) => {
-                      e.preventDefault(); 
-                      e.stopPropagation();
-                      selectCountry(c.country, c.alpha3);
-                      setShowSuggestions(false);
-                    }}
-                    className="w-full text-left px-5 py-4 text-sm hover:bg-brand-red/10 text-slate-700 dark:text-slate-300 border-b last:border-0 border-slate-100 dark:border-white/5 flex justify-between items-center transition-colors cursor-pointer group"
-                  >
-                    <span className="font-bold group-hover:text-brand-red transition-colors">{c.country}</span>
-                    <span className="text-[10px] opacity-40 font-mono bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded-md">
-                      {c.alpha3}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {activeCountry && liveStats && (
-        <div className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2 duration-500">
-            {[
-              { label: 'Active Cases', value: liveStats.active, color: 'text-red-500', desc: 'Current patients undergoing treatment or isolation.' },
-              { label: 'Today Cases', value: liveStats.todayCases, color: 'text-brand-red', desc: 'New laboratory-confirmed cases reported in the last 24h.' },
-              { label: 'Recovered', value: liveStats.recovered, color: 'text-red-500', desc: 'Total individuals cleared of infection since outbreak start.' },
-              { label: 'Critical', value: liveStats.critical, color: 'text-red-500', desc: 'Patients currently requiring intensive care or ventilation.' }
-            ].map((stat, i) => (
-              <div key={i} className="group bg-slate-50 dark:bg-slate-900/40 p-5 rounded-2xl border border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20 transition-all flex flex-col h-full">
-                <div className="flex justify-between items-start mb-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.label}</p>
-                  <div className={`w-1.5 h-1.5 rounded-full ${stat.value === 0 ? 'bg-slate-300' : 'bg-brand-red'} animate-pulse`} />
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                  {suggestions.map((c) => (
+                    <button key={c.alpha3} onClick={() => selectCountry(c.country, c.alpha3)} className="w-full text-left px-5 py-3 text-sm hover:bg-brand-red/10 text-slate-700 dark:text-slate-300 border-b last:border-0 border-slate-100 dark:border-white/5 flex justify-between items-center">
+                      <span className="font-bold">{c.country}</span>
+                      <span className="text-[10px] opacity-40 font-mono bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded-md">{c.alpha3}</span>
+                    </button>
+                  ))}
                 </div>
-                <p className={`text-2xl font-bold ${stat.color} mb-1`}>
-                  {formatStatValue(stat.value)}
-                </p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-500 leading-relaxed font-medium mt-auto">{stat.desc}</p>
-              </div>
-            ))}
-          </div>
-          {lastUpdatedString && (
-            <p className="text-[10px] text-right mt-3 text-slate-400 italic">Official Data provided by WHO API. Last updated: {lastUpdatedString}</p>
-          )}
-        </div>
-      )}
-
-      {activeCountry && <PathogenVelocityIndex countryCode={activeCountry} />}
-
-      {activeCountry && isSearchingData && dynamicDiseases.length === 0 ? (
-        <div className="h-64 flex flex-col items-center justify-center text-slate-400">
-          <div className="w-10 h-10 border-4 border-brand-red border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="animate-pulse font-medium">Performing Deep Risk Assessment...</p>
-        </div>
-      ) : activeCountry && (dynamicDiseases.length > 0 || isSearchingData) ? (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {previewDiseases.map((disease, index) => (
-              <div
-                key={disease.code}
-                ref={index === previewDiseases.length - 1 ? lastElementRef : null}
-                className="group relative flex flex-col bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-white/5 overflow-hidden min-h-[450px] transition-all"
-              >
-                <div className="p-6 pb-0 flex justify-between items-start gap-4 min-h-[4rem]">
-                  <span className="bg-brand-red/10 text-brand-red text-[10px] font-black px-3 py-1 rounded-full border border-brand-red/20"> HISTORICAL TREND </span>
-                  <a
-                    href={`https://www.google.com/search?q=${encodeURIComponent(`${disease.name} cases in ${searchQuery} WHO report`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] font-bold uppercase tracking-widest bg-brand-red text-white px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
-                  >
-                    Google Search ↗
-                  </a>
-                </div>
-                <div className="flex-1 p-4 pt-0">
-                  <Suspense fallback={<ChartSkeleton />}>
-                    <TrendChart countryCode={activeCountry} indicatorCode={disease.code} title={disease.name} />
-                  </Suspense>
-                </div>
-              </div>
-            ))}
-
-            {isSearchingData && dynamicDiseases.length < 4 && (
-              <div className="min-h-[450px] border-2 border-dashed border-slate-100 dark:border-white/5 rounded-3xl flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-5 h-5 border-2 border-brand-red border-t-transparent rounded-full animate-spin" />
-                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Analyzing Indicators...</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {dynamicDiseases.length > 0 && (
-            <div className="mt-12 space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-              <div className="text-center lg:text-left border-b border-slate-100 dark:border-white/5 pb-6">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Cross-Border Benchmarking</h2>
-                <p className="text-slate-500 text-sm italic">Comparing {searchQuery} against discovered global peers.</p>
-              </div>
-              <div className="grid grid-cols-1 gap-8">
-                {[
-                  { name: "Tuberculosis Incidence", code: "MDG_0000000001" },
-                  { name: "Measles Surveillance", code: "WHS3_62" },
-                  { name: "Malaria Reported Cases", code: "MALARIA_EST_CASES" }
-                ].map((disease) => (
-                  <Suspense key={disease.code} fallback={<div className="h-80 bg-slate-50 dark:bg-slate-900/20 rounded-[2.5rem] animate-pulse" />}>
-                    <ComparisonChart activeCountryCode={activeCountry} indicatorCode={disease.code} indicatorName={disease.name} />
-                  </Suspense>
-                ))}
-              </div>
+              )}
             </div>
-          )}
-        </>
-      ) : (
-        !activeCountry && <DefaultHealthDashboard />
-      )}
+          </div>
+        </div>
+
+        {activeCountry && liveStats && (
+          <div className="mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2 duration-500">
+              {[
+                { label: 'Active Cases', value: liveStats.active, color: 'text-red-500', desc: 'Current patients undergoing treatment or isolation.' },
+                { label: 'Today Cases', value: liveStats.todayCases, color: 'text-brand-red', desc: 'New laboratory-confirmed cases reported in the last 24h.' },
+                { label: 'Recovered', value: liveStats.recovered, color: 'text-red-500', desc: 'Total individuals cleared of infection since outbreak start.' },
+                { label: 'Critical', value: liveStats.critical, color: 'text-red-500', desc: 'Patients currently requiring intensive care or ventilation.' }
+              ].map((stat, i) => (
+                <div key={i} className="group bg-slate-50 dark:bg-slate-900/40 p-5 rounded-2xl border border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20 transition-all flex flex-col h-full">
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.label}</p>
+                    <div className={`w-1.5 h-1.5 rounded-full ${stat.value === 0 ? 'bg-slate-300' : 'bg-brand-red'} animate-pulse`} />
+                  </div>
+                  <p className={`text-2xl font-bold ${stat.color} mb-1`}>
+                    {formatStatValue(stat.value)}
+                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-500 leading-relaxed font-medium mt-auto">{stat.desc}</p>
+                </div>
+              ))}
+            </div>
+            {lastUpdatedString && (
+              <p className="text-[10px] text-right mt-3 text-slate-400 italic">Official Data provided by WHO API. Last updated: {lastUpdatedString}</p>
+            )}
+          </div>
+        )}
+
+        {activeCountry && <PathogenVelocityIndex countryCode={activeCountry} />}
+
+        {activeCountry && isSearchingData && dynamicDiseases.length === 0 ? (
+          <div className="h-64 flex flex-col items-center justify-center text-slate-400">
+            <div className="w-10 h-10 border-4 border-brand-red border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="animate-pulse font-medium">Performing Deep Risk Assessment...</p>
+          </div>
+        ) : activeCountry && (dynamicDiseases.length > 0 || isSearchingData) ? (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {previewDiseases.map((disease, index) => (
+                <div
+                  key={disease.code}
+                  ref={index === previewDiseases.length - 1 ? lastElementRef : null}
+                  className="group relative flex flex-col bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-white/5 overflow-hidden min-h-[450px] transition-all"
+                >
+                  <div className="p-6 pb-0 flex justify-between items-start gap-4 min-h-[4rem]">
+                    <span className="bg-brand-red/10 text-brand-red text-[10px] font-black px-3 py-1 rounded-full border border-brand-red/20"> HISTORICAL TREND </span>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(`${disease.name} cases in ${searchQuery} WHO report`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-bold uppercase tracking-widest bg-brand-red text-white px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
+                    >
+                      Google Search ↗
+                    </a>
+                  </div>
+                  <div className="flex-1 p-4 pt-0">
+                    <Suspense fallback={<ChartSkeleton />}>
+                      <TrendChart countryCode={activeCountry} indicatorCode={disease.code} title={disease.name} />
+                    </Suspense>
+                  </div>
+                </div>
+              ))}
+
+              {isSearchingData && dynamicDiseases.length < 4 && (
+                <div className="min-h-[450px] border-2 border-dashed border-slate-100 dark:border-white/5 rounded-3xl flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-brand-red border-t-transparent rounded-full animate-spin" />
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Analyzing Indicators...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {dynamicDiseases.length > 0 && (
+              <div className="mt-12 space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+                <div className="text-center lg:text-left border-b border-slate-100 dark:border-white/5 pb-6">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Cross-Border Benchmarking</h2>
+                  <p className="text-slate-500 text-sm italic">Comparing {searchQuery} against discovered global peers.</p>
+                </div>
+                <div className="grid grid-cols-1 gap-8">
+                  {[
+                    { name: "Tuberculosis Incidence", code: "MDG_0000000001" },
+                    { name: "Measles Surveillance", code: "WHS3_62" },
+                    { name: "Malaria Reported Cases", code: "MALARIA_EST_CASES" }
+                  ].map((disease) => (
+                    <Suspense key={disease.code} fallback={<div className="h-80 bg-slate-50 dark:bg-slate-900/20 rounded-[2.5rem] animate-pulse" />}>
+                      <ComparisonChart activeCountryCode={activeCountry} indicatorCode={disease.code} indicatorName={disease.name} />
+                    </Suspense>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          !activeCountry && <DefaultHealthDashboard />
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default Trends;
