@@ -8,6 +8,7 @@ import shaneImg from "../assets/ourTeam/Shane_image.png";
 import elijahImg from "../assets/ourTeam/Elijah_image.png";
 import leobertImg from "../assets/ourTeam/Leobert_image.png";
 import leobertHover from "../assets/ourTeam/Leobert_hoverImage.jpg";
+import teamImg from "../assets/ourTeam/ourTeam.png";
 
 interface TeamMember {
   id: number;
@@ -101,7 +102,7 @@ const OurTeam: React.FC = () => {
               className="cursor-pointer group relative rounded-3xl overflow-hidden w-full max-w-3xl h-[450px] shadow-2xl border border-white/20"
             >
               <img
-                src="src/assets/ourTeam/ourTeam.png"
+                src={teamImg}
                 alt="Group Preview"
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
               />
