@@ -991,11 +991,16 @@ const Trends: React.FC = () => {
   const allCountries = useMemo(() => iso.all(), []);
 
   const suggestions = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 2) return [];
+    if (!searchQuery || searchQuery.length < 1) return [];
+    
+    const query = searchQuery.toLowerCase();
+    
     return allCountries
-      .filter((c) =>
-        c.country.toLowerCase().includes(searchQuery.toLowerCase()),
+      .filter(c => 
+        // para magstart sa 1st letter ng country
+        c.country.toLowerCase().startsWith(query)
       )
+      .sort((a, b) => a.country.localeCompare(b.country)) // for alphabetical purposes only
       .slice(0, 8);
   }, [searchQuery, allCountries]);
 
@@ -1191,12 +1196,13 @@ const Trends: React.FC = () => {
                   `/full-report?country=${activeCountry}&query=${encodeURIComponent(searchQuery)}`,
                 )
               }
-              className="px-6 py-3 bg-brand-red text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-brand-red/90 transition-all disabled:opacity-30 flex items-center gap-2"
+              className="
+                flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 sm:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white bg-brand-red rounded-xl transition-all             hover:bg-brand-red/90 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed"
             >
               {isSearchingData && (
-                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
               )}
-              View Full List
+              <span className="truncate">View Full List</span>
             </button>
             <div className="relative w-full max-sm">
               <input
