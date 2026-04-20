@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Point this to your new Express server
-const BACKEND_URL = "http://localhost:5000/api"; 
+const BACKEND_URL = "/api"; 
 
 let cachedIndicators: any[] | null = null;
 let _indicatorFetchPromise: Promise<any[]> | null = null; 
