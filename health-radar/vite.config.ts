@@ -14,7 +14,19 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
-    strictPort: false,
+    proxy: {
+      '/gho-api': {
+        target: 'https://ghoapi.azureedge.net/api',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/gho-api/, ''),
+      },
+      '/who-news': {
+        target: 'https://www.who.int',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/who-news/, ''),
+      },
+    },
   },
 });
