@@ -27,6 +27,23 @@ export const healthService = {
     } catch { return null; }
   },
 
+  getHistoricalData: async (code: string) => {
+    try {
+      const res = await backendClient.get(`/historical/${code}`);
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  getRiskScores: async () => {
+    try {
+      // Make sure backendClient is defined in your healthService file!
+      const res = await backendClient.get(`/risk-scores`);
+      return res.data || [];
+    } catch { return []; }
+  },
+
   getRankedIndicators: async (options?: { signal?: AbortSignal }) => {
     if (cachedIndicators) return cachedIndicators;
 
