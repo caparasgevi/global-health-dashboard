@@ -27,19 +27,28 @@ const RiskScores = () => {
 
   const pageVar = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 
-  useEffect(() => {
+ useEffect(() => {
     let isMounted = true;
     const fetchScores = async () => {
       setIsLoading(true);
-      const data = await healthService.getRiskScores();
-      if (isMounted) {
-        // NEW: Stamp the true global rank onto the data before saving it to state
-        const rankedData = data.map((country: any, idx: number) => ({
-          ...country,
-          globalRank: idx + 1
-        }));
-        setRiskData(rankedData);
-        setIsLoading(false);
+      try {
+        const data = await healthService.getRiskScores();
+        if (isMounted) {
+          // BUG FIX: Ensure data is an array before we try to map over it
+          if (Array.isArray(data) && data.length > 0) {
+            const rankedData = data.map((country: any, idx: number) => ({
+              ...country,
+              globalRank: idx + 1
+            }));
+            setRiskData(rankedData);
+          } else {
+            setRiskData([]); 
+          }
+        }
+      } catch (error) {
+        if (isMounted) setRiskData([]);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
     fetchScores();

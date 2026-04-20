@@ -8,7 +8,7 @@ const verificationCache: Record<string, any[]> = {};
 
 const backendClient = axios.create({
   baseURL: BACKEND_URL,
-  timeout: 15000 
+  timeout: 60000
 });
 
 export const getCachedIndicators = () => cachedIndicators;

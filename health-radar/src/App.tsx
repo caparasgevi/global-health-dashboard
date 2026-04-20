@@ -101,7 +101,7 @@ function App() {
                             <About />
                             <GlobalMap isDark={isDark} />
                             <Trends />
-                      <RiskScores />
+                            <RiskScores />
                             <OurTeam />
                           </div>
                         }

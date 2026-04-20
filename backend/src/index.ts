@@ -8,7 +8,6 @@ import path from 'path';
 dotenv.config();
 
 const app = express();
-// Render assigns a random port; this line ensures we use it.
 const PORT = Number(process.env.PORT) || 5000;
 const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 
@@ -24,7 +23,6 @@ try {
   console.warn('⚠️ Could not load healthiest-countries-2026.json. Ensure it is in the root backend folder.');
 }
 
-// Root Route - Crucial for Render's Health Check
 app.get('/', (req, res) => {
   res.send('Health Radar API is Live and Running.');
 });
@@ -78,7 +76,6 @@ app.get('/api/indicators', async (req: Request, res: Response) => {
   }
 });
 
-// Global baseline logic with local caching
 let threatCache: any[] | null = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 60 * 60 * 1000; 
@@ -151,14 +148,6 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/indicator-status/:country/:code', async (req: Request, res: Response) => {
-  const { country, code } = req.params;
-  try {
-    const response = await axios.get(`${GHO_BASE_URL}${code}?$format=json&$filter=SpatialDim eq '${String(country).toUpperCase()}'&$orderby=TimeDim desc&$top=10`);
-    res.json(response.data.value || []);
-  } catch (error) { res.status(500).json({ error: `Failed to fetch ${code} for ${country}` }); }
-});
-
 app.get('/api/risk-scores', async (req: Request, res: Response) => {
   try {
     const staticMap = new Map();
@@ -167,19 +156,20 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       if (item.country) staticMap.set(item.country.toLowerCase(), item);
     });
 
+    // BUG FIX 1: Prevent external API downtime from crashing the Promise.all
     const [diseaseResponse, whoResponse] = await Promise.all([
-      axios.get('https://disease.sh/v3/covid-19/countries?strict=false'),
-      axios.get(`${GHO_BASE_URL}DIMENSION/COUNTRY/DimensionValues`) 
+      axios.get('https://disease.sh/v3/covid-19/countries?strict=false', { timeout: 8000 }).catch(() => ({ data: [] })),
+      axios.get(`${GHO_BASE_URL}DIMENSION/COUNTRY/DimensionValues`, { timeout: 8000 }).catch(() => ({ data: { value: [] } }))
     ]);
 
     const diseaseData = diseaseResponse.data;
-    const whoCountries = whoResponse.data.value;
+    const whoCountries = whoResponse.data.value || [];
 
     const masterRoster = new Map();
     const diseaseMap = new Map();
 
     whoCountries.forEach((c: any) => {
-      masterRoster.set(c.Code, { iso3: c.Code, name: c.Title });
+      if (c.Code) masterRoster.set(c.Code, { iso3: c.Code, name: c.Title });
     });
 
     diseaseData.forEach((c: any) => {
@@ -193,17 +183,18 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
 
     const riskData = Array.from(masterRoster.values()).map((countryObj: any) => {
       const iso3 = countryObj.iso3;
-      const name = countryObj.name;
+      const name = countryObj.name || ''; // Ensure name is never undefined
 
       const liveData = diseaseMap.get(iso3) || {};
       const iso2 = liveData.countryInfo?.iso2;
-      const staticData = staticMap.get(iso2) || staticMap.get(name.toLowerCase()) || {};
+      
+      // BUG FIX 2: Safely lowercase the name
+      const nameLower = name ? name.toLowerCase() : '';
+      const staticData = staticMap.get(iso2) || staticMap.get(nameLower) || {};
 
       const healthIndex = staticData.CEOWorldGlobalHealthIndex_2025 || staticData.GlobalHealthSecurityIndex_2021 || 50;
       const rawVulnerability = 100 - healthIndex;
 
-      // --- NEW: TRIPLE THREAT MATH ---
-      // We round immediately to prevent floating point errors in the UI
       const systemicRisk = Math.round(rawVulnerability * 0.70);
       const endemicRisk = Math.round(rawVulnerability * 0.30);
 
@@ -212,7 +203,6 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       const CFR = cases > 0 ? (deaths / cases) : 0;
       const livePenalty = Math.round(Math.min((CFR / 0.05) * 15, 15));
 
-      // Final score is perfectly sum-able
       const finalScore = Math.min(systemicRisk + endemicRisk + livePenalty, 100);
       const testsPer1M = liveData.testsPerOneMillion || 0;
 
@@ -223,7 +213,6 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
         fatality: `${(CFR * 100).toFixed(2)}%`,
         testingRate: testsPer1M.toLocaleString(), 
         trend: finalScore > 75 ? 'Global Emergency' : 'Stable',
-        // Pass the exact 3 variables to the frontend
         metrics: {
           systemic: systemicRisk,
           endemic: endemicRisk,
@@ -301,7 +290,6 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
   }
 });
 
-// Final Fix: Listen on 0.0.0.0 regardless of environment
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
