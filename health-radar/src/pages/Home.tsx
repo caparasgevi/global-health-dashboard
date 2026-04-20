@@ -100,75 +100,99 @@ const Home = () => {
         const seenRegions = new Set();
         const uniqueProcessedData: any[] = [];
 
-        for (const item of rawData) {
-          const regionCode = item.SpatialDim;
+        if (Array.isArray(rawData)) {
+          for (const item of rawData) {
+            const regionCode = item.SpatialDim;
 
-          if (regionNames[regionCode] && !seenRegions.has(regionCode)) {
-            seenRegions.add(regionCode);
+            if (regionNames[regionCode] && !seenRegions.has(regionCode)) {
+              seenRegions.add(regionCode);
 
-            const value = Math.min(Math.round(item.NumericValue || 0), 100);
-            uniqueProcessedData.push({
-              id: regionCode,
-              region: regionNames[regionCode],
-              threatLevel: value,
-              status: value > 80 ? "Critical" : value > 60 ? "High" : value > 40 ? "Moderate" : "Low"
-            });
+              const value = Math.min(Math.round(item.NumericValue || 0), 100);
+              uniqueProcessedData.push({
+                id: regionCode,
+                region: regionNames[regionCode],
+                threatLevel: value,
+                status: value > 80 ? "Critical" : value > 60 ? "High" : value > 40 ? "Moderate" : "Low"
+              });
+            }
+
+            if (uniqueProcessedData.length === 6) break;
           }
-
-          if (uniqueProcessedData.length === 6) break;
         }
 
         if (isMounted) {
           setRegionalThreatData(uniqueProcessedData);
-          setLastUpdated(new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric' }));
+          setLastUpdated(new Date().toLocaleString('en-US', { 
+            hour: 'numeric', 
+            minute: 'numeric', 
+            hour12: true, 
+            month: 'short', 
+            day: 'numeric' 
+          }));
         }
       } catch (error: any) {
-        if (error?.name !== 'AbortError') console.error("Regional fetch error:", error);
+        const isCancel = error?.name === 'AbortError' || 
+                        error?.name === 'CanceledError' || 
+                        error?.code === 'ERR_CANCELED';
+        
+        if (!isCancel) {
+          console.error("Regional fetch error:", error);
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
     };
+
     fetchRegionalData();
-    return () => { isMounted = false; controller.abort(); };
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   useEffect(() => {
     let isMounted = true;
     let intervalId: ReturnType<typeof setInterval>;
-    const controller = new AbortController();
 
     const fetchOutbreaks = async () => {
       setOutbreakLoading(true);
       try {
-        const news = await healthService.getOutbreakNews(10, { signal: controller.signal });
-        const slides: OutbreakSlide[] = await Promise.all(
-          news.map(async (item: any, index: number) => {
-            const searchKeyword = item.title.split('-')[0].trim();
-            const pexelsImg = await healthService.getRelevantImage(`${searchKeyword} ${index}`);
-            return {
-              id: item.id,
-              title: item.title,
-              date: item.date,
-              image: pexelsImg ? `${pexelsImg}?sig=${item.id}` : `https://images.unsplash.com/photo-1584118624012-df456d49ecaa?sig=${item.id}`,
-              url: `https://www.google.com/search?q=${encodeURIComponent(item.title + " WHO Report")}`,
-              caption: item.summary.replace(/<[^>]+>/g, '').trim()
-            };
-          })
-        );
+        const news = await healthService.getOutbreakNews(10);
+        
         if (isMounted) {
+          const slides = news.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            date: new Date(item.date).toLocaleDateString('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
+            }),
+            image: item.image,
+            url: item.url,
+            caption: item.summary ? item.summary.replace(/<[^>]+>/g, '').trim() : 'No details available.'
+          }));
+
           setOutbreakSlides(slides);
           setActiveSlide(0);
         }
       } catch (err: any) {
-        if (err?.name !== 'AbortError') console.error('Outbreak fetch failed:', err);
+        console.error('Outbreak fetch failed:', err);
       } finally {
         if (isMounted) setOutbreakLoading(false);
       }
     };
 
     fetchOutbreaks();
-    intervalId = setInterval(() => { if (isMounted) fetchOutbreaks(); }, REFRESH_INTERVAL_MS);
-    return () => { isMounted = false; controller.abort(); clearInterval(intervalId); };
+    intervalId = setInterval(() => { 
+      if (isMounted) fetchOutbreaks(); 
+    }, REFRESH_INTERVAL_MS);
+
+    return () => { 
+      isMounted = false; 
+      clearInterval(intervalId); 
+    };
   }, []);
 
   const handleSlideChange = (swiper: any) => {
@@ -200,11 +224,10 @@ const Home = () => {
       </m.section>
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-        {/* ── Left: WHO Surveillance Slider ─────────────────────────────────── */}
         <m.div className="lg:col-span-8 w-full" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}>
           <div className="theme-card rounded-[2rem] p-5 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
 
+            {/* Header Section */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex flex-col items-start gap-2">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm shadow-emerald-500/5">
@@ -215,6 +238,8 @@ const Home = () => {
                     </svg>
                   </span>
                 </div>
+
+                {/* Main Title */}
                 <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                   WHO Surveillance Archive
                 </h3>
@@ -297,11 +322,9 @@ const Home = () => {
           </div>
         </m.div>
 
-        {/* ── Right: Regional Threat Level ──────────────────────────────────── */}
         <m.div className="lg:col-span-4 w-full" initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.1 }} variants={revealVariants}>
           <div className="theme-card rounded-[2rem] p-6 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
 
-            {/* Panel header + "Basis" toggle */}
             <div className="mb-6">
               <div className="flex items-start justify-between gap-2 mb-1">
                 <h2 className="text-sm font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em]">Risk Assessment</h2>
@@ -316,7 +339,6 @@ const Home = () => {
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">Regional <span className="text-brand-orange">Threat Level</span></h3>
             </div>
 
-            {/* ── Indicator basis table (collapsible) ───────────────────────── */}
             <AnimatePresence initial={false}>
               {showBasis && (
                 <m.div
@@ -363,8 +385,7 @@ const Home = () => {
                 </m.div>
               )}
             </AnimatePresence>
-
-            {/* ── Region bars ───────────────────────────────────────────────── */}
+            
             <div className="space-y-7">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -382,10 +403,10 @@ const Home = () => {
                             <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{item.region}</span>
                           </div>
                           <div className="text-right">
-                            <span className="text-[10px] font-black invisible uppercase block mb-0.5">Index</span>
-                            <span className={`text-xs font-black tracking-widest uppercase ${item.threatLevel > 70 ? 'text-brand-red' : 'text-brand-orange'}`}>
-                              {item.status} · <Counter value={item.threatLevel} />%
-                            </span>
+                             <span className="text-[10px] font-black invisible uppercase block mb-0.5">Index</span>
+                             <span className={`text-xs font-black tracking-widest uppercase ${item.threatLevel > 70 ? 'text-brand-red' : 'text-brand-orange'}`}>
+                               {item.status} · <Counter value={item.threatLevel} />%
+                             </span>
                           </div>
                         </div>
                         <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden p-[2px]">
@@ -400,20 +421,20 @@ const Home = () => {
                     ))}
                   </AnimatePresence>
                   
-                  <div className="flex items-start gap-3 opacity-60 grayscale hover:grayscale-0 transition-all">
-                    <img
-                      src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/WHO_logo.svg/1024px-WHO_logo.svg.png"
-                      alt="WHO Logo"
-                      className="w-6 h-6 object-contain dark:invert dark:brightness-200"
-                      onError={(e) => {
-                        e.currentTarget.src = "https://www.svgrepo.com/show/306988/world-health-organization.svg";
-                      }}
-                    />
-                    <p className="text-[9px] leading-relaxed text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
-                      Official Surveillance Data provided by WHO APIs.<br />
-                      <span className="text-brand-orange">Last Updated: {lastUpdated}</span>
-                    </p>
-                  </div>
+                    <div className="flex items-start gap-3 opacity-60 grayscale hover:grayscale-0 transition-all">
+                      <img
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/WHO_logo.svg/1024px-WHO_logo.svg.png"
+                        alt="WHO Logo"
+                        className="w-6 h-6 object-contain dark:invert dark:brightness-200"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://www.svgrepo.com/show/306988/world-health-organization.svg";
+                        }}
+                      />
+                      <p className="text-[9px] leading-relaxed text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
+                        Official Surveillance Data provided by WHO APIs.<br />
+                        <span className="text-brand-orange">Last Updated: {lastUpdated}</span>
+                      </p>
+                    </div>
                 </>
               )}
             </div>

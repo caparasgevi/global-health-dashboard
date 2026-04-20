@@ -1,0 +1,12 @@
+{
+  "name": "global-health-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "health-radar"
+  ],
+  "scripts": {
+    "build": "cd health-radar && npm install && npm run build"
+  }
+}

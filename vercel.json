@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "functions": {
+    "backend/index.ts": {
+      "runtime": "nodejs22.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/backend/index.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/health-radar/$1"
+    }
+  ]
+}
