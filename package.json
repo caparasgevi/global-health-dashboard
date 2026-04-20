@@ -2,13 +2,10 @@
   "name": "global-health-dashboard",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "backend",
-    "health-radar"
-  ],
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
-    "build": "npm run build:backend && npm run build:frontend",
-    "build:backend": "cd backend && npm install && npm run build",
-    "build:frontend": "cd health-radar && npm install && npm run build"
+    "build": "cd health-radar && npm install && npm run build"
   }
 }
