@@ -87,15 +87,16 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
   };
 
   return (
-    <section id="global-map" className="py-8 md:py-12 transition-colors duration-500">
+    /* FIXED: Added id="global-map" for Header navigation and scroll tracking */
+    <section id="global-map" className="py-12 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="mb-6 md:mb-8 text-center md:text-left">
-          <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <div className="mb-8">
+          <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Global <span className="text-brand-red">Health Risk</span> Intelligence
           </h1>
         </div>
 
-        <div className={`relative h-[500px] md:h-[650px] w-full overflow-hidden rounded-2xl md:rounded-3xl border shadow-2xl transition-all duration-500 ${isDark ? 'border-white/10 bg-slate-900' : 'border-slate-300 bg-slate-200'}`}>
+        <div className={`relative h-[650px] w-full overflow-hidden rounded-3xl border shadow-2xl transition-all duration-500 ${isDark ? 'border-white/10 bg-slate-900' : 'border-slate-300 bg-slate-200'}`}>
           
           <Map ref={mapRef} theme={isDark ? 'dark' : 'light'}>
             {outbreaks.map((p) => (
@@ -105,20 +106,21 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
             ))}
           </Map>
 
-          <div className="absolute top-3 left-3 right-3 z-20 md:w-80 md:right-auto md:top-4 md:left-4">
-            <div className={`backdrop-blur-lg border p-3 md:p-4 rounded-xl md:rounded-2xl shadow-xl ${isDark ? 'bg-slate-950/80 border-white/20 text-white' : 'bg-white/80 border-slate-300 text-slate-900'}`}>
-              <div className="flex items-center gap-2 text-brand-red font-bold text-[9px] md:text-[10px] uppercase tracking-widest mb-2 md:mb-3">
+          {/* 1. SEARCH BAR: FIXED TOP-LEFT */}
+          <div className="absolute top-4 left-4 z-20 w-80">
+            <div className={`backdrop-blur-lg border p-4 rounded-2xl shadow-xl ${isDark ? 'bg-slate-950/80 border-white/20 text-white' : 'bg-white/80 border-slate-300 text-slate-900'}`}>
+              <div className="flex items-center gap-2 text-brand-red font-bold text-[10px] uppercase tracking-widest mb-3">
                 <Search size={14} /> Search Country
               </div>
               <input
-                className={`w-full border rounded-lg md:rounded-xl px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm outline-none focus:ring-1 focus:ring-red-500 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}
+                className={`w-full border rounded-xl px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-red-500 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}
                 placeholder="Type to search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
               />
               {showSuggestions && (
-                <div className={`mt-2 border rounded-lg md:rounded-xl max-h-32 md:max-h-40 overflow-y-auto ${isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-200'}`}>
+                <div className={`mt-2 border rounded-xl max-h-40 overflow-y-auto ${isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-200'}`}>
                   {outbreaks.filter(o => o.country.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5).map(s => (
                     <button key={s.id} onClick={() => handleCountrySelect(s)} className="w-full text-left px-4 py-2 text-xs hover:bg-red-500/10">
                       {s.country}
@@ -129,43 +131,42 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
             </div>
           </div>
 
+          {/* 2 & 3. INFO CONTAINER: POSITIONED TOP-RIGHT, LEFT OF THE ZOOM CONTROLS */}
           {selectedCountry && (
-            <div className="absolute bottom-3 left-3 right-3 md:bottom-auto md:top-4 md:right-[60px] md:left-auto z-20 md:w-80 h-[300px] md:h-[580px]">
-              <div className={`h-full backdrop-blur-xl border rounded-xl md:rounded-2xl flex flex-col shadow-2xl overflow-hidden ${isDark ? 'bg-slate-950/85 border-white/20' : 'bg-white/90 border-slate-300'}`}>
-                <div className={`p-3 md:p-4 border-b flex justify-between items-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+            <div className="absolute top-4 right-[60px] z-20 w-80 h-[580px]">
+              <div className={`h-full backdrop-blur-xl border rounded-2xl flex flex-col shadow-2xl overflow-hidden ${isDark ? 'bg-slate-950/85 border-white/20' : 'bg-white/90 border-slate-300'}`}>
+                <div className={`p-4 border-b flex justify-between items-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
                   <div>
-                    <h2 className={`font-bold text-sm md:text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>{selectedCountry.country}</h2>
-                    <p className="text-[9px] md:text-[10px] text-red-500 font-bold uppercase">Risk Intelligence</p>
+                    <h2 className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{selectedCountry.country}</h2>
+                    <p className="text-[10px] text-red-500 font-bold uppercase">Risk Intelligence</p>
                   </div>
                   <button onClick={() => setSelectedCountry(null)} className="p-1 hover:bg-red-500/10 rounded-full transition-colors">
                     <X size={18} />
                   </button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
-                  {isSearching ? <div className="text-center py-10 md:py-20 animate-pulse text-[10px] uppercase tracking-tighter">Analyzing...</div> : (
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {isSearching ? <div className="text-center py-20 animate-pulse text-xs uppercase tracking-tighter">Analyzing...</div> : (
                     <>
                       {liveAlerts.length > 0 && (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-amber-500 text-[9px] md:text-[10px] font-bold uppercase"><Activity size={14} /> Alerts</div>
+                          <div className="flex items-center gap-2 text-amber-500 text-[10px] font-bold uppercase"><Activity size={14} /> Alerts</div>
                           {liveAlerts.map((alert, i) => (
-                            <div key={i} className={`p-2 border rounded-lg text-[9px] md:text-[10px] ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                            <div key={i} className={`p-2 border rounded-lg text-[10px] ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
                               {alert.title}
                             </div>
                           ))}
                         </div>
                       )}
-                      <div className="text-red-500 text-[9px] md:text-[10px] font-bold uppercase flex items-center gap-2"><Skull size={14}/> Threats</div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2 md:gap-4">
-                        {healthRisks.map((risk, i) => (
-                          <div key={i} className={`p-2 md:p-3 rounded-lg md:rounded-xl border ${risk.type === 'Acute' ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-500/5 border-slate-500/20'}`}>
-                            <div className="flex justify-between text-[9px] md:text-[10px] font-bold mb-1">
-                              <span className={risk.type === 'Acute' ? 'text-red-500' : 'text-slate-400'}>{risk.name}</span>
-                              {risk.type === 'Acute' ? <AlertTriangle size={12}/> : <ShieldAlert size={12}/>}
-                            </div>
-                            <div className={`text-lg md:text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>{risk.value.toLocaleString()}</div>
+                      <div className="text-red-500 text-[10px] font-bold uppercase flex items-center gap-2"><Skull size={14}/> Threats</div>
+                      {healthRisks.map((risk, i) => (
+                        <div key={i} className={`p-3 rounded-xl border ${risk.type === 'Acute' ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-500/5 border-slate-500/20'}`}>
+                          <div className="flex justify-between text-[10px] font-bold mb-1">
+                            <span className={risk.type === 'Acute' ? 'text-red-500' : 'text-slate-400'}>{risk.name}</span>
+                            {risk.type === 'Acute' ? <AlertTriangle size={12}/> : <ShieldAlert size={12}/>}
                           </div>
-                        ))}
-                      </div>
+                          <div className={`text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>{risk.value.toLocaleString()}</div>
+                        </div>
+                      ))}
                     </>
                   )}
                 </div>
