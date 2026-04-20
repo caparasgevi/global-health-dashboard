@@ -34,6 +34,22 @@ app.get('/api/country-stats/:code', async (req: Request, res: Response) => {
   }
 });
 
+app.get('/api/indicator-status/:country/:code', async (req: Request, res: Response) => {
+  const { country, code } = req.params;
+  try {
+    const response = await axios.get(
+      `${GHO_BASE_URL}${code}?$format=json&$filter=SpatialDim eq '${String(country).toUpperCase()}'&$orderby=TimeDim desc&$top=10`,
+      { timeout: 10000 }
+    );
+    
+    const data = response.data?.value || [];
+    res.json(data);
+  } catch (error) {
+    console.error(`WHO API error for ${code} in ${country}`);
+    res.json([]); 
+  }
+});
+
 app.get('/api/indicators', async (req: Request, res: Response) => {
   try {
     const response = await axios.get(`${GHO_BASE_URL}Indicator?$format=json`);
