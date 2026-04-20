@@ -17,18 +17,17 @@ const RiskScores = () => {
   const [selectedCountry, setSelectedCountry] = useState<any | null>(null);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   
-  // States for Global List Data
+
   const [riskData, setRiskData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // States for Specific Country Deep Dive Data
+ 
   const [countryStats, setCountryStats] = useState<any | null>(null);
   const [historyData, setHistoryData] = useState<any[]>([]); 
   const [isStatsLoading, setIsStatsLoading] = useState(false);
 
   const pageVar = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 
-  // 1. FETCH GLOBAL LIST
   useEffect(() => {
     let isMounted = true;
     const fetchScores = async () => {
@@ -43,7 +42,7 @@ const RiskScores = () => {
     return () => { isMounted = false; };
   }, []);
 
-  // 2. FETCH SPECIFIC COUNTRY STATS & HISTORY WHEN CLICKED
+  
   useEffect(() => {
     let isMounted = true;
     if (selectedCountry) {
@@ -78,7 +77,7 @@ const RiskScores = () => {
     return () => { isMounted = false; };
   }, [selectedCountry]);
 
-  // OPTIMIZED FILTER & SORT LOGIC
+ 
   const filteredLeaderboard = useMemo(() => {
     let filtered = riskData.filter(country => 
       country.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -103,9 +102,7 @@ const RiskScores = () => {
 
         <AnimatePresence mode="wait">
           {!selectedCountry ? (
-            /* =========================================
-               VIEW 1: GLOBAL LEADERBOARD
-               ========================================= */
+ 
             <m.div key="global-view" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
               
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -180,9 +177,7 @@ const RiskScores = () => {
               </div>
             </m.div>
           ) : (
-            /* =========================================
-               VIEW 2: COUNTRY DEEP DIVE
-               ========================================= */
+      
             <m.div key="detail-view" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-8">
               
               <button 
