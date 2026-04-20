@@ -325,7 +325,6 @@ const Home = () => {
         <m.div className="lg:col-span-4 w-full" initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.1 }} variants={revealVariants}>
           <div className="theme-card rounded-[2rem] p-6 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
 
-            {/* Panel header + "Basis" toggle */}
             <div className="mb-6">
               <div className="flex items-start justify-between gap-2 mb-1">
                 <h2 className="text-sm font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em]">Risk Assessment</h2>
@@ -340,7 +339,6 @@ const Home = () => {
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">Regional <span className="text-brand-orange">Threat Level</span></h3>
             </div>
 
-            {/* ── Indicator basis table (collapsible) ───────────────────────── */}
             <AnimatePresence initial={false}>
               {showBasis && (
                 <m.div
