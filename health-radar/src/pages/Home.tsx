@@ -42,14 +42,6 @@ interface OutbreakSlide {
   url: string;
 }
 
-const THREAT_INDICATORS = [
-  { label: 'Malaria Incidence',  weight: '25%', code: 'MALARIA_EST_INCIDENCE' },
-  { label: 'Tuberculosis',       weight: '25%', code: 'MDG_0000000001' },
-  { label: 'Cholera Cases',      weight: '20%', code: 'CHOLERA_0000000001' },
-  { label: 'Measles Cases',      weight: '15%', code: 'WHS3_62' },
-  { label: 'VPD Outbreaks',      weight: '15%', code: 'RS_IDSR_VPD_06' },
-];
-
 const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 
 const Home = () => {
@@ -60,7 +52,6 @@ const Home = () => {
   const [outbreakSlides, setOutbreakSlides] = useState<OutbreakSlide[]>([]);
   const [outbreakLoading, setOutbreakLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showBasis, setShowBasis] = useState(false);
 
   const swiperRef = useRef<any>(null);
 
