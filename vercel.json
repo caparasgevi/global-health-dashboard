@@ -5,10 +5,6 @@
       "runtime": "@vercel/node"
     }
   },
-  "builds": [
-    { "src": "backend/index.ts", "use": "@vercel/node" },
-    { "src": "health-radar/package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
-  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
