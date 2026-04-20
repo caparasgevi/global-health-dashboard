@@ -75,6 +75,7 @@ const OurTeam: React.FC = () => {
     <div
       id="our-team"
       className="min-h-screen py-20 px-4 flex flex-col items-center bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-500"
+      onClick={() => setSelectedMember(null)} >
     >
       <div className="text-center mb-16">
         <motion.h1
