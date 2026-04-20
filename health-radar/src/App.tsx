@@ -9,10 +9,12 @@ import Footer from './components/Footer';
 // Pages
 import Home from './pages/Home';
 import About from './pages/About';
+import Auth from './pages/Auth'; 
 import Trends from './pages/Trends';
 import GlobalMap from './pages/GlobalMap';
 import FullReport from './pages/FullReport';
 import OurTeam from './pages/OurTeam';
+
 
 /**
  * RESET MANAGER
@@ -51,6 +53,7 @@ function App() {
   // SESSION RESET STATE: Defaults to light mode (false) to ignore previous session preferences
   const [isDark, setIsDark] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [authStatus, setAuthStatus] = useState<'unauthenticated' | 'user' | 'guest'>('unauthenticated');
 
   // LOADING DELAY: Simple preloader logic
   useEffect(() => {
@@ -70,35 +73,44 @@ function App() {
     }
   }, [isDark]);
 
-  return (
+ return (
     <Router>
       <ResetManager />
       <LazyMotion features={domMax}>
         <AnimatePresence mode="wait">
           {!isLoading && (
-            <div 
-              key="main-app-content"
-              className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins"
-            >
-              <Header isDark={isDark} setIsDark={setIsDark} />
+            <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins">
+              
+              {/* Only show Header if authenticated or guest */}
+              {authStatus !== 'unauthenticated' && (
+                <Header isDark={isDark} setIsDark={setIsDark} />
+              )}
 
-              <main className="flex-grow container mx-auto px-4 py-8">
+              <main className="flex-grow">
                 <Routes>
-                  <Route path="/" element={
+                  {authStatus === 'unauthenticated' ? (
+                    // Redirect everything to Auth if not logged in
+                    <Route path="*" element={<Auth onLogin={(status) => setAuthStatus(status)} />} />
+                  ) : (
                     <>
-                      <Home />
-                      <About />
-                      {/* Pass isDark to GlobalMap for theme syncing */}
-                      <GlobalMap isDark={isDark} />
-                      <Trends />
-                      <OurTeam />
+                      <Route path="/" element={
+                        <div className="flex flex-col gap-0">
+                          <Home />
+                          {/* If Guest, they scroll down to see these */}
+                          <About />
+                          <GlobalMap isDark={isDark} />
+                          <Trends />
+                          {/* Add Risk Scores and Our Team here */}
+                          <OurTeam />
+                        </div>
+                      } />
+                      <Route path="/full-report" element={<FullReport />} />
                     </>
-                  } />
-                  <Route path="/full-report" element={<FullReport />} />
+                  )}
                 </Routes>
               </main>
 
-              <Footer />
+              {authStatus !== 'unauthenticated' && <Footer />}
             </div>
           )}
         </AnimatePresence>
