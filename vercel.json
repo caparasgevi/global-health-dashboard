@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "backend/index.ts": {
-      "runtime": "@vercel/node"
+      "runtime": "nodejs22.x"
     }
   },
   "rewrites": [
