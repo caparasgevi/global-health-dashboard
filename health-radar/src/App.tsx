@@ -13,6 +13,7 @@ import Trends from './pages/Trends';
 import GlobalMap from './pages/GlobalMap';
 import FullReport from './pages/FullReport';
 import OurTeam from './pages/OurTeam';
+import RiskScores from './pages/RiskScores';
 
 /**
  * RESET MANAGER
@@ -91,6 +92,7 @@ function App() {
                       {/* Pass isDark to GlobalMap for theme syncing */}
                       <GlobalMap isDark={isDark} />
                       <Trends />
+                      <RiskScores />
                       <OurTeam />
                     </>
                   } />
