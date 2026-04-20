@@ -11,6 +11,7 @@ import Trends from './pages/Trends';
 import GlobalMap from './pages/GlobalMap';
 import FullReport from './pages/FullReport';
 import OurTeam from './pages/OurTeam';
+import RiskScores from './pages/RiskScores';
 
 const ResetManager = () => {
   const navigate = useNavigate();
@@ -78,6 +79,7 @@ function App() {
                       <About />
                       <GlobalMap isDark={isDark} />
                       <Trends />
+                      <RiskScores />
                       <OurTeam />
                     </>
                   } />

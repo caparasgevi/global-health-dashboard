@@ -1,0 +1,1190 @@
+[
+  {
+    "flagCode": "TW",
+    "country": "Taiwan",
+    "CEOWorldGlobalHealthIndex_2025": 97.59,
+    "GlobalHealthSecurityIndex_2021": null
+  },
+  {
+    "flagCode": "SG",
+    "country": "Singapore",
+    "CEOWorldGlobalHealthIndex_2025": 97.43,
+    "GlobalHealthSecurityIndex_2021": 57.4
+  },
+  {
+    "flagCode": "IL",
+    "country": "Israel",
+    "CEOWorldGlobalHealthIndex_2025": 97.1,
+    "GlobalHealthSecurityIndex_2021": 47.2
+  },
+  {
+    "flagCode": "JP",
+    "country": "Japan",
+    "CEOWorldGlobalHealthIndex_2025": 97.07,
+    "GlobalHealthSecurityIndex_2021": 60.5
+  },
+  {
+    "flagCode": "CH",
+    "country": "Switzerland",
+    "CEOWorldGlobalHealthIndex_2025": 97.06,
+    "GlobalHealthSecurityIndex_2021": 58.8
+  },
+  {
+    "flagCode": "NO",
+    "country": "Norway",
+    "CEOWorldGlobalHealthIndex_2025": 95.88,
+    "GlobalHealthSecurityIndex_2021": 60.2
+  },
+  {
+    "flagCode": "SE",
+    "country": "Sweden",
+    "CEOWorldGlobalHealthIndex_2025": 95.41,
+    "GlobalHealthSecurityIndex_2021": 64.9
+  },
+  {
+    "flagCode": "KR",
+    "country": "South Korea",
+    "CEOWorldGlobalHealthIndex_2025": 95.34,
+    "GlobalHealthSecurityIndex_2021": 65.4
+  },
+  {
+    "flagCode": "AD",
+    "country": "Andorra",
+    "CEOWorldGlobalHealthIndex_2025": 95.21,
+    "GlobalHealthSecurityIndex_2021": 34.7
+  },
+  {
+    "flagCode": "IS",
+    "country": "Iceland",
+    "CEOWorldGlobalHealthIndex_2025": 95.08,
+    "GlobalHealthSecurityIndex_2021": 48.5
+  },
+  {
+    "flagCode": "LU",
+    "country": "Luxembourg",
+    "CEOWorldGlobalHealthIndex_2025": 94.83,
+    "GlobalHealthSecurityIndex_2021": 48.4
+  },
+  {
+    "flagCode": "NL",
+    "country": "Netherlands",
+    "CEOWorldGlobalHealthIndex_2025": 93.84,
+    "GlobalHealthSecurityIndex_2021": 64.7
+  },
+  {
+    "flagCode": "FI",
+    "country": "Finland",
+    "CEOWorldGlobalHealthIndex_2025": 93.4,
+    "GlobalHealthSecurityIndex_2021": 70.9
+  },
+  {
+    "flagCode": "DE",
+    "country": "Germany",
+    "CEOWorldGlobalHealthIndex_2025": 92.36,
+    "GlobalHealthSecurityIndex_2021": 65.5
+  },
+  {
+    "flagCode": "DK",
+    "country": "Denmark",
+    "CEOWorldGlobalHealthIndex_2025": 92.3,
+    "GlobalHealthSecurityIndex_2021": 64.4
+  },
+  {
+    "flagCode": "BE",
+    "country": "Belgium",
+    "CEOWorldGlobalHealthIndex_2025": 91.88,
+    "GlobalHealthSecurityIndex_2021": 59.3
+  },
+  {
+    "flagCode": "HK",
+    "country": "Hong Kong",
+    "CEOWorldGlobalHealthIndex_2025": 91.81,
+    "GlobalHealthSecurityIndex_2021": null
+  },
+  {
+    "flagCode": "FR",
+    "country": "France",
+    "CEOWorldGlobalHealthIndex_2025": 91.72,
+    "GlobalHealthSecurityIndex_2021": 61.9
+  },
+  {
+    "flagCode": "AT",
+    "country": "Austria",
+    "CEOWorldGlobalHealthIndex_2025": 91.36,
+    "GlobalHealthSecurityIndex_2021": 56.9
+  },
+  {
+    "flagCode": "NZ",
+    "country": "New Zealand",
+    "CEOWorldGlobalHealthIndex_2025": 91.28,
+    "GlobalHealthSecurityIndex_2021": 62.5
+  },
+  {
+    "flagCode": "IT",
+    "country": "Italy",
+    "CEOWorldGlobalHealthIndex_2025": 91.1,
+    "GlobalHealthSecurityIndex_2021": 51.9
+  },
+  {
+    "flagCode": "ES",
+    "country": "Spain",
+    "CEOWorldGlobalHealthIndex_2025": 90.85,
+    "GlobalHealthSecurityIndex_2021": 60.9
+  },
+  {
+    "flagCode": "MT",
+    "country": "Malta",
+    "CEOWorldGlobalHealthIndex_2025": 90.66,
+    "GlobalHealthSecurityIndex_2021": 40.2
+  },
+  {
+    "flagCode": "CZ",
+    "country": "Czechia",
+    "CEOWorldGlobalHealthIndex_2025": 90.46,
+    "GlobalHealthSecurityIndex_2021": 52.8
+  },
+  {
+    "flagCode": "CR",
+    "country": "Costa Rica",
+    "CEOWorldGlobalHealthIndex_2025": 90.29,
+    "GlobalHealthSecurityIndex_2021": 40.8
+  },
+  {
+    "flagCode": "AE",
+    "country": "United Arab Emirates",
+    "CEOWorldGlobalHealthIndex_2025": 90.12,
+    "GlobalHealthSecurityIndex_2021": 39.6
+  },
+  {
+    "flagCode": "KW",
+    "country": "Kuwait",
+    "CEOWorldGlobalHealthIndex_2025": 90.07,
+    "GlobalHealthSecurityIndex_2021": 36.8
+  },
+  {
+    "flagCode": "SI",
+    "country": "Slovenia",
+    "CEOWorldGlobalHealthIndex_2025": 90.02,
+    "GlobalHealthSecurityIndex_2021": 67.8
+  },
+  {
+    "flagCode": "GR",
+    "country": "Greece",
+    "CEOWorldGlobalHealthIndex_2025": 89.92,
+    "GlobalHealthSecurityIndex_2021": 51.5
+  },
+  {
+    "flagCode": "IE",
+    "country": "Ireland",
+    "CEOWorldGlobalHealthIndex_2025": 89.83,
+    "GlobalHealthSecurityIndex_2021": 55.3
+  },
+  {
+    "flagCode": "HR",
+    "country": "Croatia",
+    "CEOWorldGlobalHealthIndex_2025": 88.88,
+    "GlobalHealthSecurityIndex_2021": 48.8
+  },
+  {
+    "flagCode": "AU",
+    "country": "Australia",
+    "CEOWorldGlobalHealthIndex_2025": 88.56,
+    "GlobalHealthSecurityIndex_2021": 71.1
+  },
+  {
+    "flagCode": "BH",
+    "country": "Bahrain",
+    "CEOWorldGlobalHealthIndex_2025": 88.02,
+    "GlobalHealthSecurityIndex_2021": 36.6
+  },
+  {
+    "flagCode": "PT",
+    "country": "Portugal",
+    "CEOWorldGlobalHealthIndex_2025": 87.73,
+    "GlobalHealthSecurityIndex_2021": 54.7
+  },
+  {
+    "flagCode": "SK",
+    "country": "Slovakia",
+    "CEOWorldGlobalHealthIndex_2025": 87.55,
+    "GlobalHealthSecurityIndex_2021": 54.4
+  },
+  {
+    "flagCode": "GB",
+    "country": "United Kingdom",
+    "CEOWorldGlobalHealthIndex_2025": 87.34,
+    "GlobalHealthSecurityIndex_2021": 67.2
+  },
+  {
+    "flagCode": "CY",
+    "country": "Cyprus",
+    "CEOWorldGlobalHealthIndex_2025": 86.98,
+    "GlobalHealthSecurityIndex_2021": 41.9
+  },
+  {
+    "flagCode": "HU",
+    "country": "Hungary",
+    "CEOWorldGlobalHealthIndex_2025": 86.85,
+    "GlobalHealthSecurityIndex_2021": 54.4
+  },
+  {
+    "flagCode": "EE",
+    "country": "Estonia",
+    "CEOWorldGlobalHealthIndex_2025": 86.72,
+    "GlobalHealthSecurityIndex_2021": 55.5
+  },
+  {
+    "flagCode": "CA",
+    "country": "Canada",
+    "CEOWorldGlobalHealthIndex_2025": 86.49,
+    "GlobalHealthSecurityIndex_2021": 69.8
+  },
+  {
+    "flagCode": "QA",
+    "country": "Qatar",
+    "CEOWorldGlobalHealthIndex_2025": 86.4,
+    "GlobalHealthSecurityIndex_2021": 48.7
+  },
+  {
+    "flagCode": "MO",
+    "country": "Macau",
+    "CEOWorldGlobalHealthIndex_2025": 85.86,
+    "GlobalHealthSecurityIndex_2021": null
+  },
+  {
+    "flagCode": "CL",
+    "country": "Chile",
+    "CEOWorldGlobalHealthIndex_2025": 85.2,
+    "GlobalHealthSecurityIndex_2021": 56.2
+  },
+  {
+    "flagCode": "LV",
+    "country": "Latvia",
+    "CEOWorldGlobalHealthIndex_2025": 85.17,
+    "GlobalHealthSecurityIndex_2021": 61.9
+  },
+  {
+    "flagCode": "LT",
+    "country": "Lithuania",
+    "CEOWorldGlobalHealthIndex_2025": 84.96,
+    "GlobalHealthSecurityIndex_2021": 59.5
+  },
+  {
+    "flagCode": "MK",
+    "country": "North Macedonia",
+    "CEOWorldGlobalHealthIndex_2025": 84.95,
+    "GlobalHealthSecurityIndex_2021": 42.2
+  },
+  {
+    "flagCode": "SA",
+    "country": "Saudi Arabia",
+    "CEOWorldGlobalHealthIndex_2025": 84.78,
+    "GlobalHealthSecurityIndex_2021": 44.9
+  },
+  {
+    "flagCode": "PL",
+    "country": "Poland",
+    "CEOWorldGlobalHealthIndex_2025": 84.29,
+    "GlobalHealthSecurityIndex_2021": 55.7
+  },
+  {
+    "flagCode": "BN",
+    "country": "Brunei",
+    "CEOWorldGlobalHealthIndex_2025": 84.28,
+    "GlobalHealthSecurityIndex_2021": 43.5
+  },
+  {
+    "flagCode": "LI",
+    "country": "Liechtenstein",
+    "CEOWorldGlobalHealthIndex_2025": 84.26,
+    "GlobalHealthSecurityIndex_2021": 46.4
+  },
+  {
+    "flagCode": "MC",
+    "country": "Monaco",
+    "CEOWorldGlobalHealthIndex_2025": 84,
+    "GlobalHealthSecurityIndex_2021": 33.3
+  },
+  {
+    "flagCode": "RU",
+    "country": "Russia",
+    "CEOWorldGlobalHealthIndex_2025": 83.59,
+    "GlobalHealthSecurityIndex_2021": 49.1
+  },
+  {
+    "flagCode": "BG",
+    "country": "Bulgaria",
+    "CEOWorldGlobalHealthIndex_2025": 83.31,
+    "GlobalHealthSecurityIndex_2021": 59.9
+  },
+  {
+    "flagCode": "MD",
+    "country": "Moldova",
+    "CEOWorldGlobalHealthIndex_2025": 83.3,
+    "GlobalHealthSecurityIndex_2021": 41
+  },
+  {
+    "flagCode": "KZ",
+    "country": "Kazakhstan",
+    "CEOWorldGlobalHealthIndex_2025": 82.76,
+    "GlobalHealthSecurityIndex_2021": 46.1
+  },
+  {
+    "flagCode": "UY",
+    "country": "Uruguay",
+    "CEOWorldGlobalHealthIndex_2025": 82.72,
+    "GlobalHealthSecurityIndex_2021": 40.3
+  },
+  {
+    "flagCode": "AZ",
+    "country": "Azerbaijan",
+    "CEOWorldGlobalHealthIndex_2025": 82.67,
+    "GlobalHealthSecurityIndex_2021": 34.7
+  },
+  {
+    "flagCode": "AR",
+    "country": "Argentina",
+    "CEOWorldGlobalHealthIndex_2025": 81.97,
+    "GlobalHealthSecurityIndex_2021": 54.4
+  },
+  {
+    "flagCode": "BA",
+    "country": "Bosnia and Herzegovina",
+    "CEOWorldGlobalHealthIndex_2025": 81.77,
+    "GlobalHealthSecurityIndex_2021": 35.4
+  },
+  {
+    "flagCode": "OM",
+    "country": "Oman",
+    "CEOWorldGlobalHealthIndex_2025": 81.54,
+    "GlobalHealthSecurityIndex_2021": 39.1
+  },
+  {
+    "flagCode": "US",
+    "country": "United States",
+    "CEOWorldGlobalHealthIndex_2025": 81.49,
+    "GlobalHealthSecurityIndex_2021": 75.9
+  },
+  {
+    "flagCode": "RO",
+    "country": "Romania",
+    "CEOWorldGlobalHealthIndex_2025": 81.22,
+    "GlobalHealthSecurityIndex_2021": 45.7
+  },
+  {
+    "flagCode": "JM",
+    "country": "Jamaica",
+    "CEOWorldGlobalHealthIndex_2025": 81.21,
+    "GlobalHealthSecurityIndex_2021": 31.8
+  },
+  {
+    "flagCode": "TH",
+    "country": "Thailand",
+    "CEOWorldGlobalHealthIndex_2025": 80.8,
+    "GlobalHealthSecurityIndex_2021": 68.2
+  },
+  {
+    "flagCode": "TT",
+    "country": "Trinidad and Tobago",
+    "CEOWorldGlobalHealthIndex_2025": 80.72,
+    "GlobalHealthSecurityIndex_2021": 36.8
+  },
+  {
+    "flagCode": "JO",
+    "country": "Jordan",
+    "CEOWorldGlobalHealthIndex_2025": 80.7,
+    "GlobalHealthSecurityIndex_2021": 42.8
+  },
+  {
+    "flagCode": "TR",
+    "country": "Turkey",
+    "CEOWorldGlobalHealthIndex_2025": 80.34,
+    "GlobalHealthSecurityIndex_2021": 50
+  },
+  {
+    "flagCode": "TN",
+    "country": "Tunisia",
+    "CEOWorldGlobalHealthIndex_2025": 79.96,
+    "GlobalHealthSecurityIndex_2021": 31.5
+  },
+  {
+    "flagCode": "LC",
+    "country": "Saint Lucia",
+    "CEOWorldGlobalHealthIndex_2025": 79.95,
+    "GlobalHealthSecurityIndex_2021": 34.7
+  },
+  {
+    "flagCode": "VC",
+    "country": "Saint Vincent and the Grenadines",
+    "CEOWorldGlobalHealthIndex_2025": 79.91,
+    "GlobalHealthSecurityIndex_2021": 33.5
+  },
+  {
+    "flagCode": "IN",
+    "country": "India",
+    "CEOWorldGlobalHealthIndex_2025": 79.12,
+    "GlobalHealthSecurityIndex_2021": 42.8
+  },
+  {
+    "flagCode": "SC",
+    "country": "Seychelles",
+    "CEOWorldGlobalHealthIndex_2025": 78.77,
+    "GlobalHealthSecurityIndex_2021": 31.8
+  },
+  {
+    "flagCode": "TM",
+    "country": "Turkmenistan",
+    "CEOWorldGlobalHealthIndex_2025": 78.31,
+    "GlobalHealthSecurityIndex_2021": 31.9
+  },
+  {
+    "flagCode": "DZ",
+    "country": "Algeria",
+    "CEOWorldGlobalHealthIndex_2025": 78.28,
+    "GlobalHealthSecurityIndex_2021": 26.2
+  },
+  {
+    "flagCode": "MY",
+    "country": "Malaysia",
+    "CEOWorldGlobalHealthIndex_2025": 77.73,
+    "GlobalHealthSecurityIndex_2021": 56.4
+  },
+  {
+    "flagCode": "AG",
+    "country": "Antigua and Barbuda",
+    "CEOWorldGlobalHealthIndex_2025": 77.11,
+    "GlobalHealthSecurityIndex_2021": 30
+  },
+  {
+    "flagCode": "BR",
+    "country": "Brazil",
+    "CEOWorldGlobalHealthIndex_2025": 76.95,
+    "GlobalHealthSecurityIndex_2021": 51.2
+  },
+  {
+    "flagCode": "PA",
+    "country": "Panama",
+    "CEOWorldGlobalHealthIndex_2025": 76.75,
+    "GlobalHealthSecurityIndex_2021": 53.5
+  },
+  {
+    "flagCode": "BY",
+    "country": "Belarus",
+    "CEOWorldGlobalHealthIndex_2025": 76.68,
+    "GlobalHealthSecurityIndex_2021": 43.9
+  },
+  {
+    "flagCode": "GD",
+    "country": "Grenada",
+    "CEOWorldGlobalHealthIndex_2025": 76.31,
+    "GlobalHealthSecurityIndex_2021": 26.7
+  },
+  {
+    "flagCode": "UA",
+    "country": "Ukraine",
+    "CEOWorldGlobalHealthIndex_2025": 75.15,
+    "GlobalHealthSecurityIndex_2021": 38.9
+  },
+  {
+    "flagCode": "SR",
+    "country": "Suriname",
+    "CEOWorldGlobalHealthIndex_2025": 74.85,
+    "GlobalHealthSecurityIndex_2021": 35
+  },
+  {
+    "flagCode": "TJ",
+    "country": "Tajikistan",
+    "CEOWorldGlobalHealthIndex_2025": 74.79,
+    "GlobalHealthSecurityIndex_2021": 29.3
+  },
+  {
+    "flagCode": "CN",
+    "country": "China",
+    "CEOWorldGlobalHealthIndex_2025": 74.57,
+    "GlobalHealthSecurityIndex_2021": 47.5
+  },
+  {
+    "flagCode": "AM",
+    "country": "Armenia",
+    "CEOWorldGlobalHealthIndex_2025": 74.17,
+    "GlobalHealthSecurityIndex_2021": 61.8
+  },
+  {
+    "flagCode": "FJ",
+    "country": "Fiji",
+    "CEOWorldGlobalHealthIndex_2025": 74.14,
+    "GlobalHealthSecurityIndex_2021": 25.8
+  },
+  {
+    "flagCode": "DM",
+    "country": "Dominica",
+    "CEOWorldGlobalHealthIndex_2025": 74.02,
+    "GlobalHealthSecurityIndex_2021": 26.4
+  },
+  {
+    "flagCode": "KN",
+    "country": "Saint Kitts and Nevis",
+    "CEOWorldGlobalHealthIndex_2025": 73.55,
+    "GlobalHealthSecurityIndex_2021": 31.7
+  },
+  {
+    "flagCode": "CU",
+    "country": "Cuba",
+    "CEOWorldGlobalHealthIndex_2025": 73.04,
+    "GlobalHealthSecurityIndex_2021": 30.5
+  },
+  {
+    "flagCode": "NI",
+    "country": "Nicaragua",
+    "CEOWorldGlobalHealthIndex_2025": 71.89,
+    "GlobalHealthSecurityIndex_2021": 36.3
+  },
+  {
+    "flagCode": "AL",
+    "country": "Albania",
+    "CEOWorldGlobalHealthIndex_2025": 71.84,
+    "GlobalHealthSecurityIndex_2021": 45
+  },
+  {
+    "flagCode": "RS",
+    "country": "Serbia",
+    "CEOWorldGlobalHealthIndex_2025": 71.33,
+    "GlobalHealthSecurityIndex_2021": 45
+  },
+  {
+    "flagCode": "MU",
+    "country": "Mauritius",
+    "CEOWorldGlobalHealthIndex_2025": 71.02,
+    "GlobalHealthSecurityIndex_2021": 39.7
+  },
+  {
+    "flagCode": "PY",
+    "country": "Paraguay",
+    "CEOWorldGlobalHealthIndex_2025": 70.81,
+    "GlobalHealthSecurityIndex_2021": 40.3
+  },
+  {
+    "flagCode": "LB",
+    "country": "Lebanon",
+    "CEOWorldGlobalHealthIndex_2025": 70.79,
+    "GlobalHealthSecurityIndex_2021": 33.4
+  },
+  {
+    "flagCode": "KG",
+    "country": "Kyrgyzstan",
+    "CEOWorldGlobalHealthIndex_2025": 70.23,
+    "GlobalHealthSecurityIndex_2021": 42.4
+  },
+  {
+    "flagCode": "GY",
+    "country": "Guyana",
+    "CEOWorldGlobalHealthIndex_2025": 70.2,
+    "GlobalHealthSecurityIndex_2021": 30.8
+  },
+  {
+    "flagCode": "MX",
+    "country": "Mexico",
+    "CEOWorldGlobalHealthIndex_2025": 69.85,
+    "GlobalHealthSecurityIndex_2021": 57
+  },
+  {
+    "flagCode": "DO",
+    "country": "Dominican Republic",
+    "CEOWorldGlobalHealthIndex_2025": 69.77,
+    "GlobalHealthSecurityIndex_2021": 34.5
+  },
+  {
+    "flagCode": "CO",
+    "country": "Colombia",
+    "CEOWorldGlobalHealthIndex_2025": 69.38,
+    "GlobalHealthSecurityIndex_2021": 53.2
+  },
+  {
+    "flagCode": "GE",
+    "country": "Georgia",
+    "CEOWorldGlobalHealthIndex_2025": 69.37,
+    "GlobalHealthSecurityIndex_2021": 52.6
+  },
+  {
+    "flagCode": "SV",
+    "country": "El Salvador",
+    "CEOWorldGlobalHealthIndex_2025": 69.33,
+    "GlobalHealthSecurityIndex_2021": 40.8
+  },
+  {
+    "flagCode": "BZ",
+    "country": "Belize",
+    "CEOWorldGlobalHealthIndex_2025": 69.26,
+    "GlobalHealthSecurityIndex_2021": 29.7
+  },
+  {
+    "flagCode": "KH",
+    "country": "Cambodia",
+    "CEOWorldGlobalHealthIndex_2025": 69.12,
+    "GlobalHealthSecurityIndex_2021": 31.1
+  },
+  {
+    "flagCode": "VN",
+    "country": "Vietnam",
+    "CEOWorldGlobalHealthIndex_2025": 69.05,
+    "GlobalHealthSecurityIndex_2021": 42.9
+  },
+  {
+    "flagCode": "MA",
+    "country": "Morocco",
+    "CEOWorldGlobalHealthIndex_2025": 69,
+    "GlobalHealthSecurityIndex_2021": 33.6
+  },
+  {
+    "flagCode": "EC",
+    "country": "Ecuador",
+    "CEOWorldGlobalHealthIndex_2025": 68.88,
+    "GlobalHealthSecurityIndex_2021": 50.8
+  },
+  {
+    "flagCode": "VE",
+    "country": "Venezuela",
+    "CEOWorldGlobalHealthIndex_2025": 68.86,
+    "GlobalHealthSecurityIndex_2021": 20.9
+  },
+  {
+    "flagCode": "ID",
+    "country": "Indonesia",
+    "CEOWorldGlobalHealthIndex_2025": 68.84,
+    "GlobalHealthSecurityIndex_2021": 50.4
+  },
+  {
+    "flagCode": "PE",
+    "country": "Peru",
+    "CEOWorldGlobalHealthIndex_2025": 68.74,
+    "GlobalHealthSecurityIndex_2021": 54.9
+  },
+  {
+    "flagCode": "CV",
+    "country": "Cape Verde",
+    "CEOWorldGlobalHealthIndex_2025": 68.37,
+    "GlobalHealthSecurityIndex_2021": 34.1
+  },
+  {
+    "flagCode": "BO",
+    "country": "Bolivia",
+    "CEOWorldGlobalHealthIndex_2025": 68.16,
+    "GlobalHealthSecurityIndex_2021": 29.9
+  },
+  {
+    "flagCode": "ZA",
+    "country": "South Africa",
+    "CEOWorldGlobalHealthIndex_2025": 68.15,
+    "GlobalHealthSecurityIndex_2021": 45.8
+  },
+  {
+    "flagCode": "ME",
+    "country": "Montenegro",
+    "CEOWorldGlobalHealthIndex_2025": 67.91,
+    "GlobalHealthSecurityIndex_2021": 44.1
+  },
+  {
+    "flagCode": "UZ",
+    "country": "Uzbekistan",
+    "CEOWorldGlobalHealthIndex_2025": 67.42,
+    "GlobalHealthSecurityIndex_2021": 39
+  },
+  {
+    "flagCode": "LY",
+    "country": "Libya",
+    "CEOWorldGlobalHealthIndex_2025": 67.29,
+    "GlobalHealthSecurityIndex_2021": 25.3
+  },
+  {
+    "flagCode": "MN",
+    "country": "Mongolia",
+    "CEOWorldGlobalHealthIndex_2025": 67.2,
+    "GlobalHealthSecurityIndex_2021": 41
+  },
+  {
+    "flagCode": "PH",
+    "country": "Philippines",
+    "CEOWorldGlobalHealthIndex_2025": 67.16,
+    "GlobalHealthSecurityIndex_2021": 45.7
+  },
+  {
+    "flagCode": "IQ",
+    "country": "Iraq",
+    "CEOWorldGlobalHealthIndex_2025": 66.88,
+    "GlobalHealthSecurityIndex_2021": 24
+  },
+  {
+    "flagCode": "BB",
+    "country": "Barbados",
+    "CEOWorldGlobalHealthIndex_2025": 66.86,
+    "GlobalHealthSecurityIndex_2021": 34.9
+  },
+  {
+    "flagCode": "IR",
+    "country": "Iran",
+    "CEOWorldGlobalHealthIndex_2025": 66.52,
+    "GlobalHealthSecurityIndex_2021": 36.5
+  },
+  {
+    "flagCode": "LA",
+    "country": "Laos",
+    "CEOWorldGlobalHealthIndex_2025": 66.44,
+    "GlobalHealthSecurityIndex_2021": 34.8
+  },
+  {
+    "flagCode": "HN",
+    "country": "Honduras",
+    "CEOWorldGlobalHealthIndex_2025": 66.34,
+    "GlobalHealthSecurityIndex_2021": 26.2
+  },
+  {
+    "flagCode": "ST",
+    "country": "Sao Tome and Principe",
+    "CEOWorldGlobalHealthIndex_2025": 66.21,
+    "GlobalHealthSecurityIndex_2021": 26.6
+  },
+  {
+    "flagCode": "GT",
+    "country": "Guatemala",
+    "CEOWorldGlobalHealthIndex_2025": 66.01,
+    "GlobalHealthSecurityIndex_2021": 29.1
+  },
+  {
+    "flagCode": "BW",
+    "country": "Botswana",
+    "CEOWorldGlobalHealthIndex_2025": 65.95,
+    "GlobalHealthSecurityIndex_2021": 33.6
+  },
+  {
+    "flagCode": "GH",
+    "country": "Ghana",
+    "CEOWorldGlobalHealthIndex_2025": 65.64,
+    "GlobalHealthSecurityIndex_2021": 34.3
+  },
+  {
+    "flagCode": "SN",
+    "country": "Senegal",
+    "CEOWorldGlobalHealthIndex_2025": 65.14,
+    "GlobalHealthSecurityIndex_2021": 32.8
+  },
+  {
+    "flagCode": "MW",
+    "country": "Malawi",
+    "CEOWorldGlobalHealthIndex_2025": 65.11,
+    "GlobalHealthSecurityIndex_2021": 28.5
+  },
+  {
+    "flagCode": "NA",
+    "country": "Namibia",
+    "CEOWorldGlobalHealthIndex_2025": 64.92,
+    "GlobalHealthSecurityIndex_2021": 30.3
+  },
+  {
+    "flagCode": "ET",
+    "country": "Ethiopia",
+    "CEOWorldGlobalHealthIndex_2025": 64.68,
+    "GlobalHealthSecurityIndex_2021": 37.8
+  },
+  {
+    "flagCode": "DJ",
+    "country": "Djibouti",
+    "CEOWorldGlobalHealthIndex_2025": 64.39,
+    "GlobalHealthSecurityIndex_2021": 25.2
+  },
+  {
+    "flagCode": "SD",
+    "country": "Sudan",
+    "CEOWorldGlobalHealthIndex_2025": 64.15,
+    "GlobalHealthSecurityIndex_2021": 28.3
+  },
+  {
+    "flagCode": "TZ",
+    "country": "Tanzania",
+    "CEOWorldGlobalHealthIndex_2025": 63.55,
+    "GlobalHealthSecurityIndex_2021": 31.3
+  },
+  {
+    "flagCode": "KM",
+    "country": "Comoros",
+    "CEOWorldGlobalHealthIndex_2025": 63.53,
+    "GlobalHealthSecurityIndex_2021": 24.9
+  },
+  {
+    "flagCode": "KE",
+    "country": "Kenya",
+    "CEOWorldGlobalHealthIndex_2025": 63.38,
+    "GlobalHealthSecurityIndex_2021": 38.8
+  },
+  {
+    "flagCode": "BF",
+    "country": "Burkina Faso",
+    "CEOWorldGlobalHealthIndex_2025": 62.92,
+    "GlobalHealthSecurityIndex_2021": 29.8
+  },
+  {
+    "flagCode": "UG",
+    "country": "Uganda",
+    "CEOWorldGlobalHealthIndex_2025": 62.21,
+    "GlobalHealthSecurityIndex_2021": 36.5
+  },
+  {
+    "flagCode": "BI",
+    "country": "Burundi",
+    "CEOWorldGlobalHealthIndex_2025": 61.81,
+    "GlobalHealthSecurityIndex_2021": 22.1
+  },
+  {
+    "flagCode": "ER",
+    "country": "Eritrea",
+    "CEOWorldGlobalHealthIndex_2025": 61.4,
+    "GlobalHealthSecurityIndex_2021": 21.4
+  },
+  {
+    "flagCode": "YE",
+    "country": "Yemen",
+    "CEOWorldGlobalHealthIndex_2025": 60.47,
+    "GlobalHealthSecurityIndex_2021": 16.1
+  },
+  {
+    "flagCode": "ZM",
+    "country": "Zambia",
+    "CEOWorldGlobalHealthIndex_2025": 60.32,
+    "GlobalHealthSecurityIndex_2021": 26.5
+  },
+  {
+    "flagCode": "MR",
+    "country": "Mauritania",
+    "CEOWorldGlobalHealthIndex_2025": 60.07,
+    "GlobalHealthSecurityIndex_2021": 26.2
+  },
+  {
+    "flagCode": "GM",
+    "country": "Gambia",
+    "CEOWorldGlobalHealthIndex_2025": 59.93,
+    "GlobalHealthSecurityIndex_2021": 28.7
+  },
+  {
+    "flagCode": "GA",
+    "country": "Gabon",
+    "CEOWorldGlobalHealthIndex_2025": 59,
+    "GlobalHealthSecurityIndex_2021": 21.8
+  },
+  {
+    "flagCode": "ZW",
+    "country": "Zimbabwe",
+    "CEOWorldGlobalHealthIndex_2025": 58.67,
+    "GlobalHealthSecurityIndex_2021": 32.4
+  },
+  {
+    "flagCode": "TG",
+    "country": "Togo",
+    "CEOWorldGlobalHealthIndex_2025": 57.98,
+    "GlobalHealthSecurityIndex_2021": 27.8
+  },
+  {
+    "flagCode": "NE",
+    "country": "Niger",
+    "CEOWorldGlobalHealthIndex_2025": 57.84,
+    "GlobalHealthSecurityIndex_2021": 28.7
+  },
+  {
+    "flagCode": "ML",
+    "country": "Mali",
+    "CEOWorldGlobalHealthIndex_2025": 57.74,
+    "GlobalHealthSecurityIndex_2021": 29
+  },
+  {
+    "flagCode": "MG",
+    "country": "Madagascar",
+    "CEOWorldGlobalHealthIndex_2025": 57.61,
+    "GlobalHealthSecurityIndex_2021": 30.4
+  },
+  {
+    "flagCode": "CG",
+    "country": "Republic of the Congo",
+    "CEOWorldGlobalHealthIndex_2025": 56.64,
+    "GlobalHealthSecurityIndex_2021": 26.3
+  },
+  {
+    "flagCode": "BJ",
+    "country": "Benin",
+    "CEOWorldGlobalHealthIndex_2025": 56.08,
+    "GlobalHealthSecurityIndex_2021": 25.4
+  },
+  {
+    "flagCode": "FM",
+    "country": "Micronesia",
+    "CEOWorldGlobalHealthIndex_2025": 55.93,
+    "GlobalHealthSecurityIndex_2021": 28.5
+  },
+  {
+    "flagCode": "NR",
+    "country": "Nauru",
+    "CEOWorldGlobalHealthIndex_2025": 55.5,
+    "GlobalHealthSecurityIndex_2021": 18
+  },
+  {
+    "flagCode": "VU",
+    "country": "Vanuatu",
+    "CEOWorldGlobalHealthIndex_2025": 55.43,
+    "GlobalHealthSecurityIndex_2021": 25.9
+  },
+  {
+    "flagCode": "PW",
+    "country": "Palau",
+    "CEOWorldGlobalHealthIndex_2025": 55.22,
+    "GlobalHealthSecurityIndex_2021": 25.5
+  },
+  {
+    "flagCode": "BS",
+    "country": "Bahamas",
+    "CEOWorldGlobalHealthIndex_2025": 55,
+    "GlobalHealthSecurityIndex_2021": 30.1
+  },
+  {
+    "flagCode": "LK",
+    "country": "Sri Lanka",
+    "CEOWorldGlobalHealthIndex_2025": 54.55,
+    "GlobalHealthSecurityIndex_2021": 34.1
+  },
+  {
+    "flagCode": "BT",
+    "country": "Bhutan",
+    "CEOWorldGlobalHealthIndex_2025": 54.54,
+    "GlobalHealthSecurityIndex_2021": 39.8
+  },
+  {
+    "flagCode": "EG",
+    "country": "Egypt",
+    "CEOWorldGlobalHealthIndex_2025": 54.28,
+    "GlobalHealthSecurityIndex_2021": 28
+  },
+  {
+    "flagCode": "NP",
+    "country": "Nepal",
+    "CEOWorldGlobalHealthIndex_2025": 54.11,
+    "GlobalHealthSecurityIndex_2021": 34
+  },
+  {
+    "flagCode": "WS",
+    "country": "Samoa",
+    "CEOWorldGlobalHealthIndex_2025": 54,
+    "GlobalHealthSecurityIndex_2021": 28.8
+  },
+  {
+    "flagCode": "SM",
+    "country": "San Marino",
+    "CEOWorldGlobalHealthIndex_2025": 53.91,
+    "GlobalHealthSecurityIndex_2021": 32.9
+  },
+  {
+    "flagCode": "SB",
+    "country": "Solomon Islands",
+    "CEOWorldGlobalHealthIndex_2025": 53.88,
+    "GlobalHealthSecurityIndex_2021": 23.3
+  },
+  {
+    "flagCode": "TO",
+    "country": "Tonga",
+    "CEOWorldGlobalHealthIndex_2025": 53.65,
+    "GlobalHealthSecurityIndex_2021": 26.4
+  },
+  {
+    "flagCode": "TV",
+    "country": "Tuvalu",
+    "CEOWorldGlobalHealthIndex_2025": 53.52,
+    "GlobalHealthSecurityIndex_2021": 20
+  },
+  {
+    "flagCode": "RW",
+    "country": "Rwanda",
+    "CEOWorldGlobalHealthIndex_2025": 53.25,
+    "GlobalHealthSecurityIndex_2021": 33.1
+  },
+  {
+    "flagCode": "HT",
+    "country": "Haiti",
+    "CEOWorldGlobalHealthIndex_2025": 52.88,
+    "GlobalHealthSecurityIndex_2021": 30.4
+  },
+  {
+    "flagCode": "PG",
+    "country": "Papua New Guinea",
+    "CEOWorldGlobalHealthIndex_2025": 52.55,
+    "GlobalHealthSecurityIndex_2021": 25
+  },
+  {
+    "flagCode": "MZ",
+    "country": "Mozambique",
+    "CEOWorldGlobalHealthIndex_2025": 52.46,
+    "GlobalHealthSecurityIndex_2021": 30.4
+  },
+  {
+    "flagCode": "CI",
+    "country": "Ivory Coast",
+    "CEOWorldGlobalHealthIndex_2025": 52.43,
+    "GlobalHealthSecurityIndex_2021": 31.2
+  },
+  {
+    "flagCode": "CM",
+    "country": "Cameroon",
+    "CEOWorldGlobalHealthIndex_2025": 52.32,
+    "GlobalHealthSecurityIndex_2021": 28.6
+  },
+  {
+    "flagCode": "NG",
+    "country": "Nigeria",
+    "CEOWorldGlobalHealthIndex_2025": 52.08,
+    "GlobalHealthSecurityIndex_2021": 38
+  },
+  {
+    "flagCode": "AO",
+    "country": "Angola",
+    "CEOWorldGlobalHealthIndex_2025": 52.07,
+    "GlobalHealthSecurityIndex_2021": 29.1
+  },
+  {
+    "flagCode": "BD",
+    "country": "Bangladesh",
+    "CEOWorldGlobalHealthIndex_2025": 51.65,
+    "GlobalHealthSecurityIndex_2021": 35.5
+  },
+  {
+    "flagCode": "SY",
+    "country": "Syria",
+    "CEOWorldGlobalHealthIndex_2025": 51.54,
+    "GlobalHealthSecurityIndex_2021": 16.7
+  },
+  {
+    "flagCode": "MM",
+    "country": "Myanmar",
+    "CEOWorldGlobalHealthIndex_2025": 51.37,
+    "GlobalHealthSecurityIndex_2021": 38.3
+  },
+  {
+    "flagCode": "GN",
+    "country": "Guinea",
+    "CEOWorldGlobalHealthIndex_2025": 51.26,
+    "GlobalHealthSecurityIndex_2021": 26.8
+  },
+  {
+    "flagCode": "LR",
+    "country": "Liberia",
+    "CEOWorldGlobalHealthIndex_2025": 51.13,
+    "GlobalHealthSecurityIndex_2021": 35.7
+  },
+  {
+    "flagCode": "AF",
+    "country": "Afghanistan",
+    "CEOWorldGlobalHealthIndex_2025": 50.78,
+    "GlobalHealthSecurityIndex_2021": 28.8
+  },
+  {
+    "flagCode": "MV",
+    "country": "Maldives",
+    "CEOWorldGlobalHealthIndex_2025": 49.82,
+    "GlobalHealthSecurityIndex_2021": 32
+  },
+  {
+    "flagCode": "PK",
+    "country": "Pakistan",
+    "CEOWorldGlobalHealthIndex_2025": 49.6,
+    "GlobalHealthSecurityIndex_2021": 30.4
+  },
+  {
+    "flagCode": "CD",
+    "country": "DR Congo",
+    "CEOWorldGlobalHealthIndex_2025": 49.41,
+    "GlobalHealthSecurityIndex_2021": 26.1
+  },
+  {
+    "flagCode": "KI",
+    "country": "Kiribati",
+    "CEOWorldGlobalHealthIndex_2025": 49.31,
+    "GlobalHealthSecurityIndex_2021": 26.2
+  },
+  {
+    "flagCode": "GQ",
+    "country": "Equatorial Guinea",
+    "CEOWorldGlobalHealthIndex_2025": 48.15,
+    "GlobalHealthSecurityIndex_2021": 17.4
+  },
+  {
+    "flagCode": "SZ",
+    "country": "Eswatini",
+    "CEOWorldGlobalHealthIndex_2025": 48.03,
+    "GlobalHealthSecurityIndex_2021": 29.3
+  },
+  {
+    "flagCode": "PS",
+    "country": "Palestine",
+    "CEOWorldGlobalHealthIndex_2025": 47.94,
+    "GlobalHealthSecurityIndex_2021": null
+  },
+  {
+    "flagCode": "TL",
+    "country": "Timor-Leste",
+    "CEOWorldGlobalHealthIndex_2025": 47.49,
+    "GlobalHealthSecurityIndex_2021": 27.8
+  },
+  {
+    "flagCode": "KP",
+    "country": "North Korea",
+    "CEOWorldGlobalHealthIndex_2025": 47.46,
+    "GlobalHealthSecurityIndex_2021": 16.1
+  },
+  {
+    "flagCode": "SL",
+    "country": "Sierra Leone",
+    "CEOWorldGlobalHealthIndex_2025": 47.38,
+    "GlobalHealthSecurityIndex_2021": 32.7
+  },
+  {
+    "flagCode": "SO",
+    "country": "Somalia",
+    "CEOWorldGlobalHealthIndex_2025": 47.06,
+    "GlobalHealthSecurityIndex_2021": 16
+  },
+  {
+    "flagCode": "LS",
+    "country": "Lesotho",
+    "CEOWorldGlobalHealthIndex_2025": 46.86,
+    "GlobalHealthSecurityIndex_2021": 30.9
+  },
+  {
+    "flagCode": "TD",
+    "country": "Chad",
+    "CEOWorldGlobalHealthIndex_2025": 46.82,
+    "GlobalHealthSecurityIndex_2021": 23.9
+  },
+  {
+    "flagCode": "SS",
+    "country": "South Sudan",
+    "CEOWorldGlobalHealthIndex_2025": 46.65,
+    "GlobalHealthSecurityIndex_2021": null
+  },
+  {
+    "flagCode": "CF",
+    "country": "Central African Republic",
+    "CEOWorldGlobalHealthIndex_2025": 46.23,
+    "GlobalHealthSecurityIndex_2021": 18.6
+  },
+  {
+    "flagCode": "MH",
+    "country": "Marshall Islands",
+    "CEOWorldGlobalHealthIndex_2025": null,
+    "GlobalHealthSecurityIndex_2021": 24.6
+  },
+  {
+    "flagCode": "CK",
+    "country": "Cook Islands",
+    "CEOWorldGlobalHealthIndex_2025": null,
+    "GlobalHealthSecurityIndex_2021": 23.9
+  },
+  {
+    "flagCode": "NU",
+    "country": "Niue",
+    "CEOWorldGlobalHealthIndex_2025": null,
+    "GlobalHealthSecurityIndex_2021": 20.1
+  }
+]
