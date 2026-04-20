@@ -9,6 +9,8 @@ import Trends from './pages/Trends';
 import GlobalMap from './pages/GlobalMap';
 import FullReport from './pages/FullReport';
 import OurTeam from './pages/OurTeam';
+import Login from './pages/Login';
+import SignUp from './pages/SignUp';
 
 /**
  * RESET MANAGER
@@ -82,9 +84,12 @@ function App() {
                       <GlobalMap isDark={isDark} />
                       <Trends />
                       <OurTeam />
+                      
                     </>
                   } />
                   <Route path="/full-report" element={<FullReport />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<SignUp />} />
                 </Routes>
               </main>
 
