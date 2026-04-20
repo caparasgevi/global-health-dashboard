@@ -42,6 +42,14 @@ interface OutbreakSlide {
   url: string;
 }
 
+const THREAT_INDICATORS = [
+  { label: 'Malaria Incidence',  weight: '25%', code: 'MALARIA_EST_INCIDENCE' },
+  { label: 'Tuberculosis',       weight: '25%', code: 'MDG_0000000001' },
+  { label: 'Cholera Cases',      weight: '20%', code: 'CHOLERA_0000000001' },
+  { label: 'Measles Cases',      weight: '15%', code: 'WHS3_62' },
+  { label: 'VPD Outbreaks',      weight: '15%', code: 'RS_IDSR_VPD_06' },
+];
+
 const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 
 const Home = () => {
@@ -52,6 +60,7 @@ const Home = () => {
   const [outbreakSlides, setOutbreakSlides] = useState<OutbreakSlide[]>([]);
   const [outbreakLoading, setOutbreakLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showBasis, setShowBasis] = useState(false);
 
   const swiperRef = useRef<any>(null);
 
@@ -315,10 +324,69 @@ const Home = () => {
 
         <m.div className="lg:col-span-4 w-full" initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.1 }} variants={revealVariants}>
           <div className="theme-card rounded-[2rem] p-6 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
-            <div className="mb-8">
-              <h2 className="text-sm font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em] mb-1">Risk Assessment</h2>
+
+            {/* Panel header + "Basis" toggle */}
+            <div className="mb-6">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <h2 className="text-sm font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em]">Risk Assessment</h2>
+                <button
+                  onClick={() => setShowBasis(b => !b)}
+                  title="Show scoring basis"
+                  className="flex-shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-brand-orange hover:border-brand-orange transition-colors"
+                >
+                  {showBasis ? 'Hide Basis' : 'View Basis'}
+                </button>
+              </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">Regional <span className="text-brand-orange">Threat Level</span></h3>
             </div>
+
+            {/* ── Indicator basis table (collapsible) ───────────────────────── */}
+            <AnimatePresence initial={false}>
+              {showBasis && (
+                <m.div
+                  key="basis"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden mb-6"
+                >
+                  <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 p-3">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
+                      Composite Score — WHO GHO Indicators
+                    </p>
+
+                    {/* Column headers */}
+                    <div className="grid grid-cols-[1fr_auto] gap-x-3 mb-1 px-1">
+                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-600">Indicator</span>
+                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-600 text-right">Weight</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {THREAT_INDICATORS.map((ind) => (
+                        <div key={ind.code} className="grid grid-cols-[1fr_auto] gap-x-3 items-center px-1 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors">
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300 leading-tight">{ind.label}</p>
+                            <p className="text-[8px] font-medium text-slate-400 dark:text-slate-500 font-mono leading-tight">{ind.code}</p>
+                          </div>
+                          <span className="text-[10px] font-black text-brand-orange tabular-nums">{ind.weight}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Method note */}
+                    <p className="text-[8px] leading-relaxed text-slate-400 dark:text-slate-500 mt-2 pt-2 border-t border-slate-200 dark:border-slate-700/50">
+                      Each indicator is normalised to 0–100 against a disease-specific ceiling, then combined as a weighted average. Only indicators with regional data contribute. Scores &gt; 60 → <span className="text-brand-red font-black">HIGH</span> · &gt; 25 → <span className="text-brand-orange font-black">MODERATE</span> · else <span className="font-black text-slate-500">LOW</span>.
+                    </p>
+
+                    {/* Source */}
+                    <p className="text-[8px] text-slate-400 dark:text-slate-500 mt-1 font-medium">
+                      Source: <span className="font-black">WHO Global Health Observatory</span> — ghoapi.azureedge.net
+                    </p>
+                  </div>
+                </m.div>
+              )}
+            </AnimatePresence>
             
             <div className="space-y-7">
               {isLoading ? (
