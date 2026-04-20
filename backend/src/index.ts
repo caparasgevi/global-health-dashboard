@@ -6,21 +6,15 @@ import axios from 'axios';
 dotenv.config();
 
 const app = express();
-// PORT must be process.env.PORT for Render
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 
 app.use(cors());
 app.use(express.json());
 
-// Add a Root Route so you can test if it's alive by visiting the URL
-app.get('/', (req, res) => {
-  res.send('Global Health Dashboard API is Running');
-});
-
 let threatCache: any[] | null = null;
 let lastFetchTime = 0;
-const CACHE_DURATION = 60 * 60 * 1000; 
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
 app.get('/api/status', (req: Request, res: Response) => {
   res.json({ message: 'Health Radar backend is online and tracking.' });
@@ -30,19 +24,18 @@ app.get('/api/country-stats/:code', async (req: Request, res: Response) => {
   const countryCode = req.params.code;
   try {
     const response = await axios.get(
-      `https://disease.sh/v3/covid-19/countries/${countryCode}?strict=false`,
-      { timeout: 5000 } // Added timeout
+      `https://disease.sh/v3/covid-19/countries/${countryCode}?strict=false`
     );
     res.json(response.data);
   } catch (error) {
     console.error(`Failed to fetch stats for ${countryCode}`);
-    res.status(500).json({ error: 'Failed to fetch country stats.' });
+    res.status(500).json({ error: 'Failed to fetch country stats from upstream provider.' });
   }
 });
 
 app.get('/api/indicators', async (req: Request, res: Response) => {
   try {
-    const response = await axios.get(`${GHO_BASE_URL}Indicator?$format=json`, { timeout: 10000 });
+    const response = await axios.get(`${GHO_BASE_URL}Indicator?$format=json`);
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch WHO indicators.' });
@@ -111,8 +104,11 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
         }
       });
 
-      const finalRawValue = activeWeights > 0 ? (totalWeightedScore / activeWeights) : 0;
-      const displayValue = finalRawValue > 0 ? Math.max(finalRawValue, 12.5) : 6.0;
+      const finalRawValue =
+        activeWeights > 0 ? (totalWeightedScore / activeWeights) * 1.0 : 0;
+
+      const displayValue =
+        finalRawValue > 0 ? Math.max(finalRawValue, 12.5) : 6.0;
 
       return {
         SpatialDim: reg.code,
@@ -122,6 +118,7 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
 
     threatCache = results;
     lastFetchTime = now;
+
     res.json(results);
   } catch (error) {
     console.error('Critical Fetch Error:', error);
@@ -129,13 +126,25 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
   }
 });
 
+app.get('/api/indicator-status/:country/:code', async (req: Request, res: Response) => {
+  const { country, code } = req.params;
+  try {
+    const response = await axios.get(
+      `${GHO_BASE_URL}${code}?$format=json&$filter=SpatialDim eq '${String(country).toUpperCase()}'&$orderby=TimeDim desc&$top=10`
+    );
+    res.json(response.data.value || []);
+  } catch (error) {
+    res.status(500).json({ error: `Failed to fetch ${code} for ${country}` });
+  }
+});
+
+
 app.get('/api/relevant-image', async (req: Request, res: Response) => {
   const query = req.query.query;
   const apiKey = process.env.PEXELS_API_KEY;
 
   if (!apiKey) {
-    // Fallback instead of crashing with 500
-    return res.json({ imageUrl: 'https://images.pexels.com/photos/3992933/pexels-photo-3992933.jpeg' });
+    return res.status(500).json({ error: 'Pexels API key is missing.' });
   }
 
   try {
@@ -147,13 +156,13 @@ app.get('/api/relevant-image', async (req: Request, res: Response) => {
     const imageUrl = response.data.photos[0]?.src?.large || '';
     res.json({ imageUrl });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch image.' });
+    res.status(500).json({ error: 'Failed to fetch image from Pexels.' });
   }
 });
 
-// Outbreak news remains mostly the same, ensuring it doesn't crash if Pexels fails
 app.get('/api/outbreak-news', async (req: Request, res: Response) => {
   const limit = req.query.limit || 5;
+  
   const apiKey = process.env.PEXELS_API_KEY;
 
   try {
@@ -168,8 +177,10 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
     });
 
     const newsItems = response.data?.value || [];
+
     const formattedNews = await Promise.all(newsItems.map(async (i: any) => {
       let imageUrl = 'https://images.pexels.com/photos/3992933/pexels-photo-3992933.jpeg'; 
+      
       if (apiKey) {
         try {
           const imageRes = await axios.get('https://api.pexels.com/v1/search', {
@@ -181,6 +192,7 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
           console.warn(`Pexels fetch failed for: ${i.Title}`);
         }
       }
+
       return {
         id: i.Id,
         title: i.Title,
@@ -193,12 +205,15 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
 
     res.json(formattedNews);
   } catch (error) {
+    console.error('Outbreak news fetch error:', error);
     res.status(500).json([]);
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+}
 
 export default app;
