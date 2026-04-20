@@ -14,7 +14,6 @@ const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 app.use(cors());
 app.use(express.json());
 
-
 const staticDataPath = path.join(process.cwd(), 'healthiest-countries-2026.json');
 let staticHealthData: any[] = [];
 try {
@@ -45,13 +44,9 @@ app.get('/api/country-stats/:code', async (req: Request, res: Response) => {
 app.get('/api/historical/:code', async (req: Request, res: Response) => {
   const countryCode = req.params.code;
   try {
-   
     const response = await axios.get(`https://disease.sh/v3/covid-19/historical/${countryCode}?lastdays=30`);
-    
-
     res.json(response.data?.timeline?.cases || null);
   } catch (error) {
-    // If the country has no historical data, send a graceful 404
     res.status(404).json({ error: 'Historical data not found for this region.' });
   }
 });
@@ -133,18 +128,14 @@ app.get('/api/indicator-status/:country/:code', async (req: Request, res: Respon
   } catch (error) { res.status(500).json({ error: `Failed to fetch ${code} for ${country}` }); }
 });
 
-
-
 app.get('/api/risk-scores', async (req: Request, res: Response) => {
   try {
-    
     const staticMap = new Map();
     staticHealthData.forEach(item => {
       if (item.flagCode) staticMap.set(item.flagCode, item);
       if (item.country) staticMap.set(item.country.toLowerCase(), item);
     });
 
-    
     const [diseaseResponse, whoResponse] = await Promise.all([
       axios.get('https://disease.sh/v3/covid-19/countries?strict=false'),
       axios.get(`${GHO_BASE_URL}DIMENSION/COUNTRY/DimensionValues`) 
@@ -153,78 +144,62 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
     const diseaseData = diseaseResponse.data;
     const whoCountries = whoResponse.data.value;
 
-   
     const masterRoster = new Map();
     const diseaseMap = new Map();
 
-    
     whoCountries.forEach((c: any) => {
       masterRoster.set(c.Code, { iso3: c.Code, name: c.Title });
     });
 
-   
     diseaseData.forEach((c: any) => {
       if (c.countryInfo && c.countryInfo.iso3) {
-        diseaseMap.set(c.countryInfo.iso3, c); // Save live data
-        
-       
+        diseaseMap.set(c.countryInfo.iso3, c); 
         if (!masterRoster.has(c.countryInfo.iso3)) {
           masterRoster.set(c.countryInfo.iso3, { iso3: c.countryInfo.iso3, name: c.country });
         }
       }
     });
 
-   
     const riskData = Array.from(masterRoster.values()).map((countryObj: any) => {
       const iso3 = countryObj.iso3;
       const name = countryObj.name;
 
-   
       const liveData = diseaseMap.get(iso3) || {};
       const iso2 = liveData.countryInfo?.iso2;
-
-     
       const staticData = staticMap.get(iso2) || staticMap.get(name.toLowerCase()) || {};
 
- 
       const healthIndex = staticData.CEOWorldGlobalHealthIndex_2025 || staticData.GlobalHealthSecurityIndex_2021 || 50;
-      const baseRisk = 100 - healthIndex;
+      const rawVulnerability = 100 - healthIndex;
 
-    
+      // --- NEW: TRIPLE THREAT MATH ---
+      // We round immediately to prevent floating point errors in the UI
+      const systemicRisk = Math.round(rawVulnerability * 0.70);
+      const endemicRisk = Math.round(rawVulnerability * 0.30);
+
       const cases = liveData.cases || 1;
       const deaths = liveData.deaths || 0;
-      const active = liveData.active || 1;
-      const todayCases = liveData.todayCases || 0;
+      const CFR = cases > 0 ? (deaths / cases) : 0;
+      const livePenalty = Math.round(Math.min((CFR / 0.05) * 15, 15));
 
-      
-      const G = todayCases / active; 
-      const velocityPenalty = Math.min((G / 0.05) * 15, 15);
-
-      
-      const CFR = deaths / cases;
-      const fatalityPenalty = Math.min((CFR / 0.05) * 15, 15);
-
-   
-      const finalScore = Math.min(Math.round(baseRisk + velocityPenalty + fatalityPenalty), 100);
-
-      const radarVelocity = Math.min((G / 0.05) * 100, 100); 
-      const radarFatality = Math.min((CFR / 0.05) * 100, 100);
+      // Final score is perfectly sum-able
+      const finalScore = Math.min(systemicRisk + endemicRisk + livePenalty, 100);
+      const testsPer1M = liveData.testsPerOneMillion || 0;
 
       return {
         id: iso3,
         name: name,
         score: finalScore,
-        velocity: `${G > 0 ? '+' : ''}${(G * 100).toFixed(3)}%`,
         fatality: `${(CFR * 100).toFixed(2)}%`,
-        trend: finalScore > 75 ? 'Global Emergency' : G > 0.01 ? 'High Velocity' : 'Stable',
+        testingRate: testsPer1M.toLocaleString(), 
+        trend: finalScore > 75 ? 'Global Emergency' : 'Stable',
+        // Pass the exact 3 variables to the frontend
         metrics: {
-          surge: Math.round(radarVelocity),
-          fatality: Math.round(radarFatality),
-          baseline: Math.round(baseRisk) 
+          systemic: systemicRisk,
+          endemic: endemicRisk,
+          live: livePenalty
         }
       };
     });
-
 
     const validCountries = riskData.filter((c: any) => c.id && c.id.length === 3);
     const sortedRisks = validCountries.sort((a: any, b: any) => b.score - a.score);
@@ -236,7 +211,6 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to process algorithmic risk scores.' });
   }
 });
-
 
 app.get('/api/relevant-image', async (req: Request, res: Response) => {
   const query = req.query.query;

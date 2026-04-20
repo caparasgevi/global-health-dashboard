@@ -79,6 +79,17 @@ export const healthService = {
     ]);
   },
 
+  // NEW: Fetch specific WHO Endemic Indicators
+  getEndemicData: async (countryCode: string, indicatorCode: string) => {
+    try {
+      // Your backend route: /api/indicator-status/:country/:code
+      const res = await backendClient.get(`/indicator-status/${countryCode}/${indicatorCode}`);
+      return res.data; // Returns an array of recent historical records
+    } catch {
+      return [];
+    }
+  },
+
   getGlobalBaseline: async (options?: { signal?: AbortSignal }) => {
     try {
       const res = await backendClient.get(`/global-baseline`, { signal: options?.signal });
