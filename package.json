@@ -5,5 +5,8 @@
   "workspaces": [
     "backend",
     "health-radar"
-  ]
+  ],
+  "scripts": {
+    "build": "cd health-radar && npm install && npm run build"
+  }
 }

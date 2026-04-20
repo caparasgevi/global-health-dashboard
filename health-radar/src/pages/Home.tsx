@@ -315,12 +315,21 @@ const Home = () => {
 
         <m.div className="lg:col-span-4 w-full" initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.1 }} variants={revealVariants}>
           <div className="theme-card rounded-[2rem] p-6 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
-            <div className="mb-8">
-              <h2 className="text-sm font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em] mb-1">Risk Assessment</h2>
+
+            <div className="mb-6">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <h2 className="text-sm font-black uppercase text-slate-400 dark:text-slate-500 font-montserrat tracking-[0.2em]">Risk Assessment</h2>
+                <button
+                  onClick={() => setShowBasis(b => !b)}
+                  title="Show scoring basis"
+                  className="flex-shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-brand-orange hover:border-brand-orange transition-colors"
+                >
+                  {showBasis ? 'Hide Basis' : 'View Basis'}
+                </button>
+              </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">Regional <span className="text-brand-orange">Threat Level</span></h3>
             </div>
 
-            {/* ── Indicator basis table (collapsible) ───────────────────────── */}
             <AnimatePresence initial={false}>
               {showBasis && (
                 <m.div
