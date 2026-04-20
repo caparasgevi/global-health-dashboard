@@ -7,6 +7,7 @@ import Footer from './components/Footer';
 
 import Home from './pages/Home';
 import About from './pages/About';
+import Auth from './pages/Auth'; 
 import Trends from './pages/Trends';
 import GlobalMap from './pages/GlobalMap';
 import FullReport from './pages/FullReport';
@@ -41,6 +42,7 @@ const ResetManager = () => {
 function App() {
   const [isDark, setIsDark] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [authStatus, setAuthStatus] = useState<'unauthenticated' | 'user' | 'guest'>('unauthenticated');
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -58,34 +60,39 @@ function App() {
     }
   }, [isDark]);
 
-  return (
+ return (
     <Router>
       <ResetManager />
       <LazyMotion features={domMax}>
         <AnimatePresence mode="wait">
           {!isLoading && (
-            <div 
-              key="main-app-content"
-              className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins"
-            >
-              <Header isDark={isDark} setIsDark={setIsDark} />
+            <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins">
+              {authStatus !== 'unauthenticated' && (
+                <Header isDark={isDark} setIsDark={setIsDark} />
+              )}
 
-              <main className="flex-grow container mx-auto px-4 py-8">
+              <main className="flex-grow">
                 <Routes>
-                  <Route path="/" element={
+                  {authStatus === 'unauthenticated' ? 
+                    <Route path="*" element={<Auth onLogin={(status) => setAuthStatus(status)} />} />
+                  ) : (
                     <>
-                      <Home />
-                      <About />
-                      <GlobalMap isDark={isDark} />
-                      <Trends />
-                      <OurTeam />
+                      <Route path="/" element={
+                        <div className="flex flex-col gap-0">
+                          <Home />
+                          <About />
+                          <GlobalMap isDark={isDark} />
+                          <Trends />
+                          <OurTeam />
+                        </div>
+                      } />
+                      <Route path="/full-report" element={<FullReport />} />
                     </>
-                  } />
-                  <Route path="/full-report" element={<FullReport />} />
+                  )}
                 </Routes>
               </main>
 
-              <Footer />
+              {authStatus !== 'unauthenticated' && <Footer />}
             </div>
           )}
         </AnimatePresence>
