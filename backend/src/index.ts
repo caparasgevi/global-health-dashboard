@@ -14,7 +14,7 @@ const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 app.use(cors());
 app.use(express.json());
 
-// --- LOAD STATIC JSON DATABASE ---
+
 const staticDataPath = path.join(process.cwd(), 'healthiest-countries-2026.json');
 let staticHealthData: any[] = [];
 try {
@@ -45,11 +45,10 @@ app.get('/api/country-stats/:code', async (req: Request, res: Response) => {
 app.get('/api/historical/:code', async (req: Request, res: Response) => {
   const countryCode = req.params.code;
   try {
-    // Fetch the last 30 days of data
+   
     const response = await axios.get(`https://disease.sh/v3/covid-19/historical/${countryCode}?lastdays=30`);
     
-    // The API returns timeline.cases as an object like {"1/22/20": 100, ...}
-    // We send just that cases object back to the frontend
+
     res.json(response.data?.timeline?.cases || null);
   } catch (error) {
     // If the country has no historical data, send a graceful 404
@@ -135,17 +134,17 @@ app.get('/api/indicator-status/:country/:code', async (req: Request, res: Respon
 });
 
 
-// --- HYBRID ALGORITHMIC RISK SCORES (STATIC + LIVE DATA) ---
+
 app.get('/api/risk-scores', async (req: Request, res: Response) => {
   try {
-    // 1. Map the static JSON data for fast lookups
+    
     const staticMap = new Map();
     staticHealthData.forEach(item => {
       if (item.flagCode) staticMap.set(item.flagCode, item);
       if (item.country) staticMap.set(item.country.toLowerCase(), item);
     });
 
-    // 2. Fetch Live APIs
+    
     const [diseaseResponse, whoResponse] = await Promise.all([
       axios.get('https://disease.sh/v3/covid-19/countries?strict=false'),
       axios.get(`${GHO_BASE_URL}DIMENSION/COUNTRY/DimensionValues`) 
@@ -154,63 +153,60 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
     const diseaseData = diseaseResponse.data;
     const whoCountries = whoResponse.data.value;
 
-    // --- NEW: THE UNIFIED MASTER ROSTER ---
+   
     const masterRoster = new Map();
     const diseaseMap = new Map();
 
-    // Add WHO countries first
+    
     whoCountries.forEach((c: any) => {
       masterRoster.set(c.Code, { iso3: c.Code, name: c.Title });
     });
 
-    // Add disease.sh countries (This catches Taiwan!) and build the data map
+   
     diseaseData.forEach((c: any) => {
       if (c.countryInfo && c.countryInfo.iso3) {
         diseaseMap.set(c.countryInfo.iso3, c); // Save live data
         
-        // If WHO missed this country, add it to our roster
+       
         if (!masterRoster.has(c.countryInfo.iso3)) {
           masterRoster.set(c.countryInfo.iso3, { iso3: c.countryInfo.iso3, name: c.country });
         }
       }
     });
 
-    // 3. Process the Hybrid Logic using the UNIFIED Roster
+   
     const riskData = Array.from(masterRoster.values()).map((countryObj: any) => {
       const iso3 = countryObj.iso3;
       const name = countryObj.name;
 
-      // Get Live Data
+   
       const liveData = diseaseMap.get(iso3) || {};
       const iso2 = liveData.countryInfo?.iso2;
 
-      // Get Static Health Data (Try ISO2 first, then Name)
+     
       const staticData = staticMap.get(iso2) || staticMap.get(name.toLowerCase()) || {};
 
-      // HYBRID PART A: THE ANCHOR (Base Risk Score)
-      // 100 Health Index = 0 Risk. We fallback to 50 if the country isn't in your JSON.
+ 
       const healthIndex = staticData.CEOWorldGlobalHealthIndex_2025 || staticData.GlobalHealthSecurityIndex_2021 || 50;
       const baseRisk = 100 - healthIndex;
 
-      // HYBRID PART B: THE SENSOR (Live Outbreak Penalty)
+    
       const cases = liveData.cases || 1;
       const deaths = liveData.deaths || 0;
       const active = liveData.active || 1;
       const todayCases = liveData.todayCases || 0;
 
-      // Calculate Surge Velocity (Penalty capped at 15 points max)
+      
       const G = todayCases / active; 
       const velocityPenalty = Math.min((G / 0.05) * 15, 15);
 
-      // Calculate Case Fatality Ratio (Penalty capped at 15 points max)
+      
       const CFR = deaths / cases;
       const fatalityPenalty = Math.min((CFR / 0.05) * 15, 15);
 
-      // HYBRID PART C: COMBINE
-      // Final score is the static base risk + any live penalties (capped at 100)
+   
       const finalScore = Math.min(Math.round(baseRisk + velocityPenalty + fatalityPenalty), 100);
 
-      // Sub-metrics for your Frontend Radar Chart
       const radarVelocity = Math.min((G / 0.05) * 100, 100); 
       const radarFatality = Math.min((CFR / 0.05) * 100, 100);
 
@@ -229,7 +225,7 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       };
     });
 
-    // 4. Filter & Sort
+
     const validCountries = riskData.filter((c: any) => c.id && c.id.length === 3);
     const sortedRisks = validCountries.sort((a: any, b: any) => b.score - a.score);
 
