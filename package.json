@@ -1,5 +1,9 @@
 {
-  "name": "global-health-dashboard-root",
+  "name": "global-health-dashboard",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "workspaces": [
+    "backend",
+    "health-radar"
+  ]
 }
