@@ -1,5 +1,13 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import geviImg from "../assets/ourTeam/Gevi_image.png";
+import geviHover from "../assets/ourTeam/Gevi_hoverImage.jpg";
+import kielImg from "../assets/ourTeam/Kiel_image.jpg";
+import kielHover from "../assets/ourTeam/Kiel_hoverImage.jpg";
+import shaneImg from "../assets/ourTeam/Shane_image.png";
+import elijahImg from "../assets/ourTeam/Elijah_image.png";
+import leobertImg from "../assets/ourTeam/Leobert_image.png";
+import leobertHover from "../assets/ourTeam/Leobert_hoverImage.jpg";
 
 interface TeamMember {
   id: number;
@@ -17,8 +25,8 @@ const teamMembers: TeamMember[] = [
     role: "Project Lead | Full-Stack Engineer",
     contribution:
       "Establishes foundational architecture for frontend and backend systems. Orchestrates API development and leads the implementation of the Home, About, and Trends modules.",
-    image: "src/assets/ourTeam/Gevi_image.png",
-    hoverImage: "src/assets/ourTeam/Gevi_hoverImage.jpg",
+    image: geviImg,
+    hoverImage: geviHover,
   },
   {
     id: 2,
@@ -26,8 +34,8 @@ const teamMembers: TeamMember[] = [
     role: "Frontend & Geospatial Engineer",
     contribution:
       "Architects the high-performance geospatial engine and interactive Our Team platform. Specializes in seamless map synchronization and real-time spatial data visualization for precision disease tracking.",
-    image: "src/assets/ourTeam/Kiel_image.jpg",
-    hoverImage: "src/assets/ourTeam/Kiel_hoverImage.jpg",
+    image: kielImg,
+    hoverImage: kielHover,
   },
   {
     id: 3,
@@ -35,8 +43,8 @@ const teamMembers: TeamMember[] = [
     role: "Frontend Visualization Engineer",
     contribution:
       "Develops the Country Statistics module and analytical interfaces. Conducts data assessment of disease outbreaks to create high-fidelity, visually appealing visualizations.",
-    image: "src/assets/ourTeam/Shane_image.png",
-    hoverImage: "src/assets/ourTeam/Shane_image.png",
+    image: shaneImg,
+    hoverImage: shaneImg,
   },
   {
     id: 4,
@@ -44,8 +52,8 @@ const teamMembers: TeamMember[] = [
     role: "Database Administrator & Backend Engineer",
     contribution:
       "Primary lead for database management and secure user authentication. Ensures robust data architecture and seamless backend-to-frontend communication.",
-    image: "src/assets/ourTeam/Elijah_image.png",
-    hoverImage: "src/assets/ourTeam/Elijah_image.png",
+    image: elijahImg,
+    hoverImage: elijahImg,
   },
   {
     id: 5,
@@ -53,8 +61,8 @@ const teamMembers: TeamMember[] = [
     role: "Backend Data & Algorithms Engineer",
     contribution:
       "Engineers advanced risk scoring models and oversees backend systems. Collaborates on database refinement and high-efficiency API structures.",
-    image: "src/assets/ourTeam/Leobert_image.png",
-    hoverImage: "src/assets/ourTeam/Leobert_hoverImage.jpg",
+    image: leobertImg,
+    hoverImage: leobertHover,
   },
 ];
 
