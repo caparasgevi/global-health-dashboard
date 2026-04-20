@@ -6,15 +6,17 @@ import axios from 'axios';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+// Render assigns a random port; this line ensures we use it.
+const PORT = Number(process.env.PORT) || 5000;
 const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 
 app.use(cors());
 app.use(express.json());
 
-let threatCache: any[] | null = null;
-let lastFetchTime = 0;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+// Root Route - Crucial for Render's Health Check
+app.get('/', (req, res) => {
+  res.send('Health Radar API is Live and Running.');
+});
 
 app.get('/api/status', (req: Request, res: Response) => {
   res.json({ message: 'Health Radar backend is online and tracking.' });
@@ -28,8 +30,7 @@ app.get('/api/country-stats/:code', async (req: Request, res: Response) => {
     );
     res.json(response.data);
   } catch (error) {
-    console.error(`Failed to fetch stats for ${countryCode}`);
-    res.status(500).json({ error: 'Failed to fetch country stats from upstream provider.' });
+    res.status(500).json({ error: 'Failed to fetch country stats.' });
   }
 });
 
@@ -42,9 +43,13 @@ app.get('/api/indicators', async (req: Request, res: Response) => {
   }
 });
 
+// Global baseline logic with local caching
+let threatCache: any[] | null = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 60 * 60 * 1000; 
+
 app.get('/api/global-baseline', async (req: Request, res: Response) => {
   const now = Date.now();
-
   if (threatCache && now - lastFetchTime < CACHE_DURATION) {
     return res.json(threatCache);
   }
@@ -76,7 +81,6 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
           );
           return { code: ind.code, data: res.data?.value || [] };
         } catch (e) {
-          console.warn(`Failed to fetch ${ind.code}, skipping...`);
           return { code: ind.code, data: [] };
         }
       })
@@ -89,26 +93,20 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
       THREAT_INDICATORS.forEach((ind) => {
         const set = datasetResponses.find((r) => r.code === ind.code);
         const data = set ? set.data : [];
-
         const regRecords = data
           .filter((d: any) => d.SpatialDim === reg.code)
           .sort((a: any, b: any) => b.TimeDim - a.TimeDim);
 
         if (regRecords.length > 0) {
-          const rawValue = Number(
-            regRecords[0].NumericValue || regRecords[0].Value || 0
-          );
+          const rawValue = Number(regRecords[0].NumericValue || regRecords[0].Value || 0);
           const normalized = Math.min((rawValue / ind.ceiling) * 100, 100);
           totalWeightedScore += normalized * ind.weight;
           activeWeights += ind.weight;
         }
       });
 
-      const finalRawValue =
-        activeWeights > 0 ? (totalWeightedScore / activeWeights) * 1.0 : 0;
-
-      const displayValue =
-        finalRawValue > 0 ? Math.max(finalRawValue, 12.5) : 6.0;
+      const finalRawValue = activeWeights > 0 ? (totalWeightedScore / activeWeights) : 0;
+      const displayValue = finalRawValue > 0 ? Math.max(finalRawValue, 12.5) : 6.0;
 
       return {
         SpatialDim: reg.code,
@@ -118,33 +116,18 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
 
     threatCache = results;
     lastFetchTime = now;
-
     res.json(results);
   } catch (error) {
-    console.error('Critical Fetch Error:', error);
     res.json(threatCache || []);
   }
 });
-
-app.get('/api/indicator-status/:country/:code', async (req: Request, res: Response) => {
-  const { country, code } = req.params;
-  try {
-    const response = await axios.get(
-      `${GHO_BASE_URL}${code}?$format=json&$filter=SpatialDim eq '${String(country).toUpperCase()}'&$orderby=TimeDim desc&$top=10`
-    );
-    res.json(response.data.value || []);
-  } catch (error) {
-    res.status(500).json({ error: `Failed to fetch ${code} for ${country}` });
-  }
-});
-
 
 app.get('/api/relevant-image', async (req: Request, res: Response) => {
   const query = req.query.query;
   const apiKey = process.env.PEXELS_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'Pexels API key is missing.' });
+    return res.json({ imageUrl: 'https://images.pexels.com/photos/3992933/pexels-photo-3992933.jpeg' });
   }
 
   try {
@@ -156,13 +139,12 @@ app.get('/api/relevant-image', async (req: Request, res: Response) => {
     const imageUrl = response.data.photos[0]?.src?.large || '';
     res.json({ imageUrl });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch image from Pexels.' });
+    res.status(500).json({ error: 'Failed to fetch image.' });
   }
 });
 
 app.get('/api/outbreak-news', async (req: Request, res: Response) => {
   const limit = req.query.limit || 5;
-  
   const apiKey = process.env.PEXELS_API_KEY;
 
   try {
@@ -177,10 +159,8 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
     });
 
     const newsItems = response.data?.value || [];
-
     const formattedNews = await Promise.all(newsItems.map(async (i: any) => {
       let imageUrl = 'https://images.pexels.com/photos/3992933/pexels-photo-3992933.jpeg'; 
-      
       if (apiKey) {
         try {
           const imageRes = await axios.get('https://api.pexels.com/v1/search', {
@@ -205,15 +185,13 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
 
     res.json(formattedNews);
   } catch (error) {
-    console.error('Outbreak news fetch error:', error);
     res.status(500).json([]);
   }
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-  });
-}
+// Final Fix: Listen on 0.0.0.0 regardless of environment
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 export default app;
