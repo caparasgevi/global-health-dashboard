@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
-import { Search, AlertTriangle, ArrowLeft, ArrowUpDown, Users, Activity, ShieldCheck, FileText, Calculator, Info, Microscope, Bug } from 'lucide-react';
+import { Search, AlertTriangle, ArrowLeft, ArrowUpDown, Users, Activity, ShieldCheck, FileText, Calculator, Info, Microscope, Bug, Clock } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer
 } from 'recharts';
@@ -16,6 +16,7 @@ const RiskScores = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<any | null>(null);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [timeOffset, setTimeOffset] = useState<number>(0); // 0 is Today, 14 is 2 weeks ago
   
   const [riskData, setRiskData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,13 +35,8 @@ const RiskScores = () => {
       try {
         const data = await healthService.getRiskScores();
         if (isMounted) {
-          // BUG FIX: Ensure data is an array before we try to map over it
           if (Array.isArray(data) && data.length > 0) {
-            const rankedData = data.map((country: any, idx: number) => ({
-              ...country,
-              globalRank: idx + 1
-            }));
-            setRiskData(rankedData);
+            setRiskData(data);
           } else {
             setRiskData([]); 
           }
@@ -101,14 +97,69 @@ const RiskScores = () => {
     return () => { isMounted = false; };
   }, [selectedCountry]);
 
+  // THE TIME MACHINE ALGORITHM
   const filteredLeaderboard = useMemo(() => {
-    let filtered = riskData.filter(country => 
+    // 1. Calculate the dynamic scores for ALL countries first
+    let processed = riskData.map(country => {
+      let dynamicLivePenalty = country.metrics?.live || 0;
+      let dynamicScore = country.score;
+      let growthFactor = 1;
+      let incidenceRate = 0;
+
+      if (country.caseHistory && country.caseHistory.length >= 30) {
+        const cases = country.caseHistory;
+        
+        const todayIdx = cases.length - 1 - timeOffset;
+        const weekAgoIdx = todayIdx - 7;
+        const twoWeeksAgoIdx = weekAgoIdx - 7;
+
+        if (twoWeeksAgoIdx >= 0) {
+          const casesToday = cases[todayIdx];
+          const cases7DaysAgo = cases[weekAgoIdx];
+          const cases14DaysAgo = cases[twoWeeksAgoIdx];
+
+          const newCasesThisWeek = Math.max(casesToday - cases7DaysAgo, 0);
+          const newCasesLastWeek = Math.max(cases7DaysAgo - cases14DaysAgo, 0);
+
+          incidenceRate = (newCasesThisWeek / (country.population || 10000000)) * 100000;
+          const incidenceNorm = Math.min((incidenceRate / 500) * 10, 10);
+
+          if (newCasesLastWeek > 0) {
+            growthFactor = newCasesThisWeek / newCasesLastWeek;
+          }
+          const growthNorm = growthFactor > 1.2 ? Math.min((growthFactor - 1) * 5, 10) : 0;
+
+          dynamicLivePenalty = Math.round(incidenceNorm + growthNorm);
+          
+          const sys = country.metrics?.systemic || 0;
+          const end = country.metrics?.endemic || 0;
+          dynamicScore = Math.min(sys + end + dynamicLivePenalty, 100);
+        }
+      }
+
+      return {
+        ...country,
+        score: dynamicScore,
+        growthFactor,
+        incidenceRate,
+        metrics: { ...country.metrics, live: dynamicLivePenalty }
+      };
+    });
+
+    // 2. Sort the FULL roster to establish the correct global order
+    processed.sort((a, b) => sortOrder === 'desc' ? b.score - a.score : a.score - b.score);
+
+    // 3. Assign the true Global Rank (so a country keeps its rank even when searched)
+    let ranked = processed.map((c, idx) => ({ ...c, globalRank: idx + 1 }));
+
+    // 4. FINALLY, apply the search filter
+    let filtered = ranked.filter(country => 
       country.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    filtered.sort((a, b) => sortOrder === 'desc' ? b.score - a.score : a.score - b.score);
+    
     return filtered;
-  }, [riskData, searchQuery, sortOrder]);
-
+  }, [riskData, searchQuery, sortOrder, timeOffset]);
+  
   return (
     <div id="risk-scores" className="py-12 bg-white dark:bg-slate-950 min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
@@ -124,7 +175,36 @@ const RiskScores = () => {
 
         <AnimatePresence mode="wait">
           {!selectedCountry ? (
-            <m.div key="global-view" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+            <m.div key="global-view" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+              
+              {/* TIME MACHINE WIDGET */}
+              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <Clock size={16} className="text-brand-red" /> Time Machine Simulator
+                  </h3>
+                  <span className="text-brand-red font-black text-sm bg-red-500/10 px-4 py-1.5 rounded-full transition-all">
+                    {timeOffset === 0 ? "LIVE DATA: TODAY" : `REWIND: ${timeOffset} DAYS AGO`}
+                  </span>
+                </div>
+                
+                <input 
+                  type="range" 
+                  min="-14" 
+                  max="0" 
+                  step="1"
+                  value={-timeOffset} 
+                  onChange={(e) => setTimeOffset(-Number(e.target.value))}
+                  className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-red"
+                />
+                
+                <div className="flex justify-between text-[10px] font-black text-slate-400 mt-3 uppercase tracking-widest">
+                  <span>2 Weeks Ago</span>
+                  <span>1 Week Ago</span>
+                  <span>Today</span>
+                </div>
+              </div>
+
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="relative w-full md:w-96">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -150,7 +230,7 @@ const RiskScores = () => {
                 <div className="flex justify-between items-end mb-6">
                   <div>
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">Threat Leaderboard</h2>
-                    <p className="text-xs text-slate-500 mt-1">Ranked by composite risk assessment.</p>
+                    <p className="text-xs text-slate-500 mt-1">Scores dynamically updated based on the Time Machine timeline.</p>
                   </div>
                 </div>
 
@@ -161,37 +241,54 @@ const RiskScores = () => {
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Running Threat Algorithm...</p>
                     </div>
                   ) : (
-                    <table className="w-full text-left border-collapse relative">
+                    <table className="w-full table-fixed text-left border-collapse relative">
                       <thead className="sticky top-0 bg-white dark:bg-slate-900 z-10 shadow-sm">
                         <tr className="border-b border-slate-200 dark:border-slate-800">
-                          {/* UPDATED HEADER */}
-                          <th className="pb-3 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white dark:bg-slate-900">Global Rank</th>
-                          <th className="pb-3 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white dark:bg-slate-900">Nation</th>
-                          <th className="pb-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right bg-white dark:bg-slate-900">Score</th>
+                          <th className="pb-3 w-16 md:w-24 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white dark:bg-slate-900">Rank</th>
+                          <th className="pb-3 w-auto text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white dark:bg-slate-900">Nation</th>
+                          <th className="pb-3 w-20 md:w-32 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white dark:bg-slate-900">Growth</th>
+                          <th className="pb-3 w-24 md:w-32 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white dark:bg-slate-900">Final Score</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredLeaderboard.map((country) => (
-                          <tr 
-                            key={country.id} 
-                            onClick={() => setSelectedCountry(country)}
-                            className="group border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 cursor-pointer transition-colors"
-                          >
-                            {/* UPDATED CELL: Uses the stamped globalRank */}
-                            <td className="py-4 text-sm font-mono text-slate-500">
-                              #{String(country.globalRank).padStart(2, '0')}
-                            </td>
-                            <td className="py-4 font-bold text-slate-900 dark:text-white group-hover:text-brand-red transition-colors">{country.name}</td>
-                            <td className="py-4 text-right">
-                              <span className={`px-3 py-1 rounded-full text-xs font-black ${
-                                country.score >= 75 ? 'bg-red-500/10 text-brand-red' : 
-                                country.score >= 50 ? 'bg-orange-500/10 text-brand-orange' : 'bg-emerald-500/10 text-emerald-500'
-                              }`}>
-                                {country.score}/100
-                              </span>
+                        {filteredLeaderboard.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="py-16 text-center">
+                              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">No Results Found</p>
+                              <p className="text-xs text-slate-500 italic">No countries match "{searchQuery}"</p>
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          filteredLeaderboard.map((country) => (
+                            <tr 
+                              key={country.id} 
+                              onClick={() => setSelectedCountry(country)}
+                              className="group border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 cursor-pointer transition-colors"
+                            >
+                              <td className="py-4 text-sm font-mono text-slate-500">
+                                #{String(country.globalRank).padStart(2, '0')}
+                              </td>
+                              <td className="py-4 font-bold text-slate-900 dark:text-white group-hover:text-brand-red transition-colors truncate pr-4">
+                                {country.name}
+                              </td>
+                              <td className="py-4 text-center">
+                                <span className={`text-xs font-bold px-2 py-1 rounded ${
+                                  country.growthFactor > 1.2 ? 'bg-red-500/10 text-brand-red' : 'text-emerald-500'
+                                }`}>
+                                  {country.growthFactor ? country.growthFactor.toFixed(2) : '1.00'}x
+                                </span>
+                              </td>
+                              <td className="py-4 text-right">
+                                <span className={`px-3 py-1 rounded-full text-xs font-black transition-all ${
+                                  country.score >= 75 ? 'bg-red-500/10 text-brand-red' : 
+                                  country.score >= 50 ? 'bg-orange-500/10 text-brand-orange' : 'bg-emerald-500/10 text-emerald-500'
+                                }`}>
+                                  {country.score}/100
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   )}
@@ -219,12 +316,9 @@ const RiskScores = () => {
                       FINAL SCORE: {selectedCountry.score}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-500">
-                    Comprehensive national profile featuring historical COVID-19 and Endemic epidemiological data.
-                  </p>
                   <p className="text-sm text-slate-500 flex gap-4 mt-2">
-                    <span>COVID Fatality: <strong className="text-slate-700 dark:text-slate-300">{selectedCountry.fatality}</strong></span>
-                    <span>Testing Coverage: <strong className="text-slate-700 dark:text-slate-300">{selectedCountry.testingRate} per 1M</strong></span>
+                    <span>Dynamic Growth: <strong className={selectedCountry.growthFactor > 1.2 ? "text-brand-red" : "text-emerald-500"}>{selectedCountry.growthFactor?.toFixed(2)}x</strong></span>
+                    <span>Incidence: <strong className="text-slate-700 dark:text-slate-300">{selectedCountry.incidenceRate?.toFixed(1)} per 100k</strong></span>
                   </p>
                 </div>
               </div>
@@ -282,7 +376,7 @@ const RiskScores = () => {
                 {/* 2. THE AREA CHART */}
                 <div className="theme-card rounded-3xl p-6 h-full flex flex-col">
                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                    <AlertTriangle size={16} className="text-brand-orange" /> COVID-19 Outbreak Acceleration (30 Days)
+                    <AlertTriangle size={16} className="text-brand-orange" /> COVID-19 Outbreak Acceleration
                   </h3>
                   <div className="flex-grow w-full relative min-h-[12rem]">
                     {isStatsLoading ? (
@@ -389,7 +483,7 @@ const RiskScores = () => {
                             <div className="text-slate-300 dark:text-slate-700 font-black text-xl">+</div>
                             
                             <div>
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Live Outbreak Penalty</p>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Live Dynamic Penalty</p>
                               <p className="text-2xl font-bold text-brand-red">{livVal}</p>
                             </div>
                             
@@ -408,7 +502,7 @@ const RiskScores = () => {
                   <div className="mt-6 flex items-start gap-2 text-xs text-slate-400">
                     <Info size={14} className="mt-0.5 flex-shrink-0" />
                     <p className="leading-relaxed">
-                      <strong>Data Sources & Methodology:</strong> The Triple-Threat formula proxies <span className="text-slate-500 dark:text-slate-300 font-medium">Systemic Infrastructure</span> and <span className="text-slate-500 dark:text-slate-300 font-medium">Endemic Burden</span> directly from the Global Health Security (GHS) baseline. The <span className="text-slate-500 dark:text-slate-300 font-medium">Live Outbreak Penalty</span> is calculated via real-time telemetry from the open-source disease.sh API. Endemic disease surveillance and official territorial designations adhere to World Health Organization (WHO) standards.
+                      <strong>Data Sources & Methodology:</strong> The Triple-Threat formula proxies <span className="text-slate-500 dark:text-slate-300 font-medium">Systemic Infrastructure</span> and <span className="text-slate-500 dark:text-slate-300 font-medium">Endemic Burden</span> directly from the Global Health Security (GHS) baseline. The <span className="text-slate-500 dark:text-slate-300 font-medium">Live Dynamic Penalty</span> utilizes real-time telemetry from the open-source disease.sh API to calculate a 7-day Incidence Rate per 100k population, combined with a weekly Growth Factor, making it a leading indicator for rapidly accelerating outbreaks.
                     </p>
                   </div>
 
