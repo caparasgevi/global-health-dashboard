@@ -206,8 +206,10 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
 });
 
 // Final Fix: Listen on 0.0.0.0 regardless of environment
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
 
 export default app;

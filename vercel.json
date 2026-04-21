@@ -1,24 +1,19 @@
 {
   "version": 2,
+  "functions": {
+    "backend/index.ts": {
+      "runtime": "@vercel/node"
+    }
+  },
   "builds": [
-    {
-      "src": "backend/index.ts",
-      "use": "@vercel/node"
-    },
     {
       "src": "health-radar/package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
+      "config": { "distDir": "health-radar/dist" }
     }
   ],
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "backend/index.ts"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/health-radar/$1"
-    }
+    { "source": "/api/(.*)", "destination": "/backend/index.ts" },
+    { "source": "/(.*)", "destination": "/health-radar/dist/$1" }
   ]
 }
