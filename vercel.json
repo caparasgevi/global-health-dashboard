@@ -11,8 +11,15 @@
       "config": { "distDir": "dist" }
     }
   ],
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/src/index.ts" },
-    { "source": "/(.*)", "destination": "/health-radar/dist/$1" }
+  "routes": [
+    { 
+      "src": "/api/(.*)", 
+      "dest": "backend/src/index.ts" 
+    },
+    { "handle": "filesystem" },
+    { 
+      "src": "/(.*)", 
+      "dest": "health-radar/index.html" 
+    }
   ]
 }
