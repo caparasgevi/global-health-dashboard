@@ -989,6 +989,7 @@ const Trends: React.FC = () => {
   }, [searchQuery, activeCountry]);
 
   const allCountries = useMemo(() => iso.all(), []);
+
   const suggestions = useMemo(() => {
     if (!searchQuery || searchQuery.length < 1) return [];
     
@@ -1020,13 +1021,20 @@ const Trends: React.FC = () => {
   }, [liveStats]);
 
   useEffect(() => {
-    if (!activeCountry) return;
     let isMounted = true;
-    setVisibleCount(4);
     const controller = new AbortController();
 
     const findActiveDiseases = async () => {
+      if (!activeCountry || activeCountry.length !== 3) {
+        if (isMounted) {
+          setDynamicDiseases([]);
+          setIsSearchingData(false);
+        }
+        return;
+      }
+
       setIsSearchingData(true);
+      setVisibleCount(4);
 
       try {
         const indicators = await healthService.getRankedIndicators({

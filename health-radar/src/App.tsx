@@ -17,6 +17,7 @@ import Auth from "./pages/Auth";
 import Trends from "./pages/Trends";
 import GlobalMap from "./pages/GlobalMap";
 import FullReport from "./pages/FullReport";
+import RiskScores from "./pages/RiskScores";
 import OurTeam from "./pages/OurTeam";
 
 const ResetManager = () => {
@@ -100,6 +101,7 @@ function App() {
                             <About />
                             <GlobalMap isDark={isDark} />
                             <Trends />
+                            <RiskScores />
                             <OurTeam />
                           </div>
                         }
