@@ -11,10 +11,14 @@
       "config": { "distDir": "dist" }
     }
   ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/backend/src/index.ts" },
-    { "src": "^/assets/(.*)$", "dest": "/assets/$1" },
-    { "src": "^/(.+\\.[a-z]+)$", "dest": "/$1" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/backend/src/index.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/health-radar/$1"
+    }
   ]
 }
