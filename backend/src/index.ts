@@ -2,18 +2,27 @@ import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
 const app = express();
-// Render assigns a random port; this line ensures we use it.
 const PORT = Number(process.env.PORT) || 5000;
 const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 
 app.use(cors());
 app.use(express.json());
 
-// Root Route - Crucial for Render's Health Check
+const staticDataPath = path.join(process.cwd(), 'healthiest-countries-2026.json');
+let staticHealthData: any[] = [];
+try {
+  staticHealthData = JSON.parse(fs.readFileSync(staticDataPath, 'utf-8'));
+  console.log('✅ Successfully loaded static health index JSON.');
+} catch (e) {
+  console.warn('⚠️ Could not load healthiest-countries-2026.json. Ensure it is in the root backend folder.');
+}
+
 app.get('/', (req, res) => {
   res.send('Health Radar API is Live and Running.');
 });
@@ -25,9 +34,7 @@ app.get('/api/status', (req: Request, res: Response) => {
 app.get('/api/country-stats/:code', async (req: Request, res: Response) => {
   const countryCode = req.params.code;
   try {
-    const response = await axios.get(
-      `https://disease.sh/v3/covid-19/countries/${countryCode}?strict=false`
-    );
+    const response = await axios.get(`https://disease.sh/v3/covid-19/countries/${countryCode}?strict=false`);
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch country stats.' });
@@ -50,6 +57,16 @@ app.get('/api/indicator-status/:country/:code', async (req: Request, res: Respon
   }
 });
 
+app.get('/api/historical/:code', async (req: Request, res: Response) => {
+  const countryCode = req.params.code;
+  try {
+    const response = await axios.get(`https://disease.sh/v3/covid-19/historical/${countryCode}?lastdays=30`);
+    res.json(response.data?.timeline?.cases || null);
+  } catch (error) {
+    res.status(404).json({ error: 'Historical data not found for this region.' });
+  }
+});
+
 app.get('/api/indicators', async (req: Request, res: Response) => {
   try {
     const response = await axios.get(`${GHO_BASE_URL}Indicator?$format=json`);
@@ -59,7 +76,6 @@ app.get('/api/indicators', async (req: Request, res: Response) => {
   }
 });
 
-// Global baseline logic with local caching
 let threatCache: any[] | null = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 60 * 60 * 1000; 
@@ -91,10 +107,7 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
     const datasetResponses = await Promise.all(
       THREAT_INDICATORS.map(async (ind) => {
         try {
-          const res = await axios.get(
-            `${GHO_BASE_URL}${ind.code}?$format=json&$filter=SpatialDimType eq 'REGION'`,
-            { timeout: 8000 }
-          );
+          const res = await axios.get(`${GHO_BASE_URL}${ind.code}?$format=json&$filter=SpatialDimType eq 'REGION'`, { timeout: 8000 });
           return { code: ind.code, data: res.data?.value || [] };
         } catch (e) {
           return { code: ind.code, data: [] };
@@ -124,10 +137,7 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
       const finalRawValue = activeWeights > 0 ? (totalWeightedScore / activeWeights) : 0;
       const displayValue = finalRawValue > 0 ? Math.max(finalRawValue, 12.5) : 6.0;
 
-      return {
-        SpatialDim: reg.code,
-        NumericValue: parseFloat(displayValue.toFixed(1)),
-      };
+      return { SpatialDim: reg.code, NumericValue: parseFloat(displayValue.toFixed(1)) };
     });
 
     threatCache = results;
@@ -135,6 +145,100 @@ app.get('/api/global-baseline', async (req: Request, res: Response) => {
     res.json(results);
   } catch (error) {
     res.json(threatCache || []);
+  }
+});
+
+app.get('/api/risk-scores', async (req: Request, res: Response) => {
+  try {
+    const staticMap = new Map();
+    staticHealthData.forEach(item => {
+      if (item.flagCode) staticMap.set(item.flagCode, item);
+      if (item.country) staticMap.set(item.country.toLowerCase(), item);
+    });
+
+    // FIX 1: Add ?$format=json to WHO API so it never returns XML strings
+    const [diseaseResponse, whoResponse] = await Promise.all([
+      axios.get('https://disease.sh/v3/covid-19/countries?strict=false', { timeout: 8000 }).catch(() => ({ data: [] })),
+      axios.get(`${GHO_BASE_URL}DIMENSION/COUNTRY/DimensionValues?$format=json`, { timeout: 8000 }).catch(() => ({ data: { value: [] } }))
+    ]);
+
+    // FIX 2: Safely ensure they are arrays to prevent .forEach from crashing
+    const diseaseData = Array.isArray(diseaseResponse.data) ? diseaseResponse.data : [];
+    const whoCountries = Array.isArray(whoResponse.data?.value) ? whoResponse.data.value : [];
+
+    const masterRoster = new Map();
+    const diseaseMap = new Map();
+
+    whoCountries.forEach((c: any) => {
+      if (c.Code) masterRoster.set(c.Code, { iso3: c.Code, name: c.Title });
+    });
+
+    diseaseData.forEach((c: any) => {
+      if (c.countryInfo && c.countryInfo.iso3) {
+        diseaseMap.set(c.countryInfo.iso3, c); 
+        if (!masterRoster.has(c.countryInfo.iso3)) {
+          masterRoster.set(c.countryInfo.iso3, { iso3: c.countryInfo.iso3, name: c.country });
+        }
+      }
+    });
+
+    // FIX 3: Ultimate Fallback! If both live APIs fail/timeout, build the roster from local JSON so the table is NEVER blank.
+    if (masterRoster.size === 0) {
+      staticHealthData.forEach(item => {
+        if (item.country) {
+          const fallbackIso = item.flagCode || item.country.substring(0,3).toUpperCase();
+          masterRoster.set(fallbackIso, { iso3: fallbackIso, name: item.country });
+        }
+      });
+    }
+
+    const riskData = Array.from(masterRoster.values()).map((countryObj: any) => {
+      const iso3 = countryObj.iso3;
+      const name = countryObj.name || ''; 
+
+      const liveData = diseaseMap.get(iso3) || {};
+      const iso2 = liveData.countryInfo?.iso2;
+      
+      const nameLower = name ? name.toLowerCase() : '';
+      const staticData = staticMap.get(iso2) || staticMap.get(nameLower) || {};
+
+      const healthIndex = staticData.CEOWorldGlobalHealthIndex_2025 || staticData.GlobalHealthSecurityIndex_2021 || 50;
+      const rawVulnerability = 100 - healthIndex;
+
+      const systemicRisk = Math.round(rawVulnerability * 0.70);
+      const endemicRisk = Math.round(rawVulnerability * 0.30);
+
+      const cases = liveData.cases || 1;
+      const deaths = liveData.deaths || 0;
+      const CFR = cases > 0 ? (deaths / cases) : 0;
+      const livePenalty = Math.round(Math.min((CFR / 0.05) * 15, 15));
+
+      const finalScore = Math.min(systemicRisk + endemicRisk + livePenalty, 100);
+      const testsPer1M = liveData.testsPerOneMillion || 0;
+
+      return {
+        id: iso3,
+        name: name,
+        score: finalScore,
+        fatality: `${(CFR * 100).toFixed(2)}%`,
+        testingRate: testsPer1M.toLocaleString(), 
+        trend: finalScore > 75 ? 'Global Emergency' : 'Stable',
+        metrics: {
+          systemic: systemicRisk,
+          endemic: endemicRisk,
+          live: livePenalty
+        }
+      };
+    });
+
+    const validCountries = riskData.filter((c: any) => c.id && c.id.length >= 2);
+    const sortedRisks = validCountries.sort((a: any, b: any) => b.score - a.score);
+
+    res.json(sortedRisks);
+
+  } catch (error) {
+    console.error('Failed to calculate hybrid risk scores:', error);
+    res.status(500).json({ error: 'Failed to process algorithmic risk scores.' });
   }
 });
 
@@ -166,10 +270,8 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
   try {
     const response = await axios.get('https://www.who.int/api/news/diseaseoutbreaknews', {
       params: { 
-        '$top': limit,
-        '$select': 'Id,Title,PublicationDateAndTime,Summary,ItemDefaultUrl',
-        '$orderby': 'PublicationDateAndTime desc',
-        'sf_culture': 'en'
+        '$top': limit, '$select': 'Id,Title,PublicationDateAndTime,Summary,ItemDefaultUrl', 
+        '$orderby': 'PublicationDateAndTime desc', 'sf_culture': 'en' 
       },
       timeout: 12000,
     });
@@ -184,28 +286,20 @@ app.get('/api/outbreak-news', async (req: Request, res: Response) => {
             headers: { Authorization: apiKey }
           });
           imageUrl = imageRes.data.photos[0]?.src?.large || imageUrl;
-        } catch (e) {
-          console.warn(`Pexels fetch failed for: ${i.Title}`);
-        }
+        } catch (e) {}
       }
-
       return {
-        id: i.Id,
-        title: i.Title,
-        date: i.PublicationDateAndTime,
-        image: imageUrl,
+        id: i.Id, title: i.Title, date: i.PublicationDateAndTime, image: imageUrl,
         summary: i.Summary ? i.Summary.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '',
         url: i.ItemDefaultUrl ? `https://www.who.int${i.ItemDefaultUrl}` : 'https://www.who.int/emergencies/disease-outbreak-news',
       };
     }));
-
     res.json(formattedNews);
   } catch (error) {
     res.status(500).json([]);
   }
 });
 
-// Final Fix: Listen on 0.0.0.0 regardless of environment
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });

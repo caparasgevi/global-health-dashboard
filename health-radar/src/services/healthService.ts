@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BACKEND_URL = "https://my-backend-api-es7e.onrender.com/api";
+// Vite automatically knows if it is running locally or in production
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 let cachedIndicators: any[] | null = null;
 let _indicatorFetchPromise: Promise<any[]> | null = null; 
@@ -8,7 +9,7 @@ const verificationCache: Record<string, any[]> = {};
 
 const backendClient = axios.create({
   baseURL: BACKEND_URL,
-  timeout: 15000 
+  timeout: 60000
 });
 
 export const getCachedIndicators = () => cachedIndicators;
@@ -23,6 +24,23 @@ export const healthService = {
       const res = await backendClient.get(`/country-stats/${code}`);
       return res.data;
     } catch { return null; }
+  },
+
+  getHistoricalData: async (code: string) => {
+    try {
+      const res = await backendClient.get(`/historical/${code}`);
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  getRiskScores: async () => {
+    try {
+      // Make sure backendClient is defined in your healthService file!
+      const res = await backendClient.get(`/risk-scores`);
+      return res.data || [];
+    } catch { return []; }
   },
 
   getRankedIndicators: async (options?: { signal?: AbortSignal }) => {
@@ -58,6 +76,17 @@ export const healthService = {
         options.signal!.addEventListener('abort', () => reject(new axios.Cancel('Request aborted')), { once: true });
       })
     ]);
+  },
+
+  // NEW: Fetch specific WHO Endemic Indicators
+  getEndemicData: async (countryCode: string, indicatorCode: string) => {
+    try {
+      // Your backend route: /api/indicator-status/:country/:code
+      const res = await backendClient.get(`/indicator-status/${countryCode}/${indicatorCode}`);
+      return res.data; // Returns an array of recent historical records
+    } catch {
+      return [];
+    }
   },
 
   getGlobalBaseline: async (options?: { signal?: AbortSignal }) => {
