@@ -2,14 +2,11 @@ import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+
+// VERCEL FIX: Direct import forces the bundler to include the JSON data in the deployment
+import staticHealthDataRaw from '../healthiest-countries-2026.json' with { type: 'json' };
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -18,14 +15,9 @@ const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 app.use(cors());
 app.use(express.json());
 
-const staticDataPath = path.join(__dirname, '..', 'healthiest-countries-2026.json');
-let staticHealthData: any[] = [];
-try {
-  staticHealthData = JSON.parse(fs.readFileSync(staticDataPath, 'utf-8'));
-  console.log('✅ Successfully loaded static health index JSON.');
-} catch (e) {
-  console.warn('⚠️ Could not load healthiest-countries-2026.json. Ensure it is in the root backend folder.');
-}
+// Initialize the imported JSON data
+const staticHealthData: any[] = staticHealthDataRaw;
+console.log('✅ Successfully loaded static health index JSON.');
 
 app.get('/', (req, res) => {
   res.send('Health Radar API is Live and Running.');
@@ -160,7 +152,6 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       if (item.country) staticMap.set(item.country.toLowerCase(), item);
     });
 
-    // 1. UPDATED HISTORICAL DATA FETCH (last 30 days for Time Machine)
     const [diseaseResponse, whoResponse, historyResponse] = await Promise.all([
       axios.get('https://disease.sh/v3/covid-19/countries?strict=false', { timeout: 8000 }).catch(() => ({ data: [] })),
       axios.get(`${GHO_BASE_URL}DIMENSION/COUNTRY/DimensionValues?$format=json`, { timeout: 8000 }).catch(() => ({ data: { value: [] } })),
@@ -218,7 +209,6 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       const systemicRisk = Math.round(rawVulnerability * 0.70);
       const endemicRisk = Math.round(rawVulnerability * 0.30);
 
-      // --- 2. CAPTURE HISTORY & CALCULATE DEFAULT LIVE PENALTY ---
       let livePenalty = 0;
       let caseValues: number[] = [];
       const history = historyMap.get(nameLower);
@@ -258,8 +248,8 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
         score: finalScore,
         fatality: `${(CFR * 100).toFixed(2)}%`,
         testingRate: testsPer1M.toLocaleString(), 
-        population: pop,           // <-- ADDED FOR TIME MACHINE
-        caseHistory: caseValues,   // <-- ADDED FOR TIME MACHINE
+        population: pop,           
+        caseHistory: caseValues,   
         trend: finalScore > 75 ? 'Global Emergency' : 'Stable',
         metrics: {
           systemic: systemicRisk,
