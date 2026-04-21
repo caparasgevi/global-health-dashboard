@@ -3,7 +3,6 @@ import { Map, MapMarker, type MapRef } from "../components/ui/Map";
 import { healthService } from "../services/healthService";
 import {
   AlertTriangle,
-  ShieldAlert,
   X,
   Search,
   Skull,
@@ -11,10 +10,8 @@ import {
 } from "lucide-react";
 
 type OutbreakPoint = { id: string; country: string; latitude: number; longitude: number; iso2: string; };
-type IllnessData = { name: string; value: number; year: number | string; type: "Acute" | "Chronic"; };
+type IllnessData = { name: string; value: number; year: number | string; };
 type LiveAlert = { title: string; date: string; url: string; summary: string; };
-
-const ACUTE_KEYWORDS = ["MALARIA", "DENGUE", "CHOLERA", "MEASLES", "FEVER", "EBOLA", "ZIKA", "OUTBREAK", "TUBERCULOSIS"];
 
 interface GlobalMapProps {
   isDark: boolean;
@@ -50,32 +47,72 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
 
   const fetchSpecificRisks = async (country: OutbreakPoint) => {
     setIsSearching(true);
+    setHealthRisks([]); 
+    setLiveAlerts([]);
+
     try {
-      const [alerts, allIndicators] = await Promise.all([
+      // Step 1: Fetch live news alerts and the country-specific bulk stats
+      const [alerts, countryStats] = await Promise.all([
         healthService.getOutbreakNews(3),
-        healthService.getRankedIndicators(),
+        healthService.getLiveCountryStats(country.id)
       ]);
+
       setLiveAlerts((alerts || []).map((a: any) => ({
         title: a.title, date: a.date, url: a.url, summary: a.summary
       })));
-      
-      const candidateIndicators = (allIndicators || []).slice(0, 60);
-      const results = await Promise.allSettled(
-        candidateIndicators.map(async (ind: any) => {
-          const stats = await healthService.checkIndicatorStatus(ind.IndicatorCode, country.id);
-          if (!stats?.[0]) return null;
-          const val = stats[0]._safeValue ?? stats[0].NumericValue ?? 0;
-          return {
-            name: ind.IndicatorName,
-            value: Number(val),
-            year: stats[0].TimeDim ?? "N/A",
-            type: ACUTE_KEYWORDS.some(k => ind.IndicatorName.toUpperCase().includes(k)) ? "Acute" : "Chronic"
-          } as IllnessData;
-        })
-      );
-      const final = results.map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean) as IllnessData[];
-      setHealthRisks(final.sort((a,b) => (a.type === 'Acute' ? -1 : 1)).slice(0, 6));
-    } finally { setIsSearching(false); }
+
+      let potentialRisks: IllnessData[] = [];
+
+      // Step 2: Use bulk country stats if the backend provides them (Efficient)
+      if (countryStats && Array.isArray(countryStats) && countryStats.length > 0) {
+        potentialRisks = countryStats
+          .map((item: any) => ({
+            name: item.IndicatorName || "Unknown Risk",
+            value: Number(item._safeValue ?? item.NumericValue ?? 0),
+            year: item.TimeDim ?? "N/A"
+          }))
+          .filter(risk => risk.value > 0);
+      }
+
+      // Step 3: Deep Scan Fallback 
+      // If the bulk endpoint is empty, we scan the top 120 indicators manually
+      if (potentialRisks.length === 0) {
+        const allIndicators = await healthService.getRankedIndicators();
+        const candidateIndicators = (allIndicators || []).slice(0, 120);
+
+        const deepScanResults = await Promise.allSettled(
+          candidateIndicators.map(async (ind: any) => {
+            const stats = await healthService.checkIndicatorStatus(ind.IndicatorCode, country.id);
+            if (!stats?.[0]) return null;
+            
+            const val = stats[0]._safeValue ?? stats[0].NumericValue ?? 0;
+            if (val <= 0) return null; // CRITICAL: Filter out illnesses with 0 cases
+
+            return {
+              name: ind.IndicatorName,
+              value: Number(val),
+              year: stats[0].TimeDim ?? "N/A",
+            };
+          })
+        );
+
+        potentialRisks = deepScanResults
+          .map(r => r.status === 'fulfilled' ? r.value : null)
+          .filter(Boolean) as IllnessData[];
+      }
+
+      // Step 4: DYNAMIC SORTING
+      // We sort by 'value' in descending order so the biggest threats for THIS country rise to the top.
+      const sortedRisks = potentialRisks.sort((a, b) => b.value - a.value);
+
+      // Present the top 6 unique high-risk illnesses for the country
+      setHealthRisks(sortedRisks.slice(0, 6));
+
+    } catch (err) {
+      console.error("Health fetch error:", err);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleCountrySelect = (target: OutbreakPoint) => {
@@ -96,7 +133,6 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
         </div>
 
         <div className={`relative h-[500px] md:h-[650px] w-full overflow-hidden rounded-2xl md:rounded-3xl border shadow-2xl transition-all duration-500 ${isDark ? 'border-white/10 bg-slate-900' : 'border-slate-300 bg-slate-200'}`}>
-          
           <Map ref={mapRef} theme={isDark ? 'dark' : 'light'}>
             {outbreaks.map((p) => (
               <MapMarker key={p.id} longitude={p.longitude} latitude={p.latitude} onClick={() => handleCountrySelect(p)}>
@@ -141,8 +177,9 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                     <X size={18} />
                   </button>
                 </div>
+
                 <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
-                  {isSearching ? <div className="text-center py-10 md:py-20 animate-pulse text-[10px] uppercase tracking-tighter">Analyzing...</div> : (
+                  {isSearching ? <div className="text-center py-10 md:py-20 animate-pulse text-[10px] uppercase tracking-tighter">Scanning Regional Threats...</div> : (
                     <>
                       {liveAlerts.length > 0 && (
                         <div className="space-y-2">
@@ -154,17 +191,28 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                           ))}
                         </div>
                       )}
-                      <div className="text-red-500 text-[9px] md:text-[10px] font-bold uppercase flex items-center gap-2"><Skull size={14}/> Threats</div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2 md:gap-4">
-                        {healthRisks.map((risk, i) => (
-                          <div key={i} className={`p-2 md:p-3 rounded-lg md:rounded-xl border ${risk.type === 'Acute' ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-500/5 border-slate-500/20'}`}>
-                            <div className="flex justify-between text-[9px] md:text-[10px] font-bold mb-1">
-                              <span className={risk.type === 'Acute' ? 'text-red-500' : 'text-slate-400'}>{risk.name}</span>
-                              {risk.type === 'Acute' ? <AlertTriangle size={12}/> : <ShieldAlert size={12}/>}
+                      
+                      <div className="text-red-500 text-[9px] md:text-[10px] font-bold uppercase flex items-center gap-2"><Skull size={14}/> Top Real-Time Threats</div>
+                      
+                      <div className="grid grid-cols-1 gap-2 md:gap-4">
+                        {healthRisks.length > 0 ? (
+                          healthRisks.map((risk, i) => (
+                            <div key={i} className={`p-2 md:p-3 rounded-lg md:rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+                              <div className="flex justify-between text-[9px] md:text-[10px] font-bold mb-1">
+                                <span className="text-red-500">{risk.name}</span>
+                                <AlertTriangle size={12} className="text-red-500"/>
+                              </div>
+                              <div className={`text-lg md:text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                {risk.value.toLocaleString()}
+                              </div>
+                              <div className="text-[8px] opacity-50 uppercase">Reporting Year: {risk.year}</div>
                             </div>
-                            <div className={`text-lg md:text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>{risk.value.toLocaleString()}</div>
+                          ))
+                        ) : (
+                          <div className="text-center py-12 md:py-24 border border-dashed rounded-xl border-slate-300 opacity-40 text-[10px] uppercase">
+                            No high-volume threats reported
                           </div>
-                        ))}
+                        )}
                       </div>
                     </>
                   )}
