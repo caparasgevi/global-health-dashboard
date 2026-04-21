@@ -1314,7 +1314,7 @@ const Trends: React.FC = () => {
                       rel="noopener noreferrer"
                       className="text-[10px] font-bold uppercase tracking-widest bg-brand-red text-white px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
                     >
-                      Google Search ↗
+                      Search Official Report ↗
                     </a>
                   </div>
                   <div className="flex-1 p-4 pt-0">
