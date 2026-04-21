@@ -233,9 +233,6 @@ const DiseaseChangeIndex: React.FC<{ countryCode: string }> = ({
               </svg>
               Verified GHO Stream
             </span>
-            <span className="text-slate-400 text-[10px] font-mono uppercase tracking-widest hidden md:inline">
-              2026.SURGE.V4
-            </span>
           </div>
           <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
             Real-Time <span className="text-brand-red">Disease Surge</span>{" "}
@@ -248,7 +245,7 @@ const DiseaseChangeIndex: React.FC<{ countryCode: string }> = ({
 
         <div className="bg-slate-100 dark:bg-white/5 px-6 py-3 rounded-2xl border dark:border-white/5 text-right">
           <p className="text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-1">
-            Global Refresh ID
+            Latest Update ID
           </p>
           <p className="text-sm font-mono text-brand-red font-bold">
             {fetchDate}
@@ -404,14 +401,6 @@ const DiseaseChangeIndex: React.FC<{ countryCode: string }> = ({
           </p>
           <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium italic">
             Scrubbed via Clinical OData API v4.01
-          </p>
-        </div>
-        <div className="md:text-right">
-          <p className="text-[10px] font-black text-slate-400 uppercase mb-2">
-            Verification Status
-          </p>
-          <p className="text-[11px] text-emerald-500 font-bold uppercase tracking-widest">
-            Active System Connection
           </p>
         </div>
       </div>
