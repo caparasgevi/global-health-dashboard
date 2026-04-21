@@ -8,7 +8,7 @@
     {
       "src": "health-radar/package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "health-radar/dist" }
+      "config": { "distDir": "dist" }
     }
   ],
   "rewrites": [
