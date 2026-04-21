@@ -18,7 +18,7 @@ const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 app.use(cors());
 app.use(express.json());
 
-const staticDataPath = path.join(__dirname, 'healthiest-countries-2026.json');
+const staticDataPath = path.join(__dirname, '..', 'healthiest-countries-2026.json');
 let staticHealthData: any[] = [];
 try {
   staticHealthData = JSON.parse(fs.readFileSync(staticDataPath, 'utf-8'));
