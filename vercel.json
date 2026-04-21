@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "backend/index.ts": {
+    "backend/src/index.ts": {
       "runtime": "@vercel/node"
     }
   },
@@ -13,7 +13,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/index.ts" },
+    { "source": "/api/(.*)", "destination": "/backend/src/index.ts" },
     { "source": "/(.*)", "destination": "/health-radar/dist/$1" }
   ]
 }
