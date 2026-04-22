@@ -7,6 +7,8 @@ import {
   useLocation,
 } from "react-router-dom";
 import { LazyMotion, domMax, AnimatePresence } from "framer-motion";
+import { SessionContextProvider, useSessionContext } from '@supabase/auth-helpers-react';
+import { supabase } from './lib/supabase'; // ✅ Supabase client
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -48,27 +50,79 @@ const ResetManager = () => {
   return null;
 };
 
-function App() {
+// ✅ SUPABASE AUTH HOOK
+const useSupabaseAuth = () => {
+  const { session } = useSessionContext();
+  
+  const [authStatus, setAuthStatus] = useState<'unauthenticated' | 'user' | 'guest'>('unauthenticated');
+  const [userName, setUserName] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (session) {
+      // ✅ LOGGED IN USER
+      setAuthStatus('user');
+      setUserEmail(session.user.email || '');
+      
+      // Get display name from metadata or profiles table
+      const displayName = session.user.user_metadata?.full_name || 
+                         session.user.user_metadata?.display_name ||
+                         session.user.email?.split('@')[0] || 
+                         'User';
+      setUserName(displayName);
+      
+      setUserAvatar(session.user.user_metadata?.avatar_url || null);
+    } else {
+      // ✅ NO SESSION = GUEST
+      setAuthStatus('guest');
+      setUserName('Guest');
+      setUserEmail('');
+      setUserAvatar(null);
+    }
+    setLoading(false);
+  }, [session]);
+
+  const handleGuestLogin = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const handleLoginSuccess = () => {
+    // Auto-handled by Supabase session
+  };
+
+  return {
+    authStatus,
+    userName,
+    userEmail,
+    userAvatar,
+    loading,
+    handleGuestLogin,
+    handleLoginSuccess
+  };
+};
+
+function AppContent() {
   const [isDark, setIsDark] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [authStatus, setAuthStatus] = useState<
-    "unauthenticated" | "user" | "guest"
-  >("unauthenticated");
-  const [userName, setUserName] = useState<string>(
-    () => localStorage.getItem("healthRadarUserName") || ""
-  );
+  
+  // ✅ SUPABASE AUTH STATE
+  const {
+    authStatus,
+    userName,
+    userEmail,
+    userAvatar,
+    loading: authLoading,
+    handleGuestLogin
+  } = useSupabaseAuth();
 
+  // Theme management
   useEffect(() => {
-    if (userName) {
-      localStorage.setItem("healthRadarUserName", userName);
-    } else {
-      localStorage.removeItem("healthRadarUserName");
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
+    if (savedTheme === 'dark') {
+      setIsDark(true);
     }
-  }, [userName]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -82,68 +136,83 @@ function App() {
     }
   }, [isDark]);
 
+  // Initial load
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show loader until Supabase auth loads
+  if (isLoading || authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 border-4 border-brand-red/20 border-t-brand-red rounded-full animate-spin shadow-lg"></div>
+          <p className="text-lg font-semibold text-gray-600 dark:text-gray-400 tracking-tight">Loading HealthRadar...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins">
+      
+      {/* ✅ HEADER - Only when authenticated */}
+      {authStatus !== "unauthenticated" && (
+        <Header 
+          isDark={isDark} 
+          setIsDark={setIsDark}
+          authStatus={authStatus}
+          userName={userName}
+          userEmail={userEmail}
+          userAvatar={userAvatar}
+          onGuestLogin={handleGuestLogin}
+          onLoginClick={() => navigate('/auth?mode=login')}
+        />
+      )}
+
+      <main className="flex-grow">
+        <Routes>
+          {/* ✅ UNAUTHENTICATED = Auth Page */}
+          {authStatus === "unauthenticated" ? (
+            <Route path="*" element={<Auth />} />
+          ) : (
+            <>
+              {/* ✅ AUTHENTICATED = Full App */}
+              <Route path="/" element={
+                <div className="flex flex-col gap-0">
+                  <Home />
+                  <About />
+                  <GlobalMap isDark={isDark} />
+                  <Trends />
+                  <RiskScores />
+                  <OurTeam />
+                </div>
+              } />
+              <Route path="/full-report" element={<FullReport />} />
+              <Route path="/auth/*" element={<Auth />} />
+            </>
+          )}
+        </Routes>
+      </main>
+
+      {/* ✅ FOOTER - Only when authenticated */}
+      {authStatus !== "unauthenticated" && <Footer />}
+    </div>
+  );
+}
+
+function App() {
   return (
     <Router>
       <ResetManager />
-      <LazyMotion features={domMax}>
-        <AnimatePresence mode="wait">
-          {!isLoading && (
-            <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins">
-              {authStatus !== "unauthenticated" && (
-                <Header 
-                  isDark={isDark} 
-                  setIsDark={setIsDark}
-                  authStatus={authStatus}
-                  userName={userName}
-                  onGuestLogin={() => {
-                    setAuthStatus("guest");
-                    setUserName("Guest");
-                  }}
-                />
-              )}
-
-              <main className="flex-grow">
-                <Routes>
-                  {authStatus === "unauthenticated" ? (
-                    <Route
-                      path="*"
-                      element={
-                        <Auth onLogin={(status, name) => {
-                          setAuthStatus(status);
-                          if (status === "guest") {
-                            setUserName("Guest");
-                          } else if (name) {
-                            setUserName(name);
-                          }
-                        }} />
-                      }
-                    />
-                  ) : (
-                    <>
-                      <Route
-                        path="/"
-                        element={
-                          <div className="flex flex-col gap-0">
-                            <Home />
-                            <About />
-                            <GlobalMap isDark={isDark} />
-                            <Trends />
-                            <RiskScores />
-                            <OurTeam />
-                          </div>
-                        }
-                      />
-                      <Route path="/full-report" element={<FullReport />} />
-                    </>
-                  )}
-                </Routes>
-              </main>
-
-              {authStatus !== "unauthenticated" && <Footer />}
-            </div>
-          )}
-        </AnimatePresence>
-      </LazyMotion>
+      <SessionContextProvider supabaseClient={supabase}>
+        <LazyMotion features={domMax}>
+          <AnimatePresence mode="wait">
+            <AppContent />
+          </AnimatePresence>
+        </LazyMotion>
+      </SessionContextProvider>
     </Router>
   );
 }
