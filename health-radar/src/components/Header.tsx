@@ -4,9 +4,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 interface HeaderProps {
   isDark: boolean;
   setIsDark: React.Dispatch<React.SetStateAction<boolean>>;
+  authStatus?: "unauthenticated" | "user" | "guest";
+  onGuestLogin?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
+const Header: React.FC<HeaderProps> = ({ isDark, setIsDark, authStatus, onGuestLogin }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const navItems = ['Home', 'About', 'Global Map', 'Country Statistics', 'Trends', 'Risk Scores', 'Our Team'];
@@ -154,6 +156,37 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
+          {authStatus === "user" && onGuestLogin && (
+            <button 
+              onClick={onGuestLogin}
+              className="flex items-center justify-center px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all duration-300 text-xs font-medium"
+            >
+              Guest Mode
+            </button>
+          )}
+
+          {/* LOGIN BUTTON - Shows when GUEST */}
+      {authStatus === "guest" && onLoginClick && (
+        <button 
+          onClick={onLoginClick}
+          className="flex items-center justify-center px-3 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 border border-blue-500 dark:border-blue-600 transition-all duration-300 text-xs font-medium text-white shadow-sm hover:shadow-md"
+          title="Login to save countries"
+        >
+          🔐 Login
+        </button>
+      )}
+
+      {/* LOGOUT BUTTON - Shows when LOGGED IN */}
+      {authStatus === "user" && (
+        <button 
+          onClick={onLogout}
+          className="flex items-center justify-center px-3 py-2 rounded-xl bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 border border-red-200 dark:border-red-700 transition-all duration-300 text-xs font-medium text-red-700 dark:text-red-200"
+          title="Logout"
+        >
+          🚪 Logout
+        </button>
+      )}
+
           <button 
             onClick={() => setIsDark(!isDark)}
             className="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all duration-300"
@@ -181,7 +214,20 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
         lg:hidden fixed inset-x-0 top-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-300 origin-top
         ${isMenuOpen ? 'scale-y-100 opacity-100 visible' : 'scale-y-0 opacity-0 invisible'}
       `}>
+
         <div className="flex flex-col p-4 gap-2">
+          {authStatus === "user" && onGuestLogin && (
+            <button
+              onClick={() => {
+                onGuestLogin();
+                setIsMenuOpen(false);
+              }}
+              className="w-full text-left px-5 py-4 rounded-xl text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+            >
+              Guest Mode
+            </button>
+          )}
+          
           {navItems.map((item) => (
             <button
               key={item}

@@ -79,7 +79,12 @@ function App() {
           {!isLoading && (
             <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins">
               {authStatus !== "unauthenticated" && (
-                <Header isDark={isDark} setIsDark={setIsDark} />
+                <Header 
+                  isDark={isDark} 
+                  setIsDark={setIsDark}
+                  authStatus={authStatus}
+                  onGuestLogin={() => setAuthStatus("guest")}
+                />
               )}
 
               <main className="flex-grow">
