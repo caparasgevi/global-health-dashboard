@@ -166,5 +166,14 @@ export const healthService = {
     } catch {
       return [];
     }
-  }
+  },
+  getOutbreakNews: async (limit = 5, options?: { signal?: AbortSignal }) => {
+    try {
+      const res = await backendClient.get(`/outbreak-news`, { 
+        signal: options?.signal,
+        params: { limit }
+      });
+      return res.data || [];
+    } catch { return []; }
+  },
 };
