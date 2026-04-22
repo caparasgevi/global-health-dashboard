@@ -1140,7 +1140,7 @@ const Trends: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div className="text-center lg:text-left">
             <h1 className="text-4xl font-bold text-slate-900 dark:text-white font-montserrat">
-              Health Risk <span className="text-brand-red">Analysis</span>
+              Trend <span className="text-brand-red">Analysis</span>
             </h1>
             <p className="mt-2 text-slate-600 dark:text-slate-400 max-w-2xl text-lg font-poppins">
               {activeCountry ? (

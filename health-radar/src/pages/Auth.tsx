@@ -238,7 +238,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               <div>
                 <label className={labelClass}>Email Address</label>
                 <input
-                  type="email" required placeholder="Email"
+                  type="email" required placeholder="Enter your email"
                   className={getInputClass(formData.email.includes('@'))}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
@@ -254,7 +254,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                   )}
                 </div>
                 <input
-                  type="password" required placeholder="••••••••"
+                  type="password" required placeholder="Enter your password"
                   className={getInputClass(formData.password.length > 0)}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />

@@ -9,11 +9,12 @@ import {
 } from "framer-motion";
 import { healthService } from "../services/healthService";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination, EffectFade } from "swiper/modules";
+import { Autoplay, Pagination, EffectFade, Navigation } from "swiper/modules";
 
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-fade";
+import "swiper/css/navigation";
 
 const Counter = React.memo(({ value }: { value: number }) => {
   const count = useMotionValue(0);
@@ -301,13 +302,48 @@ const Home = () => {
               </div>
             ) : outbreakSlides.length > 0 ? (
               <div className="flex flex-col h-full">
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-200 dark:shadow-none mb-6">
+                <div className="group/slider relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-200 dark:shadow-none mb-6">
+                  <button className="nav-prev absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md border border-white/10 text-white opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-brand-red hover:scale-110 active:scale-95 disabled:hidden">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  <button className="nav-next absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md border border-white/10 text-white opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-brand-red hover:scale-110 active:scale-95 disabled:hidden">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </button>
                   <Swiper
                     onSwiper={(swiper) => (swiperRef.current = swiper)}
-                    modules={[Autoplay, Pagination, EffectFade]}
+                    modules={[Autoplay, Pagination, EffectFade, Navigation]}
                     effect="fade"
                     loop={true}
                     autoplay={{ delay: 6000, disableOnInteraction: false }}
+                    navigation={{
+                      prevEl: ".nav-prev",
+                      nextEl: ".nav-next",
+                    }}
                     pagination={{
                       clickable: true,
                       bulletActiveClass:

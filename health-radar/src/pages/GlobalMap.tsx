@@ -114,7 +114,7 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-6 md:mb-8 text-center md:text-left">
           <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Global <span className="text-brand-red">Health Risk</span> Intelligence
+            Global <span className="text-brand-red">Map</span>
           </h1>
         </div>
 
