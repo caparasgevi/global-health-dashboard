@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -7,12 +7,12 @@ import {
   useLocation,
 } from "react-router-dom";
 import { LazyMotion, domMax, AnimatePresence } from "framer-motion";
-import { SessionContextProvider, useSessionContext } from '@supabase/auth-helpers-react';
-import { supabase } from './lib/supabase'; // ✅ Supabase client
+import { supabase } from './lib/supabase'; // ✅ Only 1 import
 
+import Login from "./pages/Login";  
+import SignUp from "./pages/SignUp";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Auth from "./pages/Auth";
@@ -22,107 +22,104 @@ import FullReport from "./pages/FullReport";
 import RiskScores from "./pages/RiskScores";
 import OurTeam from "./pages/OurTeam";
 
-const ResetManager = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  useEffect(() => {
-    const navEntries = window.performance.getEntriesByType("navigation");
-    const isReload =
-      navEntries.length > 0 &&
-      (navEntries[0] as PerformanceNavigationTiming).type === "reload";
 
-    if (isReload) {
-      sessionStorage.removeItem("health_radar_query");
-      sessionStorage.removeItem("health_radar_country");
-    }
+ 
 
-    if (location.pathname !== "/") {
-      navigate("/", { replace: true });
-    }
-
-    if ("scrollRestoration" in window.history) {
-      window.history.scrollRestoration = "manual";
-    }
-    window.scrollTo(0, 0);
-  }, []);
-
-  return null;
-};
-
-// ✅ SUPABASE AUTH HOOK
+// ✅ SUPABASE AUTH HOOK (Custom - No deprecated package)
 const useSupabaseAuth = () => {
-  const { session } = useSessionContext();
-  
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [authStatus, setAuthStatus] = useState<'unauthenticated' | 'user' | 'guest'>('unauthenticated');
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleAuthChange(session);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        handleAuthChange(session);
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleAuthChange = (session: any) => {
     if (session) {
-      // ✅ LOGGED IN USER
       setAuthStatus('user');
       setUserEmail(session.user.email || '');
-      
-      // Get display name from metadata or profiles table
       const displayName = session.user.user_metadata?.full_name || 
                          session.user.user_metadata?.display_name ||
-                         session.user.email?.split('@')[0] || 
-                         'User';
+                         session.user.email?.split('@')[0] || 'User';
       setUserName(displayName);
-      
       setUserAvatar(session.user.user_metadata?.avatar_url || null);
     } else {
-      // ✅ NO SESSION = GUEST
-      setAuthStatus('guest');
+      setAuthStatus('unauthenticated');
       setUserName('Guest');
-      setUserEmail('');
-      setUserAvatar(null);
     }
-    setLoading(false);
-  }, [session]);
+    setSession(session);
+  };
 
   const handleGuestLogin = async () => {
     await supabase.auth.signOut();
   };
 
-  const handleLoginSuccess = () => {
-    // Auto-handled by Supabase session
-  };
+  const setAsGuest = () => {
+    setAuthStatus('guest');
+    setUserName('Guest');
+    setUserEmail('');
+    setUserAvatar(null);
+  }
+
+  const setAsUnauthenticated = () => {
+  setAuthStatus('unauthenticated');
+  setUserName('');
+  setUserEmail('');
+  setUserAvatar(null);
+}
 
   return {
+    session,
     authStatus,
     userName,
     userEmail,
     userAvatar,
     loading,
+    setAsGuest,
     handleGuestLogin,
-    handleLoginSuccess
+    setAsUnauthenticated
   };
 };
 
 function AppContent() {
   const [isDark, setIsDark] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAppLoading, setIsAppLoading] = useState(true);
   
-  // ✅ SUPABASE AUTH STATE
+  // ✅ AUTH HOOK INSIDE THE COMPONENT
   const {
     authStatus,
     userName,
     userEmail,
     userAvatar,
     loading: authLoading,
-    handleGuestLogin
+    setAsGuest,
+    handleGuestLogin,
+    setAsUnauthenticated
   } = useSupabaseAuth();
 
-  // Theme management
+  // Theme
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
-    if (savedTheme === 'dark') {
-      setIsDark(true);
-    }
+    if (savedTheme === 'dark') setIsDark(true);
   }, []);
 
   useEffect(() => {
@@ -136,29 +133,26 @@ function AppContent() {
     }
   }, [isDark]);
 
-  // Initial load
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200);
+    const timer = setTimeout(() => setIsAppLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
-  // Show loader until Supabase auth loads
-  if (isLoading || authLoading) {
+  if (isAppLoading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-slate-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-brand-red/20 border-t-brand-red rounded-full animate-spin shadow-lg"></div>
-          <p className="text-lg font-semibold text-gray-600 dark:text-gray-400 tracking-tight">Loading HealthRadar...</p>
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-brand-red/20 border-t-brand-red rounded-full animate-spin mx-auto mb-4 shadow-lg"></div>
+          <p className="text-lg font-semibold text-gray-600 dark:text-gray-400">HealthRadar Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins">
-      
-      {/* ✅ HEADER - Only when authenticated */}
-      {authStatus !== "unauthenticated" && (
+    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950">
+      {/* Header - HIDE on unauthenticated (auto shows login/signup when unauthenticated) */}
+      {authStatus !== 'unauthenticated' && (
         <Header 
           isDark={isDark} 
           setIsDark={setIsDark}
@@ -166,38 +160,51 @@ function AppContent() {
           userName={userName}
           userEmail={userEmail}
           userAvatar={userAvatar}
-          onGuestLogin={handleGuestLogin}
-          onLoginClick={() => navigate('/auth?mode=login')}
+          onGuestLogin={handleGuestLogin}  
+          onLoginClick={setAsUnauthenticated}
         />
       )}
 
       <main className="flex-grow">
         <Routes>
-          {/* ✅ UNAUTHENTICATED = Auth Page */}
-          {authStatus === "unauthenticated" ? (
-            <Route path="*" element={<Auth />} />
-          ) : (
-            <>
-              {/* ✅ AUTHENTICATED = Full App */}
-              <Route path="/" element={
-                <div className="flex flex-col gap-0">
-                  <Home />
-                  <About />
-                  <GlobalMap isDark={isDark} />
-                  <Trends />
-                  <RiskScores />
-                  <OurTeam />
-                </div>
-              } />
-              <Route path="/full-report" element={<FullReport />} />
-              <Route path="/auth/*" element={<Auth />} />
-            </>
-          )}
+          {/* ✅ DEFAULT TO AUTH PAGE */}
+          {authStatus === 'unauthenticated' ? (
+  
+  <Route path="*" element={
+  <Login onLogin ={() => {}} /> // No-op since Header handles login state
+) : authStatus === 'guest' ? (
+  <>
+    <Route path="/" element={
+      <div>
+        <Home />
+        <About />
+        <GlobalMap isDark={isDark} />
+        <Trends />
+        <RiskScores />
+        <OurTeam />
+      </div>
+    } />
+    <Route path="/full-report" element={<FullReport />} />
+  </>
+) : (
+  <>
+    <Route path="/" element={
+      <div>
+        <Home />
+        <About />
+        <GlobalMap isDark={isDark} />
+        <Trends />
+        <RiskScores />
+        <OurTeam />
+      </div>
+    } />
+    <Route path="/full-report" element={<FullReport />} />
+  </>
+)}
         </Routes>
       </main>
 
-      {/* ✅ FOOTER - Only when authenticated */}
-      {authStatus !== "unauthenticated" && <Footer />}
+      {authStatus !== 'unauthenticated' && <Footer />}
     </div>
   );
 }
@@ -205,14 +212,11 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <ResetManager />
-      <SessionContextProvider supabaseClient={supabase}>
-        <LazyMotion features={domMax}>
-          <AnimatePresence mode="wait">
-            <AppContent />
-          </AnimatePresence>
-        </LazyMotion>
-      </SessionContextProvider>
+      <LazyMotion features={domMax}>
+        <AnimatePresence mode="wait">
+          <AppContent />
+        </AnimatePresence>
+      </LazyMotion>
     </Router>
   );
 }

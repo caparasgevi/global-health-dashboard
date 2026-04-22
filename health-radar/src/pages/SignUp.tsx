@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../services/supabaseClient';
+import { supabase } from '../lib/supabase';
 
 const SignUp: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -90,7 +90,7 @@ const SignUp: React.FC = () => {
       }
 
       setSuccess(true);
-      setTimeout(() => navigate('/dashboard'), 2000);
+      setTimeout(() => navigate('/'), 2000);
     } catch (err) {
       console.error(err);
       setError('Something went wrong. Please try again.');
