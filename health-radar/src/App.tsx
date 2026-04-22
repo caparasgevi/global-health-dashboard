@@ -170,8 +170,7 @@ function AppContent() {
           {/* ✅ DEFAULT TO AUTH PAGE */}
           {authStatus === 'unauthenticated' ? (
   
-  <Route path="*" element={
-  <Login onLogin ={() => {}} /> // No-op since Header handles login state
+  <Route path="*" element={<Login />} />
 ) : authStatus === 'guest' ? (
   <>
     <Route path="/" element={
