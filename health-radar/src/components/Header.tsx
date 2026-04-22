@@ -5,22 +5,21 @@ interface HeaderProps {
   isDark: boolean;
   setIsDark: React.Dispatch<React.SetStateAction<boolean>>;
   authStatus?: 'unauthenticated' | 'user' | 'guest';
-  userName?: string;
-  userEmail?: string;
-  userAvatar?: string | null;
+  
+  user?: User | null;
   onGuestLogin?: () => void;
   onLoginClick?: () => void;
+  onLogout?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
   isDark,
   setIsDark,
   authStatus = 'unauthenticated',
-  userName,
-  userEmail,
-  userAvatar,
+  user,
   onGuestLogin,
-  onLoginClick
+  onLoginClick ,
+  onLogout
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -163,20 +162,27 @@ const Header: React.FC<HeaderProps> = ({
           <div className="hidden lg:flex items-center gap-4 ml-8">
             
             {/* Welcome User */}
-            {authStatus === 'user' && (userName || userEmail) && (
+            {user && (
               <div className="flex items-center gap-3 p-3 bg-emerald-50/80 dark:bg-emerald-500/10 rounded-2xl border border-emerald-200/50 shadow-sm">
-                {userAvatar && (
-                  <img src={userAvatar} alt="Avatar" className="w-9 h-9 rounded-xl ring-2 ring-emerald-200/50" />
-                )}
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">Welcome,</p>
-                  <p className="text-xs font-black text-emerald-700 uppercase tracking-wider">
-                    {getDisplayName()}
-                  </p>
-                </div>
-              </div>
-            )}
+    <div>
+      <p className="text-sm font-bold text-gray-900 dark:text-white">Welcome,</p>
+      <p className="text-xs font-black text-emerald-700 uppercase tracking-wider">
+        {user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
+      </p>
+    </div>
+  </div>
+)}
 
+            {/* Logout */}
+            {authStatus === 'user' && onLogout && (
+              <button 
+                onClick={onLogout}
+                className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm uppercase tracking-wider transition-all"
+              >
+                Logout
+              </button>
+            )}
+            
             {/* Guest Mode */}
             {authStatus === 'user' && onGuestLogin && (
               <button 

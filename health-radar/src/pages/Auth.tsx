@@ -1,17 +1,15 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import iso from 'iso-3166-1';
-import { supabase } from '../services/supabaseClient'; // Make sure this path is correct
 
 interface AuthProps {
   onLogin: (status: 'user' | 'guest') => void;
 }
 
+
 const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '', name: '', password: '',
     country: '', countrySearch: '', role: '', alertsEnabled: true,
@@ -40,56 +38,20 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     return allCountries.filter(c => c.country.toLowerCase().includes(q));
   }, [formData.countrySearch, allCountries]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setWasSubmitted(true);
-    setAuthError(null);
-
     const isValid = isLogin
       ? formData.email.includes('@') && formData.password.length > 0
       : formData.name.length > 0 && formData.email.includes('@') && formData.password.length > 0 && formData.country.length > 0;
 
     if (isValid) {
-      setLoading(true);
-
       if (!isLogin) {
-        // Show the cool synchronization animation while creating the account
-        setIsConfirming(true); 
-        
-        const { error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.name,
-              country: formData.country,
-              alerts_enabled: formData.alertsEnabled,
-            }
-          }
-        });
-
-        if (error) {
-          setAuthError(error.message);
-          setIsConfirming(false);
-        } else {
-          // If you have email confirmations enabled in Supabase, you might want to 
-          // change this to alert the user to check their email instead of auto-logging in.
-          setTimeout(() => { setIsConfirming(false); onLogin('user'); }, 1500);
-        }
+        setIsConfirming(true);
+        setTimeout(() => { setIsConfirming(false); onLogin('user'); }, 3000);
       } else {
-        // Handle Sign In
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        if (error) {
-          setAuthError(error.message);
-        } else {
-          onLogin('user');
-        }
+        onLogin('user');
       }
-      setLoading(false);
     }
   };
 
@@ -139,7 +101,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-6">
           {['Sign In', 'Sign Up'].map((label, i) => (
             <button key={label} type="button"
-              onClick={() => { setIsLogin(i === 0); setWasSubmitted(false); setShowCountryDropdown(false); setAuthError(null); }}
+              onClick={() => { setIsLogin(i === 0); setWasSubmitted(false); setShowCountryDropdown(false); }}
               className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all uppercase tracking-widest
                 ${(isLogin ? i === 0 : i === 1)
                   ? 'bg-white dark:bg-slate-700 text-brand-red shadow-sm'
@@ -299,16 +261,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               </div>
             </div>
 
-            {/* Error Display */}
-            {authError && (
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs font-semibold text-center">
-                {authError}
-              </div>
-            )}
-
-            <m.button layout type="submit" whileTap={{ scale: 0.98 }} disabled={loading}
-              className="w-full bg-brand-red hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition-all text-sm uppercase tracking-widest shadow-md shadow-red-500/15 mt-1 disabled:opacity-50 disabled:cursor-not-allowed">
-              {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
+            <m.button layout type="submit" whileTap={{ scale: 0.98 }}
+              className="w-full bg-brand-red hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition-all text-sm uppercase tracking-widest shadow-md shadow-red-500/15 mt-1">
+              {isLogin ? 'Sign In' : 'Create Account'}
             </m.button>
           </form>
         </m.div>
@@ -322,8 +277,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           </div>
         </div>
 
-        <button type="button" onClick={() => onLogin('guest')} disabled={loading}
-          className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 font-bold text-[11px] transition-all uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed">
+        <button type="button" onClick={() => onLogin('guest')}
+          className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 font-bold text-[11px] transition-all uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800">
           Continue as Guest
         </button>
       </m.div>
@@ -332,4 +287,3 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 };
 
 export default Auth;
-
