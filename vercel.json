@@ -1,14 +1,20 @@
 {
   "version": 2,
-  "functions": {
-    "backend/index.ts": {
-      "runtime": "nodejs22.x"
+  "builds": [
+    {
+      "src": "backend/src/index.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "health-radar/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
     }
-  },
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/backend/index.ts"
+      "destination": "/backend/src/index.ts"
     },
     {
       "source": "/(.*)",

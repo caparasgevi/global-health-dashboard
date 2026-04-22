@@ -15,3 +15,5 @@ build/
 *.suo
 *.ntvs*
 *.njsproj
+.vercel
+.env*.local

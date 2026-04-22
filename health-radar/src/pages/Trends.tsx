@@ -233,9 +233,6 @@ const DiseaseChangeIndex: React.FC<{ countryCode: string }> = ({
               </svg>
               Verified GHO Stream
             </span>
-            <span className="text-slate-400 text-[10px] font-mono uppercase tracking-widest hidden md:inline">
-              2026.SURGE.V4
-            </span>
           </div>
           <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
             Real-Time <span className="text-brand-red">Disease Surge</span>{" "}
@@ -248,7 +245,7 @@ const DiseaseChangeIndex: React.FC<{ countryCode: string }> = ({
 
         <div className="bg-slate-100 dark:bg-white/5 px-6 py-3 rounded-2xl border dark:border-white/5 text-right">
           <p className="text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-1">
-            Global Refresh ID
+            Latest Update ID
           </p>
           <p className="text-sm font-mono text-brand-red font-bold">
             {fetchDate}
@@ -404,14 +401,6 @@ const DiseaseChangeIndex: React.FC<{ countryCode: string }> = ({
           </p>
           <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium italic">
             Scrubbed via Clinical OData API v4.01
-          </p>
-        </div>
-        <div className="md:text-right">
-          <p className="text-[10px] font-black text-slate-400 uppercase mb-2">
-            Verification Status
-          </p>
-          <p className="text-[11px] text-emerald-500 font-bold uppercase tracking-widest">
-            Active System Connection
           </p>
         </div>
       </div>
@@ -989,12 +978,18 @@ const Trends: React.FC = () => {
   }, [searchQuery, activeCountry]);
 
   const allCountries = useMemo(() => iso.all(), []);
+
   const suggestions = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 2) return [];
+    if (!searchQuery || searchQuery.length < 1) return [];
+    
+    const query = searchQuery.toLowerCase();
+    
     return allCountries
-      .filter((c) =>
-        c.country.toLowerCase().includes(searchQuery.toLowerCase()),
+      .filter(c => 
+        // para magstart sa 1st letter ng country
+        c.country.toLowerCase().startsWith(query)
       )
+      .sort((a, b) => a.country.localeCompare(b.country)) // for alphabetical purposes only
       .slice(0, 8);
   }, [searchQuery, allCountries]);
 
@@ -1015,13 +1010,20 @@ const Trends: React.FC = () => {
   }, [liveStats]);
 
   useEffect(() => {
-    if (!activeCountry) return;
     let isMounted = true;
-    setVisibleCount(4);
     const controller = new AbortController();
 
     const findActiveDiseases = async () => {
+      if (!activeCountry || activeCountry.length !== 3) {
+        if (isMounted) {
+          setDynamicDiseases([]);
+          setIsSearchingData(false);
+        }
+        return;
+      }
+
       setIsSearchingData(true);
+      setVisibleCount(4);
 
       try {
         const indicators = await healthService.getRankedIndicators({
@@ -1183,12 +1185,13 @@ const Trends: React.FC = () => {
                   `/full-report?country=${activeCountry}&query=${encodeURIComponent(searchQuery)}`,
                 )
               }
-              className="px-6 py-3 bg-brand-red text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-brand-red/90 transition-all disabled:opacity-30 flex items-center gap-2"
+              className="
+                flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 sm:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white bg-brand-red rounded-xl transition-all             hover:bg-brand-red/90 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed"
             >
               {isSearchingData && (
-                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
               )}
-              View Full List
+              <span className="truncate">View Full List</span>
             </button>
             <div className="relative w-full max-sm">
               <input
@@ -1311,7 +1314,7 @@ const Trends: React.FC = () => {
                       rel="noopener noreferrer"
                       className="text-[10px] font-bold uppercase tracking-widest bg-brand-red text-white px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
                     >
-                      Google Search ↗
+                      Search Official Report ↗
                     </a>
                   </div>
                   <div className="flex-1 p-4 pt-0">
