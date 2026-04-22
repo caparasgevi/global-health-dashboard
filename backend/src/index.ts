@@ -2,14 +2,11 @@ import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+
+// VERCEL FIX: Direct import forces the bundler to include the JSON data in the deployment
+import staticHealthDataRaw from '../healthiest-countries-2026.json' with { type: 'json' };
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -18,14 +15,9 @@ const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 app.use(cors());
 app.use(express.json());
 
-const staticDataPath = path.join(__dirname, 'healthiest-countries-2026.json');
-let staticHealthData: any[] = [];
-try {
-  staticHealthData = JSON.parse(fs.readFileSync(staticDataPath, 'utf-8'));
-  console.log('✅ Successfully loaded static health index JSON.');
-} catch (e) {
-  console.warn('⚠️ Could not load healthiest-countries-2026.json. Ensure it is in the root backend folder.');
-}
+// Initialize the imported JSON data
+const staticHealthData: any[] = staticHealthDataRaw;
+console.log('✅ Successfully loaded static health index JSON.');
 
 app.get('/', (req, res) => {
   res.send('Health Radar API is Live and Running.');
@@ -160,18 +152,23 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       if (item.country) staticMap.set(item.country.toLowerCase(), item);
     });
 
-    // FIX 1: Add ?$format=json to WHO API so it never returns XML strings
-    const [diseaseResponse, whoResponse] = await Promise.all([
+    const [diseaseResponse, whoResponse, historyResponse] = await Promise.all([
       axios.get('https://disease.sh/v3/covid-19/countries?strict=false', { timeout: 8000 }).catch(() => ({ data: [] })),
-      axios.get(`${GHO_BASE_URL}DIMENSION/COUNTRY/DimensionValues?$format=json`, { timeout: 8000 }).catch(() => ({ data: { value: [] } }))
+      axios.get(`${GHO_BASE_URL}DIMENSION/COUNTRY/DimensionValues?$format=json`, { timeout: 8000 }).catch(() => ({ data: { value: [] } })),
+      axios.get('https://disease.sh/v3/covid-19/historical?lastdays=30', { timeout: 8000 }).catch(() => ({ data: [] }))
     ]);
 
-    // FIX 2: Safely ensure they are arrays to prevent .forEach from crashing
     const diseaseData = Array.isArray(diseaseResponse.data) ? diseaseResponse.data : [];
     const whoCountries = Array.isArray(whoResponse.data?.value) ? whoResponse.data.value : [];
+    const historyData = Array.isArray(historyResponse.data) ? historyResponse.data : [];
 
     const masterRoster = new Map();
     const diseaseMap = new Map();
+    const historyMap = new Map();
+
+    historyData.forEach((h: any) => {
+        if(h.country) historyMap.set(h.country.toLowerCase(), h);
+    });
 
     whoCountries.forEach((c: any) => {
       if (c.Code) masterRoster.set(c.Code, { iso3: c.Code, name: c.Title });
@@ -186,7 +183,6 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       }
     });
 
-    // FIX 3: Ultimate Fallback! If both live APIs fail/timeout, build the roster from local JSON so the table is NEVER blank.
     if (masterRoster.size === 0) {
       staticHealthData.forEach(item => {
         if (item.country) {
@@ -202,6 +198,7 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
 
       const liveData = diseaseMap.get(iso3) || {};
       const iso2 = liveData.countryInfo?.iso2;
+      const pop = liveData.population || 1;
       
       const nameLower = name ? name.toLowerCase() : '';
       const staticData = staticMap.get(iso2) || staticMap.get(nameLower) || {};
@@ -212,12 +209,37 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
       const systemicRisk = Math.round(rawVulnerability * 0.70);
       const endemicRisk = Math.round(rawVulnerability * 0.30);
 
-      const cases = liveData.cases || 1;
-      const deaths = liveData.deaths || 0;
-      const CFR = cases > 0 ? (deaths / cases) : 0;
-      const livePenalty = Math.round(Math.min((CFR / 0.05) * 15, 15));
+      let livePenalty = 0;
+      let caseValues: number[] = [];
+      const history = historyMap.get(nameLower);
+      
+      if (history && history.timeline && history.timeline.cases) {
+          const casesObj = history.timeline.cases;
+          caseValues = Object.values(casesObj) as number[];
+          
+          if (caseValues.length >= 15) {
+              const casesToday = caseValues[caseValues.length - 1];
+              const cases7DaysAgo = caseValues[caseValues.length - 8];
+              const cases14DaysAgo = caseValues[caseValues.length - 15];
+              
+              const newCasesThisWeek = Math.max(casesToday - cases7DaysAgo, 0);
+              const newCasesLastWeek = Math.max(cases7DaysAgo - cases14DaysAgo, 0);
+              
+              const incidenceRate = (newCasesThisWeek / pop) * 100000;
+              const incidenceNorm = Math.min((incidenceRate / 500) * 10, 10);
+              
+              let growthFactor = 1;
+              if (newCasesLastWeek > 0) {
+                  growthFactor = newCasesThisWeek / newCasesLastWeek;
+              }
+              const growthNorm = growthFactor > 1.2 ? Math.min((growthFactor - 1) * 5, 10) : 0;
+              
+              livePenalty = Math.round(incidenceNorm + growthNorm);
+          }
+      }
 
       const finalScore = Math.min(systemicRisk + endemicRisk + livePenalty, 100);
+      const CFR = liveData.cases > 0 ? (liveData.deaths / liveData.cases) : 0;
       const testsPer1M = liveData.testsPerOneMillion || 0;
 
       return {
@@ -226,6 +248,8 @@ app.get('/api/risk-scores', async (req: Request, res: Response) => {
         score: finalScore,
         fatality: `${(CFR * 100).toFixed(2)}%`,
         testingRate: testsPer1M.toLocaleString(), 
+        population: pop,           
+        caseHistory: caseValues,   
         trend: finalScore > 75 ? 'Global Emergency' : 'Stable',
         metrics: {
           systemic: systemicRisk,
