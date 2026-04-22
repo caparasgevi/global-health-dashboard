@@ -54,6 +54,17 @@ function App() {
   const [authStatus, setAuthStatus] = useState<
     "unauthenticated" | "user" | "guest"
   >("unauthenticated");
+  const [userName, setUserName] = useState<string>(
+    () => localStorage.getItem("healthRadarUserName") || ""
+  );
+
+  useEffect(() => {
+    if (userName) {
+      localStorage.setItem("healthRadarUserName", userName);
+    } else {
+      localStorage.removeItem("healthRadarUserName");
+    }
+  }, [userName]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -83,7 +94,11 @@ function App() {
                   isDark={isDark} 
                   setIsDark={setIsDark}
                   authStatus={authStatus}
-                  onGuestLogin={() => setAuthStatus("guest")}
+                  userName={userName}
+                  onGuestLogin={() => {
+                    setAuthStatus("guest");
+                    setUserName("Guest");
+                  }}
                 />
               )}
 
@@ -93,7 +108,14 @@ function App() {
                     <Route
                       path="*"
                       element={
-                        <Auth onLogin={(status) => setAuthStatus(status)} />
+                        <Auth onLogin={(status, name) => {
+                          setAuthStatus(status);
+                          if (status === "guest") {
+                            setUserName("Guest");
+                          } else if (name) {
+                            setUserName(name);
+                          }
+                        }} />
                       }
                     />
                   ) : (

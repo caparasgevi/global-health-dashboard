@@ -10,6 +10,7 @@
     "build": "npm run install-all && cd health-radar && npm run build"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.104.0",
     "firebase": "^12.12.1"
   }
 }
