@@ -8,6 +8,9 @@ interface AuthProps {
   onLogin?: (status: "user" | "guest") => void;
 }
 
+// Standard email validation regex
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -60,7 +63,10 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
     // --- FORGOT PASSWORD FLOW ---
     if (isForgotPassword) {
-      if (!formData.email.includes("@")) return;
+      if (!EMAIL_REGEX.test(formData.email)) {
+        setAuthError("Please enter a valid email address.");
+        return;
+      }
       try {
         const { error } = await supabase.auth.resetPasswordForEmail(
           formData.email,
@@ -78,45 +84,59 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     }
     // --- END FORGOT PASSWORD FLOW ---
 
-    const isValid = isLogin
-      ? formData.email.includes("@") && formData.password.length > 0
-      : formData.name.length > 0 &&
-        formData.email.includes("@") &&
-        formData.password.length > 0 &&
-        formData.country.length > 0;
+    // --- PRE-FLIGHT VALIDATION CHECKS ---
+    if (!EMAIL_REGEX.test(formData.email)) {
+      setAuthError("Please enter a valid email address.");
+      return;
+    }
 
-    if (isValid) {
-      try {
-        if (isLogin) {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: formData.email,
-            password: formData.password,
-          });
-          if (error) throw error;
-          if (onLogin) onLogin("user");
-        } else {
-          const { data, error } = await supabase.auth.signUp({
-            email: formData.email,
-            password: formData.password,
-            options: {
-              data: {
-                name: formData.name,
-                country: formData.country,
-                alerts_enabled: formData.alertsEnabled,
-              },
-            },
-          });
-          if (error) throw error;
-          setIsConfirming(true);
-          setTimeout(() => {
-            setIsConfirming(false);
-            if (onLogin) onLogin("user");
-          }, 3000);
-        }
-      } catch (error: any) {
-        console.error("Auth error:", error);
-        setAuthError(error.message || "Invalid credentials. Please try again.");
+    if (formData.password.length < 8) {
+      setAuthError("Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (!isLogin) {
+      if (formData.name.trim().length < 2) {
+        setAuthError("Full Name must be at least 2 characters.");
+        return;
       }
+      if (!formData.country) {
+        setAuthError("Please select your country or region.");
+        return;
+      }
+    }
+    // --- END PRE-FLIGHT VALIDATION ---
+
+    try {
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        if (error) throw error;
+        if (onLogin) onLogin("user");
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              name: formData.name.trim(),
+              country: formData.country,
+              alerts_enabled: formData.alertsEnabled,
+            },
+          },
+        });
+        if (error) throw error;
+        setIsConfirming(true);
+        setTimeout(() => {
+          setIsConfirming(false);
+          if (onLogin) onLogin("user");
+        }, 3000);
+      }
+    } catch (error: any) {
+      console.error("Auth error:", error);
+      setAuthError(error.message || "Invalid credentials. Please try again.");
     }
   };
 
@@ -185,7 +205,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         transition={{ delay: 0.2 }}
         className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-200/60 dark:shadow-black/40 border border-white/60 dark:border-slate-800/60 p-8 lg:p-9 overflow-hidden"
       >
-        {/* Tab toggle (Hidden if in Forgot Password mode) */}
+        {/* Tab toggle */}
         {!isForgotPassword && (
           <div className="flex p-1.5 bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl mb-7">
             {["Sign In", "Sign Up"].map((label, i) => (
@@ -280,14 +300,19 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                       type="text"
                       required
                       placeholder="Full Name"
-                      className={getInputClass(formData.name.length > 0)}
+                      className={getInputClass(formData.name.trim().length >= 2)}
                       onChange={(e) =>
                         setFormData({ ...formData, name: e.target.value })
                       }
                     />
-                    {wasSubmitted && !formData.name && (
-                      <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-0.5 block">
+                    {wasSubmitted && formData.name.trim().length === 0 && (
+                      <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-1 block">
                         * Required
+                      </span>
+                    )}
+                    {wasSubmitted && formData.name.trim().length === 1 && (
+                      <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-1 block">
+                        * Name must be at least 2 characters
                       </span>
                     )}
                   </div>
@@ -298,7 +323,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                       Country / Region <span className="text-brand-red">*</span>
                     </label>
                     <div
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 transition-all cursor-pointer ${wasSubmitted && !formData.country ? "border-red-400" : showCountryDropdown ? "border-brand-red/40 ring-2 ring-brand-red/8" : "border-slate-200 dark:border-slate-700"}`}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 transition-all cursor-pointer ${wasSubmitted && !formData.country ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/10" : showCountryDropdown ? "border-brand-red/40 ring-2 ring-brand-red/8" : "border-slate-200 dark:border-slate-700"}`}
                       onClick={() => setShowCountryDropdown((v) => !v)}
                     >
                       <svg
@@ -307,12 +332,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"
-                        />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
                       </svg>
                       <span
                         className={`flex-1 text-sm font-medium ${formData.country ? "text-slate-800 dark:text-white" : "text-slate-400"}`}
@@ -325,12 +345,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
 
@@ -350,49 +365,28 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                               type="text"
                               placeholder="Search country..."
                               value={formData.countrySearch}
-                              onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  countrySearch: e.target.value,
-                                })
-                              }
+                              onChange={(e) => setFormData({ ...formData, countrySearch: e.target.value })}
                               className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-700 rounded-lg outline-none border border-slate-200 dark:border-slate-600 placeholder:text-slate-400 dark:text-white font-medium focus:border-brand-red/40"
                               onClick={(e) => e.stopPropagation()}
                             />
                           </div>
                           <ul className="max-h-48 overflow-y-auto">
                             {filteredCountries.length === 0 ? (
-                              <li className="px-4 py-3 text-sm text-slate-400 text-center">
-                                No countries found
-                              </li>
+                              <li className="px-4 py-3 text-sm text-slate-400 text-center">No countries found</li>
                             ) : (
                               filteredCountries.map((c) => (
                                 <li
                                   key={c.alpha2}
                                   onClick={() => {
-                                    setFormData({
-                                      ...formData,
-                                      country: c.country,
-                                      countrySearch: "",
-                                    });
+                                    setFormData({ ...formData, country: c.country, countrySearch: "" });
                                     setShowCountryDropdown(false);
                                   }}
                                   className={`flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors ${formData.country === c.country ? "bg-red-50 dark:bg-red-950/30 text-brand-red font-semibold" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
                                 >
                                   <span>{c.country}</span>
                                   {formData.country === c.country && (
-                                    <svg
-                                      className="w-3.5 h-3.5 ml-auto text-brand-red"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2.5}
-                                        d="M5 13l4 4L19 7"
-                                      />
+                                    <svg className="w-3.5 h-3.5 ml-auto text-brand-red" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                                     </svg>
                                   )}
                                 </li>
@@ -403,7 +397,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                       )}
                     </AnimatePresence>
                     {wasSubmitted && !formData.country && (
-                      <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-0.5 block">
+                      <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-1 block">
                         * Required
                       </span>
                     )}
@@ -415,21 +409,11 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                       id="alerts"
                       type="checkbox"
                       checked={formData.alertsEnabled}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          alertsEnabled: e.target.checked,
-                        })
-                      }
+                      onChange={(e) => setFormData({ ...formData, alertsEnabled: e.target.checked })}
                       className="mt-0.5 accent-brand-red w-3.5 h-3.5 shrink-0 cursor-pointer"
                     />
-                    <label
-                      htmlFor="alerts"
-                      className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed cursor-pointer"
-                    >
-                      <span className="font-bold text-slate-700 dark:text-slate-300">
-                        Enable outbreak alerts
-                      </span>
+                    <label htmlFor="alerts" className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed cursor-pointer">
+                      <span className="font-bold text-slate-700 dark:text-slate-300">Enable outbreak alerts</span>
                       <br />
                       Receive notifications about health threats in your region.
                     </label>
@@ -446,20 +430,21 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                   type="email"
                   required
                   placeholder="Enter your email"
-                  className={getInputClass(formData.email.includes("@"))}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  className={getInputClass(EMAIL_REGEX.test(formData.email))}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
+                {wasSubmitted && formData.email.length > 0 && !EMAIL_REGEX.test(formData.email) && (
+                  <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-1 block">
+                    * Please enter a valid email address
+                  </span>
+                )}
               </div>
 
               {/* Password field hides if in Forgot Password mode */}
               {!isForgotPassword && (
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className={labelClass.replace("mb-1.5", "")}>
-                      Password
-                    </label>
+                    <label className={labelClass.replace("mb-1.5", "")}>Password</label>
                     {isLogin && (
                       <button
                         type="button"
@@ -477,12 +462,15 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                   <input
                     type="password"
                     required
-                    placeholder="Enter your password"
-                    className={getInputClass(formData.password.length > 0)}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
+                    placeholder="Enter your password (min. 8 characters)"
+                    className={getInputClass(formData.password.length >= 8)}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   />
+                  {wasSubmitted && formData.password.length > 0 && formData.password.length < 8 && (
+                    <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-1 block">
+                      * Password must be at least 8 characters
+                    </span>
+                  )}
                 </div>
               )}
             </div>
