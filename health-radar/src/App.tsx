@@ -23,6 +23,7 @@ import FullReport from "./pages/FullReport";
 import CountryStatistics from "./pages/CountryStatistics";
 import RiskScores from "./pages/RiskScores";
 import OurTeam from "./pages/OurTeam";
+import UpdatePassword from "./pages/UpdatePassword";
 
 const ResetManager = () => {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ const ResetManager = () => {
       sessionStorage.removeItem("health_radar_country");
     }
 
-    if (location.pathname !== "/") {
+    if (location.pathname !== "/" && location.pathname !== "/update-password") {
       navigate("/", { replace: true });
     }
 
@@ -118,40 +119,60 @@ function App() {
               <main className="flex-grow">
                 <AnimatePresence mode="wait">
                   <Routes>
-                    {authStatus === "unauthenticated" ? (
+                  {authStatus === "unauthenticated" ? (
+                    <Route
+                      path="*"
+                      element={
+                        <Auth 
+                          onLogin={(status) => {
+                            if (status === 'guest') {
+                              setUser({ id: 'guest' } as User);
+                            }
+                          }} 
+                        />
+                      }
+                    />
+                  ) : showAuth ? (
+                    <Route
+                      path="*"
+                      element={
+                        <Auth 
+                          onLogin={(status) => {
+                            setShowAuth(false);
+                            if (status === 'guest') {
+                              setUser({ id: 'guest' } as User);
+                            }
+                          }} 
+                        />
+                      }
+                    />
+                  ) : (
+                    <>
                       <Route
-                        path="*"
-                        element={<Auth onLogin={() => setUser({ id: 'guest' } as User)} />}
-                      />
-                    ) : showAuth ? (
-                      <Route
-                        path="*"
+                        path="/auth"
                         element={<Auth onLogin={() => setShowAuth(false)} />}
                       />
-                    ) : (
-                      <>
-                        <Route
-                          path="/auth"
-                          element={<Auth onLogin={() => setShowAuth(false)} />}
-                        />
-                        <Route
-                          path="/"
-                          element={
-                            <div className="flex flex-col gap-0">
-                              <Home />
-                              <About />
-                              <GlobalMap isDark={isDark} />
-                              <CountryStatistics />
-                              <Trends />
-                              <RiskScores />
-                              <OurTeam />
-                            </div>
-                          }
-                        />
-                        <Route path="/full-report" element={<FullReport />} />
-                      </>
-                    )}
-                  </Routes>
+                      <Route
+                        path="/"
+                        element={
+                          <div className="flex flex-col gap-0">
+                            <Home />
+                            <About />
+                            <GlobalMap isDark={isDark} />
+                            <CountryStatistics />
+                            <Trends />
+                            <RiskScores />
+                            <OurTeam />
+                          </div>
+                        }
+                      />
+                      <Route path="/full-report" element={<FullReport />} />
+                      
+                      {/* The new Reset Password Route */}
+                      <Route path="/update-password" element={<UpdatePassword />} />
+                    </>
+                  )}
+                </Routes>
                 </AnimatePresence>
               </main>
 
