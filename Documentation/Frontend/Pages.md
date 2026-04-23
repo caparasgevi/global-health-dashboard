@@ -1,4 +1,4 @@
-# 🖥️ Frontend Documentation
+# 🖥️ PAGES - Frontend Documentation
 
 ## Overview
 The **Health Radar** frontend is a high-performance Single Page Application (SPA) built with React. It heavily utilizes `framer-motion` for fluid page transitions, `recharts` for complex data visualizations, and custom hooks for efficient API interactions with the backend intelligence layer.
