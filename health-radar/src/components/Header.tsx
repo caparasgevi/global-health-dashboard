@@ -165,35 +165,25 @@ const Header: React.FC<HeaderProps> = ({
             {/* Welcome User */}
             {user && (
               <div className="flex items-center gap-3 p-3 bg-emerald-50/80 dark:bg-emerald-500/10 rounded-2xl border border-emerald-200/50 shadow-sm">
-    <div>
-      <p className="text-sm font-bold text-gray-900 dark:text-white">Welcome,</p>
-      <p className="text-xs font-black text-emerald-700 uppercase tracking-wider">
-        {user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
-      </p>
-    </div>
-  </div>
-)}
+                <div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Welcome,</p>
+                  <p className="text-xs font-black text-emerald-700 uppercase tracking-wider">
+                    {user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Logout */}
             {user && onLogout && (
-  <button 
-    onClick={onLogout}
-    className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm uppercase tracking-wider transition-all"
-  >
-    Logout
-  </button>
-)}
-            
-            {/* Guest Mode */}
-            {authStatus === 'user' && onGuestLogin && (
               <button 
-                onClick={onGuestLogin}
-                className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm uppercase tracking-wider transition-all"
+                onClick={onLogout}
+                className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm uppercase tracking-wider transition-all"
               >
-                👤 Guest
+                Logout
               </button>
             )}
-
+            
             {/* Login */}
             {(authStatus === 'guest' || authStatus === 'unauthenticated') && onLoginClick && (
               <button 
