@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createClient } from "@supabase/supabase-js";
 import {
   m,
   AnimatePresence,
@@ -10,11 +11,17 @@ import {
 import { healthService } from "../services/healthService";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, EffectFade, Navigation } from "swiper/modules";
+import CountryHealthAlerts from "../components/CountryHealthAlerts"; // ONLY ADDED THIS IMPORT
 
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-fade";
 import "swiper/css/navigation";
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+);
 
 const Counter = React.memo(({ value }: { value: number }) => {
   const count = useMotionValue(0);
@@ -73,7 +80,35 @@ const Home = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBasis, setShowBasis] = useState(false);
 
+  // NEW: Auth states for CountryHealthAlerts
+  const [user, setUser] = useState<any>(null);
+  const [isGuest, setIsGuest] = useState(false);
+
   const swiperRef = useRef<any>(null);
+
+  // NEW: Get user country from metadata if available
+  const userCountry = user?.user_metadata?.country ?? undefined;
+  const userRegion = user?.user_metadata?.region ?? undefined;
+
+  // NEW: Fetch auth state (copy from Header)
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setIsGuest(localStorage.getItem("auth_mode") === "guest");
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session) {
+        setIsGuest(false);
+        localStorage.removeItem("auth_mode");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!swiperRef.current) return;
@@ -259,177 +294,194 @@ const Home = () => {
       </m.section>
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <m.div
-          className="lg:col-span-8 w-full"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={revealVariants}
-        >
-          <div className="theme-card rounded-[2rem] p-5 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
-            {/* Header Section */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex flex-col items-start gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm shadow-emerald-500/5">
-                  <span className="text-[10px] md:text-xs font-black uppercase text-emerald-600 dark:text-emerald-400 font-montserrat tracking-[0.15em] flex items-center gap-1.5">
-                    Verified
-                    <svg
-                      className="w-3.5 h-3.5 fill-emerald-500"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293l-4 4a1 1 0 01-1.414 0l-2-2a1 1 0 111.414-1.414L9 10.586l3.293-3.293a1 1 0 111.414 1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </div>
-
-                {/* Main Title */}
-                <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  WHO Surveillance Archive
-                </h3>
-              </div>
-            </div>
-
-            {outbreakLoading ? (
-              <div className="rounded-2xl border border-slate-100 dark:border-slate-800 aspect-video flex flex-col items-center justify-center bg-slate-50/50 dark:bg-slate-900/50">
-                <div className="w-10 h-10 border-4 border-brand-red border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                  Synchronizing Intelligence...
-                </p>
-              </div>
-            ) : outbreakSlides.length > 0 ? (
-              <div className="flex flex-col h-full">
-                <div className="group/slider relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-200 dark:shadow-none mb-6">
-                  <button className="nav-prev absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-transparent md:bg-black/30 md:backdrop-blur-md border border-white/10 md:border-white/10 text-white opacity-100 md:opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-brand-red hover:scale-110 active:scale-95 disabled:hidden">
-                    <svg
-                      className="w-5 h-5 drop-shadow-md"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-
-                  <button className="nav-next absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-transparent md:bg-black/30 md:backdrop-blur-md border border-white/10 md:border-white/10 text-white opacity-100 md:opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-brand-red hover:scale-110 active:scale-95 disabled:hidden">
-                    <svg
-                      className="w-5 h-5 drop-shadow-md"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-                  <Swiper
-                    onSwiper={(swiper) => (swiperRef.current = swiper)}
-                    modules={[Autoplay, Pagination, EffectFade, Navigation]}
-                    effect="fade"
-                    loop={true}
-                    autoplay={{ delay: 6000, disableOnInteraction: false }}
-                    navigation={{
-                      prevEl: ".nav-prev",
-                      nextEl: ".nav-next",
-                    }}
-                    pagination={{
-                      clickable: true,
-                      bulletActiveClass:
-                        "swiper-pagination-bullet-active !bg-brand-orange",
-                    }}
-                    onSlideChange={handleSlideChange}
-                    className="w-full aspect-video lg:h-[450px]"
-                  >
-                    {outbreakSlides.map((slide) => (
-                      <SwiperSlide key={slide.id}>
-                        <div className="relative w-full h-full bg-slate-900">
-                          <img
-                            src={slide.image}
-                            alt={slide.title}
-                            className="w-full h-full object-cover opacity-70 transition-transform duration-[2000ms] hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/20 to-transparent" />
-                          <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-6 md:p-10 text-white">
-                            <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                              <span className="h-[2px] w-6 sm:w-8 bg-brand-orange"></span>
-                              <p className="text-[9px] md:text-xs text-brand-orange font-black uppercase tracking-widest">
-                                {new Date(slide.date).toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                  },
-                                )}
-                              </p>
-                            </div>
-                            <h3 className="text-lg sm:text-2xl md:text-4xl font-bold leading-tight mb-2 drop-shadow-md line-clamp-2">
-                              {slide.title}
-                            </h3>
-                          </div>
-                        </div>
-                      </SwiperSlide>
-                    ))}
-                  </Swiper>
-                </div>
-
-                <div className="mt-auto bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-100 dark:border-slate-800/50">
-                  <m.div
-                    initial={false}
-                    animate={{ height: isExpanded ? "auto" : "2.8em" }}
-                    className="overflow-hidden relative mb-4"
-                  >
-                    <p
-                      className={`text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed ${!isExpanded ? "line-clamp-2" : ""}`}
-                    >
-                      {outbreakSlides[activeSlide]?.caption}
-                    </p>
-                  </m.div>
-
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
-                    <button
-                      onClick={() => setIsExpanded(!isExpanded)}
-                      className="w-full sm:w-auto text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 hover:text-brand-orange transition-colors flex items-center justify-center gap-1 group"
-                    >
-                      {isExpanded ? "Show Less" : "Read Full Context"}
-                      <span
-                        className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : "group-hover:translate-y-0.5"}`}
+        {user && !isGuest ? (
+          <m.div
+            className="lg:col-span-8 w-full"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={revealVariants}
+          >
+            <CountryHealthAlerts
+              isDark={false} // Pass isDark from parent if available, or use state
+              userCountry={userCountry}
+              userRegion={userRegion}
+            />
+          </m.div>
+        ) : (
+          <m.div
+            className="lg:col-span-8 w-full"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={revealVariants}
+          >
+            {/* Original WHO Surveillance Archive - COMPLETELY UNCHANGED */}
+            <div className="theme-card rounded-[2rem] p-5 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+              {/* Header Section */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col items-start gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm shadow-emerald-500/5">
+                    <span className="text-[10px] md:text-xs font-black uppercase text-emerald-600 dark:text-emerald-400 font-montserrat tracking-[0.15em] flex items-center gap-1.5">
+                      Verified
+                      <svg
+                        className="w-3.5 h-3.5 fill-emerald-500"
+                        viewBox="0 0 20 20"
                       >
-                        ↓
-                      </span>
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293l-4 4a1 1 0 01-1.414 0l-2-2a1 1 0 111.414-1.414L9 10.586l3.293-3.293a1 1 0 111.414 1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                  </div>
+
+                  {/* Main Title */}
+                  <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    WHO Surveillance Archive
+                  </h3>
+                </div>
+              </div>
+
+              {outbreakLoading ? (
+                <div className="rounded-2xl border border-slate-100 dark:border-slate-800 aspect-video flex flex-col items-center justify-center bg-slate-50/50 dark:bg-slate-900/50">
+                  <div className="w-10 h-10 border-4 border-brand-red border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                    Synchronizing Intelligence...
+                  </p>
+                </div>
+              ) : outbreakSlides.length > 0 ? (
+                <div className="flex flex-col h-full">
+                  <div className="group/slider relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-200 dark:shadow-none mb-6">
+                    <button className="nav-prev absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-transparent md:bg-black/30 md:backdrop-blur-md border border-white/10 md:border-white/10 text-white opacity-100 md:opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-brand-red hover:scale-110 active:scale-95 disabled:hidden">
+                      <svg
+                        className="w-5 h-5 drop-shadow-md"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
                     </button>
 
-                    <a
-                      href={`https://www.google.com/search?q=${encodeURIComponent(outbreakSlides[activeSlide]?.title + " WHO report")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-red text-[10px] font-black uppercase text-white hover:bg-red-700 transition-all shadow-lg shadow-red-200 dark:shadow-none active:scale-95"
+                    <button className="nav-next absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-transparent md:bg-black/30 md:backdrop-blur-md border border-white/10 md:border-white/10 text-white opacity-100 md:opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-brand-red hover:scale-110 active:scale-95 disabled:hidden">
+                      <svg
+                        className="w-5 h-5 drop-shadow-md"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                    <Swiper
+                      onSwiper={(swiper) => (swiperRef.current = swiper)}
+                      modules={[Autoplay, Pagination, EffectFade, Navigation]}
+                      effect="fade"
+                      loop={true}
+                      autoplay={{ delay: 6000, disableOnInteraction: false }}
+                      navigation={{
+                        prevEl: ".nav-prev",
+                        nextEl: ".nav-next",
+                      }}
+                      pagination={{
+                        clickable: true,
+                        bulletActiveClass:
+                          "swiper-pagination-bullet-active !bg-brand-orange",
+                      }}
+                      onSlideChange={handleSlideChange}
+                      className="w-full aspect-video lg:h-[450px]"
                     >
-                      Search Official Report
-                      <span className="text-sm">↗</span>
-                    </a>
+                      {outbreakSlides.map((slide) => (
+                        <SwiperSlide key={slide.id}>
+                          <div className="relative w-full h-full bg-slate-900">
+                            <img
+                              src={slide.image}
+                              alt={slide.title}
+                              className="w-full h-full object-cover opacity-70 transition-transform duration-[2000ms] hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/20 to-transparent" />
+                            <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-6 md:p-10 text-white">
+                              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                                <span className="h-[2px] w-6 sm:w-8 bg-brand-orange"></span>
+                                <p className="text-[9px] md:text-xs text-brand-orange font-black uppercase tracking-widest">
+                                  {new Date(slide.date).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    },
+                                  )}
+                                </p>
+                              </div>
+                              <h3 className="text-lg sm:text-2xl md:text-4xl font-bold leading-tight mb-2 drop-shadow-md line-clamp-2">
+                                {slide.title}
+                              </h3>
+                            </div>
+                          </div>
+                        </SwiperSlide>
+                      ))}
+                    </Swiper>
+                  </div>
+
+                  <div className="mt-auto bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-100 dark:border-slate-800/50">
+                    <m.div
+                      initial={false}
+                      animate={{ height: isExpanded ? "auto" : "2.8em" }}
+                      className="overflow-hidden relative mb-4"
+                    >
+                      <p
+                        className={`text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed ${!isExpanded ? "line-clamp-2" : ""}`}
+                      >
+                        {outbreakSlides[activeSlide]?.caption}
+                      </p>
+                    </m.div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
+                      <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="w-full sm:w-auto text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 hover:text-brand-orange transition-colors flex items-center justify-center gap-1 group"
+                      >
+                        {isExpanded ? "Show Less" : "Read Full Context"}
+                        <span
+                          className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : "group-hover:translate-y-0.5"}`}
+                        >
+                          ↓
+                        </span>
+                      </button>
+
+                      <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(outbreakSlides[activeSlide]?.title + " WHO report")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-red text-[10px] font-black uppercase text-white hover:bg-red-700 transition-all shadow-lg shadow-red-200 dark:shadow-none active:scale-95"
+                      >
+                        Search Official Report
+                        <span className="text-sm">↗</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border-2 border-dashed border-slate-100 dark:border-slate-800 aspect-video flex items-center justify-center text-slate-400 text-sm font-medium italic">
-                No active outbreaks reported.
-              </div>
-            )}
-          </div>
-        </m.div>
+              ) : (
+                <div className="rounded-2xl border-2 border-dashed border-slate-100 dark:border-slate-800 aspect-video flex items-center justify-center text-slate-400 text-sm font-medium italic">
+                  No active outbreaks reported.
+                </div>
+              )}
+            </div>
+          </m.div>
+        )}
 
         <m.div
           className="lg:col-span-4 w-full"
