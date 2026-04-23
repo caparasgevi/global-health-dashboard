@@ -1,9 +1,3 @@
-Here is the consolidated documentation. I have taken your high-level structural document and seamlessly integrated the code-level mechanical breakdowns into each section. 
-
-I also took the liberty of adding an **Application Root (`App.tsx`)** section at the top, as it forms the architectural backbone of the entire frontend. 
-
-***
-
 # 🖥️ PAGES - Frontend Documentation
 
 ## Overview
