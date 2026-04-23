@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import geviImg from "../assets/ourTeam/Gevi_image.png";
-import geviHover from "../assets/ourTeam/Gevi_hoverImage.jpg";
 import kielImg from "../assets/ourTeam/Kiel_image.jpg";
-import kielHover from "../assets/ourTeam/Kiel_hoverImage.jpg";
 import shaneImg from "../assets/ourTeam/Shane_image.png";
 import elijahImg from "../assets/ourTeam/Elijah_image.png";
 import leobertImg from "../assets/ourTeam/Leobert_image.png";
-import leobertHover from "../assets/ourTeam/Leobert_hoverImage.jpg";
+
 
 interface TeamMember {
   id: number;
@@ -26,7 +24,7 @@ const teamMembers: TeamMember[] = [
     contribution:
       "Establishes foundational architecture for frontend and backend systems. Orchestrates API development and leads the implementation of the Home, About, and Trends modules.",
     image: geviImg,
-    hoverImage: geviHover,
+    hoverImage: geviImg,
   },
   {
     id: 2,
@@ -35,7 +33,7 @@ const teamMembers: TeamMember[] = [
     contribution:
       "Architects the high-performance geospatial engine and interactive Our Team platform. Specializes in seamless map synchronization and real-time spatial data visualization for precision disease tracking.",
     image: kielImg,
-    hoverImage: kielHover,
+    hoverImage: kielImg,
   },
   {
     id: 3,
@@ -62,7 +60,7 @@ const teamMembers: TeamMember[] = [
     contribution:
       "Engineers advanced risk scoring models and oversees backend systems. Collaborates on database refinement and high-efficiency API structures.",
     image: leobertImg,
-    hoverImage: leobertHover,
+    hoverImage: leobertImg,
   },
 ];
 
