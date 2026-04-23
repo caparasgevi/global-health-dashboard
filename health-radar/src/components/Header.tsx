@@ -71,7 +71,6 @@ const Header: React.FC<HeaderProps> = ({
     });
 
     const handleScroll = () => {
-      // Changed to check for '/home' instead of '/'
       if (window.scrollY < 100 && location.pathname === '/home') {
         setActiveItem('Home');
       }
@@ -82,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({
       observer.disconnect();
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [location.pathname]); // Removed navItems from dependencies
+  }, [location.pathname]);
 
   const scrollToSection = (id: string) => {
     setIsMenuOpen(false); 
@@ -117,7 +116,6 @@ const Header: React.FC<HeaderProps> = ({
       sessionStorage.setItem('redirectAfterLogin', currentPath);
     }
     
-    // THE FIX: Force the browser to completely reload into the Auth page
     window.location.href = '/auth';
   };
 
@@ -146,13 +144,14 @@ const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
         
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center bg-gray-100/50 dark:bg-gray-800/40 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
+        {/* Desktop Navigation - FIXED: Changed lg:flex to xl:flex to prevent tablet squishing */}
+        <nav className="hidden xl:flex items-center bg-gray-100/50 dark:bg-gray-800/40 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
           {navItems.map((item) => (
             <button 
               key={item} 
               onClick={() => scrollToSection(item)}
-              className={`relative px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 rounded-xl group font-montserrat ${activeItem === item ? 'text-brand-red bg-white dark:bg-gray-900 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
+              /* FIXED: Added dynamic padding and text scaling (px-2 xl:px-4 text-[10px] xl:text-xs) */
+              className={`relative px-2 xl:px-4 py-2 text-[10px] xl:text-xs font-bold uppercase tracking-wider transition-all duration-300 rounded-xl group font-montserrat ${activeItem === item ? 'text-brand-red bg-white dark:bg-gray-900 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
             >
               {item}
               <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-brand-red transition-all duration-300 rounded-full ${activeItem === item ? 'w-4 opacity-100' : 'w-0 opacity-0'}`} />
@@ -194,8 +193,8 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          {/* Burger Menu Button */}
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex lg:hidden flex-col justify-center items-center w-10 h-10 rounded-xl bg-brand-red text-white shadow-lg shadow-brand-red/20 active:scale-95 transition-transform">
+          {/* Burger Menu Button - FIXED: Changed lg:hidden to xl:hidden */}
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex xl:hidden flex-col justify-center items-center w-10 h-10 rounded-xl bg-brand-red text-white shadow-lg shadow-brand-red/20 active:scale-95 transition-transform">
             <div className={`w-5 h-0.5 bg-white transition-all duration-300 mb-1 ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
             <div className={`w-5 h-0.5 bg-white transition-all duration-300 mb-1 ${isMenuOpen ? 'opacity-0' : ''}`} />
             <div className={`w-5 h-0.5 bg-white transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`} />
@@ -203,8 +202,8 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      <div className={`lg:hidden fixed inset-x-0 top-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-300 origin-top ${isMenuOpen ? 'scale-y-100 opacity-100 visible' : 'scale-y-0 opacity-0 invisible'}`}>
+      {/* Mobile Menu - FIXED: Changed lg:hidden to xl:hidden */}
+      <div className={`xl:hidden fixed inset-x-0 top-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-300 origin-top ${isMenuOpen ? 'scale-y-100 opacity-100 visible' : 'scale-y-0 opacity-0 invisible'}`}>
         <div className="flex flex-col p-4 gap-2">
           {navItems.map((item) => (
             <button key={item} onClick={() => scrollToSection(item)} className={`w-full text-left px-5 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${activeItem === item ? 'bg-brand-red/10 text-brand-red border-l-4 border-brand-red' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
