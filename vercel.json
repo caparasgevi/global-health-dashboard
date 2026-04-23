@@ -17,8 +17,8 @@
       "destination": "/backend/src/index.ts"
     },
     {
-      "source": "/(.*\\.(png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot))$",
-      "destination": "/health-radar/$1"
+      "source": "/(?<file>.*\\.[a-zA-Z0-9]+)",
+      "destination": "/health-radar/:file"
     },
     {
       "source": "/(.*)",
