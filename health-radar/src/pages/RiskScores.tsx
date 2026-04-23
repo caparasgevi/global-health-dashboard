@@ -328,7 +328,7 @@ const RiskScores = () => {
                       </p>
                     </div>
                   ) : (
-                    <table className="w-full table-fixed text-left border-collapse relative">
+                    <table className="w-full min-w-[500px] table-fixed text-left border-collapse relative">
                       <thead className="sticky top-0 bg-white dark:bg-slate-900 z-10">
                         <tr className="border-b border-slate-100 dark:border-slate-800">
                           <th className="pb-4 w-16 md:w-24 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
