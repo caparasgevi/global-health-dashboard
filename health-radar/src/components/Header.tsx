@@ -12,25 +12,25 @@ interface HeaderProps {
   onLogout?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  isDark, 
+const Header: React.FC<HeaderProps> = ({
+  isDark,
   setIsDark,
   authStatus = 'unauthenticated',
   user,
   onLoginClick,
-  onLogout 
+  onLogout
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const navItems = ['Home', 'About', 'Global Map', 'Country Statistics', 'Trends', 'Risk Scores', 'Our Team'];
   const [activeItem, setActiveItem] = useState('Home');
   const [logoError, setLogoError] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     if (location.pathname === '/full-report') {
       setActiveItem('Trends');
-      return; 
+      return;
     }
 
     const observerOptions = {
@@ -43,12 +43,12 @@ const Header: React.FC<HeaderProps> = ({
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const id = entry.target.id;
-          
+
           // Improved mapping: finds the navItem that matches the ID
           const matchedItem = navItems.find(
             item => item.toLowerCase().replace(/\s+/g, '-') === id
           );
-          
+
           if (matchedItem) {
             setActiveItem(matchedItem);
           } else if (id === 'home' || id === 'hero') {
@@ -82,10 +82,10 @@ const Header: React.FC<HeaderProps> = ({
       observer.disconnect();
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [location.pathname, navItems]); 
+  }, [location.pathname, navItems]);
 
   const scrollToSection = (id: string) => {
-    setIsMenuOpen(false); 
+    setIsMenuOpen(false);
     if (location.pathname !== '/') {
       navigate('/');
       setTimeout(() => executeScroll(id), 150); // Increased timeout slightly for component mount
@@ -103,7 +103,7 @@ const Header: React.FC<HeaderProps> = ({
 
     const elementId = id.toLowerCase().replace(/\s+/g, '-');
     const element = document.getElementById(elementId);
-    
+
     if (element) {
       const headerOffset = 80;
       const elementPosition = element.getBoundingClientRect().top;
@@ -121,7 +121,7 @@ const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-50 w-full bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 font-poppins">
       {/* Made the container wider with max-w-[105rem] */}
       <div className="max-w-[105rem] mx-auto px-6 h-20 flex items-center justify-between gap-4">
-        
+
         {/* 1. LEFT ZONE (Logo Section) */}
         <div className="flex items-center justify-start gap-3 cursor-pointer group shrink-0 w-auto lg:w-[25%]"
           onClick={() => scrollToSection('Home')}
@@ -144,18 +144,18 @@ const Header: React.FC<HeaderProps> = ({
             Health<span className="text-brand-red inline-block group-hover:translate-x-0.5 transition-transform">Radar</span>
           </span>
         </div>
-        
+
         {/* 2. CENTER ZONE (Desktop Navigation) */}
         <div className="hidden lg:flex flex-1 justify-center shrink">
           <nav className="flex items-center bg-gray-100/50 dark:bg-gray-800/40 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
             {navItems.map((item) => (
-              <button 
-                key={item} 
+              <button
+                key={item}
                 onClick={() => scrollToSection(item)}
                 className={`
                   relative px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-300 rounded-xl group font-montserrat whitespace-nowrap
-                  ${activeItem === item 
-                    ? 'text-brand-red bg-white dark:bg-gray-900 shadow-sm' 
+                  ${activeItem === item
+                    ? 'text-brand-red bg-white dark:bg-gray-900 shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }
                 `}
@@ -169,21 +169,25 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* 3. RIGHT ZONE (Action Buttons / Auth) */}
         <div className="flex items-center justify-end gap-3 shrink-0 w-auto lg:w-[25%]">
-          
+
           {/* Welcome User & Logout (Desktop) */}
           {user && (
             <div className="hidden md:flex items-center gap-4 pr-4 mr-1 border-r border-gray-200 dark:border-gray-700">
-              <div className="flex flex-col text-right justify-center">
-                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none mb-0.5">
-                  Welcome
+              {/* Profile Link: Wraps the welcome text and adds a 'View Profile' cue on hover */}
+              <button
+                onClick={() => navigate('/profile')}
+                className="flex flex-col text-right justify-center group transition-all"
+              >
+                <span className="text-[8px] font-black text-gray-500 group-hover:text-brand-red uppercase tracking-widest leading-none mb-0.5">
+                  View Profile
                 </span>
-                <span className="text-[11px] font-black text-gray-800 dark:text-white uppercase tracking-wider leading-none truncate max-w-[120px]">
+                <span className="text-[11px] font-black text-gray-800 dark:text-white group-hover:text-brand-red uppercase tracking-wider leading-none truncate max-w-[120px]">
                   {user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                 </span>
-              </div>
-              
+              </button>
+
               {onLogout && (
-                <button 
+                <button
                   onClick={onLogout}
                   className="text-[10px] font-bold text-gray-400 hover:text-brand-red uppercase tracking-widest transition-colors px-2 py-1"
                 >
@@ -195,7 +199,7 @@ const Header: React.FC<HeaderProps> = ({
 
           {/* Sign In Button (For guests / unauthenticated) */}
           {(authStatus === 'guest' || authStatus === 'unauthenticated') && onLoginClick && (
-            <button 
+            <button
               onClick={onLoginClick}
               className="hidden sm:block px-5 py-2 bg-brand-red hover:bg-red-700 text-white font-bold rounded-xl shadow-md shadow-brand-red/20 text-[11px] uppercase tracking-widest transition-all"
             >
@@ -204,7 +208,7 @@ const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Theme Toggle */}
-          <button 
+          <button
             onClick={() => setIsDark(!isDark)}
             className="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all duration-300"
             title={isDark ? 'Light Mode' : 'Dark Mode'}
@@ -217,7 +221,7 @@ const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* Mobile Menu Toggle */}
-          <button 
+          <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="flex lg:hidden flex-col justify-center items-center w-10 h-10 rounded-xl bg-brand-red text-white shadow-lg shadow-brand-red/20 active:scale-95 transition-transform"
           >
@@ -231,19 +235,19 @@ const Header: React.FC<HeaderProps> = ({
       {/* Mobile Menu Dropdown */}
       <div className={`
         lg:hidden fixed inset-x-0 top-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-300 origin-top
-        ${isMenuOpen ? 'scale-y-100 opacity-100 visible' : 'scale-y-0 opacity-0 invisible'}
-      `}>
+         ${isMenuOpen ? 'scale-y-100 opacity-100 visible' : 'scale-y-0 opacity-0 invisible'}
+        `}>
         <div className="flex flex-col p-4 gap-2">
           {navItems.map((item) => (
             <button
               key={item}
               onClick={() => scrollToSection(item)}
               className={`w-full text-left px-5 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all
-                ${activeItem === item 
-                  ? 'bg-brand-red/10 text-brand-red border-l-4 border-brand-red' 
+          ${activeItem === item
+                  ? 'bg-brand-red/10 text-brand-red border-l-4 border-brand-red'
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
                 }
-              `}
+        `}
             >
               {item}
             </button>
@@ -260,7 +264,7 @@ const Header: React.FC<HeaderProps> = ({
                   </span>
                 </div>
                 {onLogout && (
-                  <button 
+                  <button
                     onClick={() => { onLogout(); setIsMenuOpen(false); }}
                     className="w-full text-left px-5 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all text-brand-red hover:bg-red-50 dark:hover:bg-gray-800"
                   >
@@ -270,7 +274,7 @@ const Header: React.FC<HeaderProps> = ({
               </>
             ) : (
               (authStatus === 'guest' || authStatus === 'unauthenticated') && onLoginClick && (
-                <button 
+                <button
                   onClick={() => { onLoginClick(); setIsMenuOpen(false); }}
                   className="w-full text-left px-5 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all text-brand-red hover:bg-red-50 dark:hover:bg-gray-800"
                 >

@@ -24,6 +24,7 @@ import CountryStatistics from "./pages/CountryStatistics";
 import RiskScores from "./pages/RiskScores";
 import OurTeam from "./pages/OurTeam";
 import UpdatePassword from "./pages/UpdatePassword";
+import Profile from "./pages/Profile";
 
 const ResetManager = () => {
   const navigate = useNavigate();
@@ -40,10 +41,14 @@ const ResetManager = () => {
       sessionStorage.removeItem("health_radar_country");
     }
 
-    if (location.pathname !== "/" && location.pathname !== "/update-password") {
+    if (
+      location.pathname !== "/" &&
+      location.pathname !== "/update-password" &&
+      location.pathname !== "/profile" // Add this condition
+    ) {
       navigate("/", { replace: true });
+      
     }
-
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
@@ -119,60 +124,63 @@ function App() {
               <main className="flex-grow">
                 <AnimatePresence mode="wait">
                   <Routes>
-                  {authStatus === "unauthenticated" ? (
-                    <Route
-                      path="*"
-                      element={
-                        <Auth 
-                          onLogin={(status) => {
-                            if (status === 'guest') {
-                              setUser({ id: 'guest' } as User);
-                            }
-                          }} 
-                        />
-                      }
-                    />
-                  ) : showAuth ? (
-                    <Route
-                      path="*"
-                      element={
-                        <Auth 
-                          onLogin={(status) => {
-                            setShowAuth(false);
-                            if (status === 'guest') {
-                              setUser({ id: 'guest' } as User);
-                            }
-                          }} 
-                        />
-                      }
-                    />
-                  ) : (
-                    <>
+                    {authStatus === "unauthenticated" ? (
                       <Route
-                        path="/auth"
-                        element={<Auth onLogin={() => setShowAuth(false)} />}
-                      />
-                      <Route
-                        path="/"
+                        path="*"
                         element={
-                          <div className="flex flex-col gap-0">
-                            <Home />
-                            <About />
-                            <GlobalMap isDark={isDark} />
-                            <CountryStatistics />
-                            <Trends />
-                            <RiskScores />
-                            <OurTeam />
-                          </div>
+                          <Auth
+                            onLogin={(status) => {
+                              if (status === 'guest') {
+                                setUser({ id: 'guest' } as User);
+                              }
+                            }}
+                          />
                         }
                       />
-                      <Route path="/full-report" element={<FullReport />} />
-                      
-                      {/* The new Reset Password Route */}
-                      <Route path="/update-password" element={<UpdatePassword />} />
-                    </>
-                  )}
-                </Routes>
+                    ) : showAuth ? (
+                      <Route
+                        path="*"
+                        element={
+                          <Auth
+                            onLogin={(status) => {
+                              setShowAuth(false);
+                              if (status === 'guest') {
+                                setUser({ id: 'guest' } as User);
+                              }
+                            }}
+                          />
+                        }
+                      />
+                    ) : (
+                      <>
+                        <Route
+                          path="/auth"
+                          element={<Auth onLogin={() => setShowAuth(false)} />}
+                        />
+                        <Route
+                          path="/"
+                          element={
+                            <div className="flex flex-col gap-0">
+                              <Home />
+                              <About />
+                              <GlobalMap isDark={isDark} />
+                              <CountryStatistics />
+                              <Trends />
+                              <RiskScores />
+                              <OurTeam />
+                            </div>
+                          }
+                        />
+                        <Route path="/full-report" element={<FullReport />} />
+
+                        {/* The new Reset Password Route */}
+                        <Route path="/update-password" element={<UpdatePassword />} />
+
+                        <Route path="/profile" element={<Profile />} />
+
+                      </>
+                    )}
+                  </Routes>
                 </AnimatePresence>
               </main>
 
