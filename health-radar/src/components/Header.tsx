@@ -1,49 +1,42 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import type { User } from '@supabase/supabase-js';
 
 interface HeaderProps {
   isDark: boolean;
   setIsDark: React.Dispatch<React.SetStateAction<boolean>>;
+  authStatus: string;
+  user: User | null;
+  onLoginClick: () => void;
+  onLogout: () => Promise<void>;
 }
 
-const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
+// 1. Moved OUTSIDE the component to prevent infinite loop crashes on re-renders
+const navItems = ['Home', 'About', 'Global Map', 'Country Statistics', 'Trends', 'Risk Scores', 'Our Team'];
+
+const Header: React.FC<HeaderProps> = ({ 
+  isDark, 
+  setIsDark, 
+  authStatus, 
+  user, 
+  onLoginClick, 
+  onLogout 
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const navItems = ['Home', 'About', 'Global Map', 'Country Statistics', 'Trends', 'Risk Scores', 'Our Team'];
+
+  if (location.pathname === '/auth') {
+    return null;
+  }
+
   const [activeItem, setActiveItem] = useState('Home');
   const [logoError, setLogoError] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false); 
 
-  // NEW AUTH STATES
-  const [user, setUser] = useState<any>(null);
-  const [isGuest, setIsGuest] = useState(false);
+  // 2. Derive isGuest dynamically from the centralized App.tsx state
+  const isGuest = user?.id === 'guest';
 
   useEffect(() => {
-    // 1. Initial State Sync
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setIsGuest(localStorage.getItem('auth_mode') === 'guest');
-    };
-    checkAuth();
-
-    // 2. Listen for Auth Changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session) {
-        setIsGuest(false);
-        localStorage.removeItem('auth_mode');
-      }
-    });
-
-    // 3. Scroll & Observer Logic (Original Template)
     if (location.pathname === '/full-report') {
       setActiveItem('Trends');
     }
@@ -78,7 +71,8 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
     });
 
     const handleScroll = () => {
-      if (window.scrollY < 100 && location.pathname === '/') {
+      // Changed to check for '/home' instead of '/'
+      if (window.scrollY < 100 && location.pathname === '/home') {
         setActiveItem('Home');
       }
     };
@@ -86,32 +80,14 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
     window.addEventListener('scroll', handleScroll);
     return () => {
       observer.disconnect();
-      subscription.unsubscribe();
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [location.pathname, navItems]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem('auth_mode');
-    setIsGuest(false);
-    navigate('/auth');
-  };
-
-  // NEW: Handle sign in navigation
-  const handleSignIn = () => {
-    // Optional: Save current location to redirect back after login
-    const currentPath = location.pathname;
-    if (currentPath !== '/auth') {
-      sessionStorage.setItem('redirectAfterLogin', currentPath);
-    }
-    navigate('/auth');
-  };
+  }, [location.pathname]); // Removed navItems from dependencies
 
   const scrollToSection = (id: string) => {
     setIsMenuOpen(false); 
-    if (location.pathname !== '/') {
-      navigate('/');
+    if (location.pathname !== '/home') {
+      navigate('/home');
       setTimeout(() => executeScroll(id), 150);
     } else {
       executeScroll(id);
@@ -133,6 +109,16 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
       setActiveItem(id);
     }
+  };
+
+  const handleSignIn = () => {
+    const currentPath = location.pathname;
+    if (currentPath !== '/auth') {
+      sessionStorage.setItem('redirectAfterLogin', currentPath);
+    }
+    
+    // THE FIX: Force the browser to completely reload into the Auth page
+    window.location.href = '/auth';
   };
 
   return (
@@ -183,15 +169,14 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
               <div className="flex flex-col text-right justify-center">
                 <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none mb-0.5">Welcome</span>
                 <span className="text-[11px] font-black text-gray-800 dark:text-white uppercase tracking-wider leading-none truncate max-w-[100px]">
-                  {user.user_metadata?.name || user.email?.split('@')[0]}
+                  {user.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
                 </span>
               </div>
-              <button onClick={handleLogout} className="text-[10px] font-bold text-gray-400 hover:text-brand-red uppercase tracking-widest transition-colors">
+              <button onClick={onLogout} className="text-[10px] font-bold text-gray-400 hover:text-brand-red uppercase tracking-widest transition-colors">
                 Logout
               </button>
             </div>
           ) : (
-            /* GUEST/UNAUTHENTICATED STATE - Updated to use handleSignIn */
             <button 
               onClick={handleSignIn}
               className="hidden sm:block px-5 py-2 bg-brand-red hover:bg-red-700 text-white font-bold rounded-xl shadow-md shadow-brand-red/20 text-[10px] uppercase tracking-widest transition-all"
@@ -226,12 +211,12 @@ const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
               {item}
             </button>
           ))}
-          {/* Mobile Auth Actions - Updated to use handleSignIn */}
+          {/* Mobile Auth Actions */}
           <div className="mt-2 pt-4 border-t border-gray-100 dark:border-gray-800">
             {user && !isGuest ? (
               <div className="flex items-center justify-between px-5 py-2">
-                <span className="text-xs font-black text-gray-800 dark:text-white uppercase">{user.user_metadata?.name || user.email?.split('@')[0]}</span>
-                <button onClick={handleLogout} className="text-sm font-black text-brand-red uppercase">Logout</button>
+                <span className="text-xs font-black text-gray-800 dark:text-white uppercase">{user.user_metadata?.name || user?.email?.split('@')[0] || 'User'}</span>
+                <button onClick={onLogout} className="text-sm font-black text-brand-red uppercase">Logout</button>
               </div>
             ) : (
               <button onClick={handleSignIn} className="w-full text-left px-5 py-4 text-sm font-black text-brand-red uppercase">Sign In</button>

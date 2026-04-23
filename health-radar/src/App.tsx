@@ -8,8 +8,9 @@ import {
   Route,
   useNavigate,
   useLocation,
+  Navigate,
 } from "react-router-dom";
-import { LazyMotion, domMax, AnimatePresence } from "framer-motion";
+import { LazyMotion, domMax } from "framer-motion";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -40,17 +41,44 @@ const ResetManager = () => {
       sessionStorage.removeItem("health_radar_country");
     }
 
-    if (location.pathname !== "/" && location.pathname !== "/update-password") {
-      navigate("/", { replace: true });
+    // ALLOW-LIST: Now includes "/home", we redirect unknown paths to "/home"
+    const allowedPaths = ["/home", "/update-password", "/auth", "/full-report", "/"];
+    if (!allowedPaths.includes(location.pathname)) {
+      navigate("/home", { replace: true });
     }
 
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
-    window.scrollTo(0, 0);
+    
+    if (!isReload) {
+      window.scrollTo(0, 0);
+    }
   }, [location.pathname, navigate]);
 
   return null;
+};
+
+const AuthWrapper = ({ setUser, setShowAuth }: { setUser: any, setShowAuth: any }) => {
+  // We no longer need useNavigate() here
+  return (
+    <Auth 
+      onLogin={(status) => {
+        setShowAuth(false);
+        
+        if (status === 'guest') {
+          // Lock in the guest state
+          localStorage.setItem("auth_mode", "guest");
+          setUser({ id: 'guest' } as User);
+        } else {
+          localStorage.removeItem("auth_mode");
+        }
+        
+        // 🚨 THE FIX: Force a hard browser refresh instead of React routing!
+        window.location.href = '/home'; 
+      }} 
+    />
+  );
 };
 
 function App() {
@@ -59,18 +87,32 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
 
+  // Helper function: Checks Supabase first, then falls back to Guest Mode
+  const checkAuthState = (session: any) => {
+    const authMode = localStorage.getItem("auth_mode");
+    if (session?.user) {
+      setUser(session.user);
+      localStorage.removeItem("auth_mode"); // clear guest flag if a real user is found
+    } else if (authMode === "guest") {
+      setUser({ id: 'guest' } as User); // Restore guest status
+    } else {
+      setUser(null);
+    }
+  };
+
   const authStatus = user ? 'user' : 'unauthenticated';
 
   const handleLogout = async () => {
+    localStorage.removeItem("auth_mode"); // Ensure guest mode clears on logout
     await supabase.auth.signOut();
+    setUser(null);
   };
 
   useEffect(() => {
     // 1. Initial Session Check
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      // Wait at least 1s for the brand experience, or until session is found
+      checkAuthState(session);
       setTimeout(() => setIsLoading(false), 1000);
     };
 
@@ -79,7 +121,7 @@ function App() {
     // 2. Auth State Subscription
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null);
+        checkAuthState(session);
         setIsLoading(false);
       }
     );
@@ -102,84 +144,68 @@ function App() {
     <Router>
       <ResetManager />
       <LazyMotion features={domMax}>
-        <AnimatePresence mode="wait">
-          {!isLoading && (
-            <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins">
-              {authStatus !== "unauthenticated" && !showAuth && (
-                <Header
-                  isDark={isDark}
-                  setIsDark={setIsDark}
-                  authStatus={authStatus}
-                  user={user}
-                  onLoginClick={() => setShowAuth(true)}
-                  onLogout={handleLogout}
+        {!isLoading && (
+          <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins">
+            {authStatus !== "unauthenticated" && !showAuth && (
+              <Header
+                isDark={isDark}
+                setIsDark={setIsDark}
+                authStatus={authStatus}
+                user={user}
+                onLoginClick={() => setShowAuth(true)}
+                onLogout={handleLogout}
+              />
+            )}
+
+            <main className="flex-grow">
+              <Routes>
+                {/* Automatically redirect base URL to /home */}
+                <Route path="/" element={<Navigate to="/home" replace />} />
+                
+                {/* Explicit Auth & Password Routes */}
+                <Route path="/auth" element={<AuthWrapper setUser={setUser} setShowAuth={setShowAuth} />} />
+                <Route path="/update-password" element={<UpdatePassword />} />
+                
+                {/* Protected Dashboard Route is now explicitly /home */}
+                <Route
+                  path="/home"
+                  element={
+                    authStatus === "unauthenticated" ? (
+                      <Navigate to="/auth" replace />
+                    ) : (
+                      <div className="flex flex-col gap-0">
+                        <Home />
+                        <About />
+                        <GlobalMap isDark={isDark} />
+                        <CountryStatistics />
+                        <Trends />
+                        <RiskScores />
+                        <OurTeam />
+                      </div>
+                    )
+                  }
                 />
-              )}
 
-              <main className="flex-grow">
-                <AnimatePresence mode="wait">
-                  <Routes>
-                  {authStatus === "unauthenticated" ? (
-                    <Route
-                      path="*"
-                      element={
-                        <Auth 
-                          onLogin={(status) => {
-                            if (status === 'guest') {
-                              setUser({ id: 'guest' } as User);
-                            }
-                          }} 
-                        />
-                      }
-                    />
-                  ) : showAuth ? (
-                    <Route
-                      path="*"
-                      element={
-                        <Auth 
-                          onLogin={(status) => {
-                            setShowAuth(false);
-                            if (status === 'guest') {
-                              setUser({ id: 'guest' } as User);
-                            }
-                          }} 
-                        />
-                      }
-                    />
-                  ) : (
-                    <>
-                      <Route
-                        path="/auth"
-                        element={<Auth onLogin={() => setShowAuth(false)} />}
-                      />
-                      <Route
-                        path="/"
-                        element={
-                          <div className="flex flex-col gap-0">
-                            <Home />
-                            <About />
-                            <GlobalMap isDark={isDark} />
-                            <CountryStatistics />
-                            <Trends />
-                            <RiskScores />
-                            <OurTeam />
-                          </div>
-                        }
-                      />
-                      <Route path="/full-report" element={<FullReport />} />
-                      
-                      {/* The new Reset Password Route */}
-                      <Route path="/update-password" element={<UpdatePassword />} />
-                    </>
-                  )}
-                </Routes>
-                </AnimatePresence>
-              </main>
+                {/* Protected Report Route */}
+                <Route 
+                  path="/full-report" 
+                  element={
+                    authStatus === "unauthenticated" ? (
+                      <Navigate to="/auth" replace />
+                    ) : (
+                      <FullReport />
+                    )
+                  } 
+                />
 
-              {authStatus !== "unauthenticated" && <Footer />}
-            </div>
-          )}
-        </AnimatePresence>
+                {/* Catch-all fallback goes to /home */}
+                <Route path="*" element={<Navigate to="/home" replace />} />
+              </Routes>
+            </main>
+
+            {authStatus !== "unauthenticated" && <Footer />}
+          </div>
+        )}
       </LazyMotion>
     </Router>
   );
