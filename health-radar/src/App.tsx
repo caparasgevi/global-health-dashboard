@@ -1,5 +1,5 @@
 import { supabase } from "./lib/supabase";
-import { User } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -24,7 +24,8 @@ import RiskScores from "./pages/RiskScores";
 import OurTeam from "./pages/OurTeam";
 
 
-const authStatus = user ? 'user' : 'unauthenticated';
+
+
 
 const ResetManager = () => {
   const navigate = useNavigate();
@@ -58,26 +59,44 @@ function App() {
   const [isDark, setIsDark] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [authStatus, setAuthStatus] = useState<'unauthenticated' | 'user' | 'guest'>('unauthenticated');
+  const [showAuth, setShowAuth] = useState(false);
 
-const handleLogout = async () => {
-  await supabase.auth.signOut();
-};
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setAuthStatus('unauthenticated');
+  };
+
+  const handleGuestLogin = () => {
+    setAuthStatus('guest');
+  };
+
   useEffect(() => {
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    (event, session) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    }
-  );
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          setAuthStatus('user');
+          setShowAuth(false);
+        } else {
+          setAuthStatus('unauthenticated');
+        }
+        setIsLoading(false);
+      }
+    );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-    setUser(session?.user ?? null);
-    setIsLoading(false);
-  });
- 
-  return () => subscription.unsubscribe();
-}, []);
+      console.log('Initial session check:', session?.user?.email);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setAuthStatus('user');
+      }
+      setIsLoading(false);
+    });
 
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -103,54 +122,51 @@ const handleLogout = async () => {
           {!isLoading && (
             <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins">
               {authStatus !== "unauthenticated" && !showAuth && (
-  <Header isDark={isDark} setIsDark={setIsDark} 
-  authStatus={authStatus}
-  user={user}
-  onLoginClick={() => setShowAuth(true)} 
-  onLogout={handleLogout}/>
-)}
+                <Header isDark={isDark} setIsDark={setIsDark} 
+                authStatus={authStatus}
+                user={user}
+                onLoginClick={() => setShowAuth(true)} 
+                onLogout={handleLogout}
+                onGuestLogin={handleGuestLogin}/>
+              )}
 
               <main className="flex-grow">
                 <Routes>
-  {authStatus === "unauthenticated" ? (
-    <Route
-      path="*"
-      element={<Auth onLogin={(status) => setAuthStatus(status)} />}
-    />
-  ) : showAuth ? (
-    <Route
-      path="*"
-      element={<Auth onLogin={(status) => {
-        setAuthStatus(status);
-        setShowAuth(false);
-      }} />}
-    />
-  ) : (
-    <>
-      <Route
-        path="/auth"
-        element={<Auth onLogin={(status) => {
-          setAuthStatus(status);
-          setShowAuth(false);
-        }} />}
-      />
-      <Route
-        path="/"
-        element={
-          <div className="flex flex-col gap-0">
-            <Home />
-            <About />
-            <GlobalMap isDark={isDark} />
-            <Trends />
-            <RiskScores />
-            <OurTeam />
-          </div>
-        }
-      />
-      <Route path="/full-report" element={<FullReport />} />
-    </>
-  )}
-</Routes>
+                  {authStatus === "unauthenticated" || showAuth ? (
+                    <Route
+                      path="*"
+                      element={<Auth onLogin={(status) => {
+                        if (status === 'guest') {
+                          setAuthStatus('guest');
+                          setShowAuth(false);
+                        } else if (status === 'user') {
+                          setShowAuth(false);
+                        }
+                      }} />}
+                    />
+                  ) : (
+                    <>
+                      <Route
+                        path="/auth"
+                        element={<Auth />}
+                      />
+                      <Route
+                        path="/"
+                        element={
+                          <div className="flex flex-col gap-0">
+                            <Home />
+                            <About />
+                            <GlobalMap isDark={isDark} />
+                            <Trends />
+                            <RiskScores />
+                            <OurTeam />
+                          </div>
+                        }
+                      />
+                      <Route path="/full-report" element={<FullReport />} />
+                    </>
+                  )}
+                </Routes>
               </main>
 
               {authStatus !== "unauthenticated" && <Footer />}

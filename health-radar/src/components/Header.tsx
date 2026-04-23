@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import type { User } from '@supabase/supabase-js';
 
 interface HeaderProps {
   isDark: boolean;
@@ -29,11 +30,11 @@ const Header: React.FC<HeaderProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
   // Display name logic
-  const getDisplayName = (): string => {
+  /*const getDisplayName = (): string => {
     if (userName) return userName;
     if (userEmail) return userEmail.split('@')[0];
     return 'User';
-  };
+  };*/
 
   // Scroll observer (your existing logic)
   useEffect(() => {
@@ -174,14 +175,14 @@ const Header: React.FC<HeaderProps> = ({
 )}
 
             {/* Logout */}
-            {authStatus === 'user' && onLogout && (
-              <button 
-                onClick={onLogout}
-                className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm uppercase tracking-wider transition-all"
-              >
-                Logout
-              </button>
-            )}
+            {user && onLogout && (
+  <button 
+    onClick={onLogout}
+    className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm uppercase tracking-wider transition-all"
+  >
+    Logout
+  </button>
+)}
             
             {/* Guest Mode */}
             {authStatus === 'user' && onGuestLogin && (
