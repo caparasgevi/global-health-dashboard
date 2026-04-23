@@ -11,10 +11,13 @@ import {
 } from "lucide-react";
 
 type OutbreakPoint = { id: string; country: string; latitude: number; longitude: number; iso2: string; };
-type IllnessData = { name: string; value: number; year: number | string; type: "Acute" | "Chronic"; };
+type IllnessData = { name: string; value: number | string; year: number | string; type: "Acute" | "Chronic"; };
 type LiveAlert = { title: string; date: string; url: string; summary: string; };
 
-const ACUTE_KEYWORDS = ["MALARIA", "DENGUE", "CHOLERA", "MEASLES", "FEVER", "EBOLA", "ZIKA", "OUTBREAK", "TUBERCULOSIS", "COVID", "MPOX", "H5N1"];
+const ACUTE_KEYWORDS = [
+  "MALARIA", "DENGUE", "CHOLERA", "MEASLES", "FEVER", "EBOLA", "ZIKA", 
+  "OUTBREAK", "TUBERCULOSIS", "COVID", "MPOX", "H5N1", "POLIO", "MARBURG"
+];
 
 interface GlobalMapProps {
   isDark: boolean;
@@ -50,11 +53,10 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
 
   const fetchSpecificRisks = async (country: OutbreakPoint) => {
     setIsSearching(true);
-    setHealthRisks([]); // Clear previous country data immediately
+    setHealthRisks([]); 
     setLiveAlerts([]);
 
     try {
-      
       const [alerts, realtimeStats, allIndicators] = await Promise.all([
         healthService.getCountrySpecificAlerts(country.id),
         healthService.getRealtimeDiseaseStats(country.id),
@@ -63,21 +65,54 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
       
       setLiveAlerts(alerts);
 
-      const candidateIndicators = (allIndicators || []).slice(0, 50);
+      const seenDataPoints = new Set<string>();
+      const rawLiveRisks: IllnessData[] = [];
+
+      (alerts as LiveAlert[]).forEach((alert: LiveAlert) => {
+        if (!seenDataPoints.has(alert.title)) {
+          seenDataPoints.add(alert.title);
+          rawLiveRisks.push({
+            name: alert.title.length > 45 ? alert.title.substring(0, 45) + "..." : alert.title,
+            value: "Active Alert",
+            year: "Live",
+            type: "Acute"
+          });
+        }
+      });
+
+      const activeRealtime = (realtimeStats as IllnessData[]).filter(s => {
+        if (Number(s.value) > 0 && !seenDataPoints.has(s.name)) {
+          seenDataPoints.add(s.name);
+          return true;
+        }
+        return false;
+      });
+
+      // WIDER COVERAGE: Shuffle and grab the top 100 instead of 50
+      const shuffledIndicators = [...(allIndicators || [])].sort(() => 0.5 - Math.random());
+      const candidateIndicators = shuffledIndicators.slice(0, 100);
+
       const results = await Promise.allSettled(
         candidateIndicators.map(async (ind: any) => {
           const stats = await healthService.checkIndicatorStatus(ind.IndicatorCode, country.id);
           if (!stats?.[0]) return null;
           
           const val = stats[0]._safeValue ?? stats[0].NumericValue ?? 0;
-          
           if (Number(val) <= 0) return null; 
 
+          // STRICT FILTER: Must be 2021 or newer
+          const recordYear = parseInt(stats[0].TimeDim);
+          if (isNaN(recordYear) || recordYear < 2021) return null;
+
+          const rawName = ind.IndicatorName;
+          if (seenDataPoints.has(rawName)) return null;
+          seenDataPoints.add(rawName);
+
           return {
-            name: ind.IndicatorName,
+            name: rawName,
             value: Number(val),
             year: stats[0].TimeDim ?? "N/A",
-            type: ACUTE_KEYWORDS.some(k => ind.IndicatorName.toUpperCase().includes(k)) ? "Acute" : "Chronic"
+            type: ACUTE_KEYWORDS.some(k => rawName.toUpperCase().includes(k)) ? "Acute" : "Chronic"
           } as IllnessData;
         })
       );
@@ -87,11 +122,12 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
         .filter(Boolean) as IllnessData[];
 
       const combinedData = [
-        ...(realtimeStats as IllnessData[]).filter(s => s.value > 0), 
+        ...rawLiveRisks,
+        ...activeRealtime, 
         ...whoData
       ]
         .sort((a, b) => (a.type === 'Acute' ? -1 : 1))
-        .slice(0, 6); // Take the top 6 most pressing issues
+        .slice(0, 6); 
 
       setHealthRisks(combinedData);
     } catch (e) {
@@ -115,6 +151,9 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
         <div className="mb-6 md:mb-8 text-center md:text-left">
           <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Global <span className="text-brand-red">Map</span>
+            <p className={`mt-2 text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            Select a destination to initiate a comprehensive screening for infectious outbreaks.
+          </p>
           </h1>
         </div>
 
@@ -192,14 +231,16 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                                 {risk.type === 'Acute' ? <AlertTriangle size={12}/> : <ShieldAlert size={12}/>}
                               </div>
                               <div className={`text-lg md:text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                                {risk.value.toLocaleString()}
-                                <span className="text-[8px] font-sans text-slate-400 ml-1 block mt-1">Reported: {risk.year}</span>
+                                {typeof risk.value === 'number' ? risk.value.toLocaleString() : risk.value}
+                                <span className={`text-[8px] font-sans ml-1 block mt-1 ${risk.value === 'Active Alert' ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
+                                  Reported: {risk.year}
+                                </span>
                               </div>
                             </div>
                           ))}
                         </div>
                       ) : (
-                         <div className={`text-[10px] text-center p-4 rounded-xl ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data not currently available or 0 active cases recorded.</div>
+                         <div className={`text-[10px] text-center p-4 rounded-xl ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No recent data (2021+) or active cases recorded.</div>
                       )}
                     </>
                   )}

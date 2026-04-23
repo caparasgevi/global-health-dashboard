@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Vite automatically knows if it is running locally or in production
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 let cachedIndicators: any[] | null = null;
@@ -14,21 +13,34 @@ const backendClient = axios.create({
 
 export const getCachedIndicators = () => cachedIndicators;
 
-// Base WHO codes for historically high-risk diseases
 const TOP_DISEASES = [
   'MALARIA_EST_CASES', 'CHOLERA_0000000001', 'WHS3_62', 'MDG_0000000001', 
-  'NTD_DENGUE_CASES', 'RS_196', 'WHS3_41', 'WHS3_42', 'WHS3_40', 'HIV_0000000001'
+  'NTD_DENGUE_CASES', 'RS_196', 'WHS3_41', 'WHS3_42', 'WHS3_40', 'HIV_0000000001',
+  'NTD_LEISH_CASES', // Leishmaniasis
+  'NTD_LEP_NEWC',    // Leprosy
+  'NTD_RABIES_DEATHS', // Rabies
+  'WHS3_47',         // Polio
+  'WHS3_49',         // Meningitis
+  'WHS3_51',         // Diphtheria
+  'WHS3_52',         // Pertussis
+  'WHS3_53',         // Tetanus
+  'WHS3_54',         // Yellow fever
+  'WHS3_55',         // Haemophilus influenzae
+  'WHS3_56',         // Japanese encephalitis
+  'WHS3_63',         // Guinea worm
+  'WHS3_64',         // Sleeping sickness
+  'WHS3_65',         // Chagas
+  'WHS3_66'          // Trachoma
 ];
 
-// Added modern, high-risk outbreak keywords (Mpox, H5N1, Marburg, etc.)
 const PRIORITY_KWS = [
   'outbreak', 'epidemic', 'pandemic', 'incidence', 'cholera', 'dengue', 
   'malaria', 'measles', 'covid', 'sars', 'ebola', 'zika', 'tuberculosis', 
   'hiv', 'aids', 'hepatitis', 'polio', 'reported cases', 'confirmed cases',
-  'mpox', 'monkeypox', 'avian flu', 'h5n1', 'marburg', 'lassa', 'nipah', 'anthrax'
+  'mpox', 'monkeypox', 'avian flu', 'h5n1', 'marburg', 'lassa', 'nipah', 'anthrax',
+  'meningitis', 'diphtheria', 'pertussis', 'tetanus', 'yellow fever', 'leishmaniasis', 'leprosy'
 ];
 
-// Expanded to aggressively filter out non-infectious lifestyle/chronic stats
 const BLACKLIST = [
   'ALCOHOL', 'TOBACCO', 'SMOKING', 'OBESITY', 'FRUIT', 'VEGETABLE', 
   'EXERCISE', 'PHYSICAL ACTIVITY', 'ROAD TRAFFIC', 'SUICIDE', 'HOMICIDE', 
@@ -76,11 +88,11 @@ export const healthService = {
             // 1. Filter out chronic/lifestyle conditions first
             if (BLACKLIST.some(k => name.includes(k) || code.includes(k))) return false;
             
-            // 2. Keep only high-priority infectious diseases
+            // 2. Keep only high-priority infectious diseases from expanded lists
             return TOP_DISEASES.includes(code) || PRIORITY_KWS.some(k => name.toLowerCase().includes(k.toLowerCase()));
           });
           
-          return cachedIndicators.length > 0 ? cachedIndicators : indicators.slice(0, 50);
+          return cachedIndicators.length > 0 ? cachedIndicators : indicators.slice(0, 100);
         } catch (error) {
           _indicatorFetchPromise = null; 
           if (axios.isCancel(error)) throw error;
@@ -138,10 +150,9 @@ export const healthService = {
     } catch { return ''; }
   },
 
-  // Fetch live, country-specific outbreak alerts from the open ReliefWeb API
   getCountrySpecificAlerts: async (iso3: string, options?: { signal?: AbortSignal }) => {
     try {
-      const url = `https://api.reliefweb.int/v1/reports?appname=globalhealth&query[value]="outbreak" OR "epidemic" OR "disease"&filter[field]=country.iso3&filter[value]=${iso3.toLowerCase()}&fields[include][]=title&fields[include][]=date&fields[include][]=url&limit=4&sort[]=date:desc`;
+      const url = `https://api.reliefweb.int/v1/reports?appname=globalhealth&query[value]="outbreak" OR "epidemic" OR "disease"&filter[field]=country.iso3&filter[value]=${iso3.toLowerCase()}&fields[include][]=title&fields[include][]=date&fields[include][]=url&limit=6&sort[]=date:desc`;
       const res = await axios.get(url, { signal: options?.signal });
       return (res.data?.data || []).map((item: any) => ({
         title: item.fields?.title || 'Health Alert',
@@ -154,7 +165,6 @@ export const healthService = {
     }
   },
 
-  // Fetch live COVID/Disease daily stats directly for the specific country
   getRealtimeDiseaseStats: async (iso3: string) => {
     try {
       const res = await axios.get(`https://disease.sh/v3/covid-19/countries/${iso3}`);
@@ -167,6 +177,7 @@ export const healthService = {
       return [];
     }
   },
+  
   getOutbreakNews: async (limit = 5, options?: { signal?: AbortSignal }) => {
     try {
       const res = await backendClient.get(`/outbreak-news`, { 
