@@ -17,12 +17,12 @@
       "destination": "/backend/src/index.ts"
     },
     {
-      "source": "/(?<file>.*\\.[a-zA-Z0-9]+)",
-      "destination": "/health-radar/:file"
+      "source": "/:path([^.]*)",
+      "destination": "/health-radar/index.html"
     },
     {
       "source": "/(.*)",
-      "destination": "/health-radar/index.html"
+      "destination": "/health-radar/$1"
     }
   ]
 }
