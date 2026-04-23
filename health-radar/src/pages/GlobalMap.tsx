@@ -149,18 +149,12 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
     /* FIXED: Added id="global-map" for Header navigation and scroll tracking */
     <section id="global-map" className="py-12 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4">
-<<<<<<< HEAD
-        <div className="mb-8">
-          <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Global <span className="text-brand-red">Health Risk</span> Intelligence
-=======
         <div className="mb-6 md:mb-8 text-center md:text-left">
           <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Global <span className="text-brand-red">Map</span>
             <p className={`mt-2 text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             Select a destination to initiate a comprehensive screening for infectious outbreaks.
           </p>
->>>>>>> 03362f6db9bfeec02e16a16aa7cc0251532f79ac
           </h1>
         </div>
 
@@ -212,26 +206,15 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                     <X size={18} />
                   </button>
                 </div>
-<<<<<<< HEAD
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {isSearching ? <div className="text-center py-20 animate-pulse text-xs uppercase tracking-tighter">Analyzing...</div> : (
-=======
                 <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
                   {isSearching ? <div className="text-center py-10 md:py-20 animate-pulse text-[10px] uppercase tracking-tighter">Analyzing live data...</div> : (
->>>>>>> 03362f6db9bfeec02e16a16aa7cc0251532f79ac
                     <>
                       {liveAlerts.length > 0 ? (
                         <div className="space-y-2">
-<<<<<<< HEAD
-                          <div className="flex items-center gap-2 text-amber-500 text-[10px] font-bold uppercase"><Activity size={14} /> Alerts</div>
-                          {liveAlerts.map((alert, i) => (
-                            <div key={i} className={`p-2 border rounded-lg text-[10px] ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
-=======
                           <div className="flex items-center gap-2 text-amber-500 text-[9px] md:text-[10px] font-bold uppercase"><Activity size={14} /> Local Alerts</div>
                           {liveAlerts.map((alert, i) => (
                             <a key={i} href={alert.url} target="_blank" rel="noreferrer" className={`block p-2 border rounded-lg text-[9px] md:text-[10px] hover:opacity-80 transition-opacity ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
                               <span className="font-bold block mb-1">{new Date(alert.date).toLocaleDateString()}</span>
->>>>>>> 03362f6db9bfeec02e16a16aa7cc0251532f79ac
                               {alert.title}
                             </a>
                           ))}
@@ -262,19 +245,6 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                       ) : (
                          <div className={`text-[10px] text-center p-4 rounded-xl ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No recent data (2021+) or active cases recorded.</div>
                       )}
-<<<<<<< HEAD
-                      <div className="text-red-500 text-[10px] font-bold uppercase flex items-center gap-2"><Skull size={14}/> Threats</div>
-                      {healthRisks.map((risk, i) => (
-                        <div key={i} className={`p-3 rounded-xl border ${risk.type === 'Acute' ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-500/5 border-slate-500/20'}`}>
-                          <div className="flex justify-between text-[10px] font-bold mb-1">
-                            <span className={risk.type === 'Acute' ? 'text-red-500' : 'text-slate-400'}>{risk.name}</span>
-                            {risk.type === 'Acute' ? <AlertTriangle size={12}/> : <ShieldAlert size={12}/>}
-                          </div>
-                          <div className={`text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>{risk.value.toLocaleString()}</div>
-                        </div>
-                      ))}
-=======
->>>>>>> 03362f6db9bfeec02e16a16aa7cc0251532f79ac
                     </>
                   )}
                 </div>
