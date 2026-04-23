@@ -52,6 +52,7 @@ export const Map = forwardRef<MapRef, MapProps>(({ children, className = "", the
       attributionControl: false,
     });
 
+    // FIXED: Positioned to Top-Right
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
     map.on("load", () => {
@@ -76,6 +77,7 @@ export const Map = forwardRef<MapRef, MapProps>(({ children, className = "", the
   return (
     <MapContext.Provider value={mapReady}>
       <div className={`relative h-full w-full ${className}`}>
+        {/* CSS Override to sync Zoom Control theme */}
         <style>{`
           .maplibregl-ctrl-group {
             background: ${theme === 'dark' ? '#0f172a !important' : '#ffffff !important'};

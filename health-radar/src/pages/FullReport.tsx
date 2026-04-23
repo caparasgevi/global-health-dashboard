@@ -5,6 +5,9 @@ import type TrendChartType from '../components/charts/TrendChart';
 
 const TrendChart = lazy(() => import('../components/charts/TrendChart')) as React.LazyExoticComponent<typeof TrendChartType>;
 
+/**
+ * @section Configuration & Domain Constants
+ */
 const SCROLL_CONFIG = {
   THRESHOLD: 400,
   ROOT_MARGIN: '800px',
@@ -22,6 +25,9 @@ const DISCOVERY_CONFIG = {
   ]
 };
 
+/**
+ * @section Domain Logic Abstraction
+ */
 const isUsefulIndicator = (data: any[]): boolean => Array.isArray(data) && data.length >= 2;
 
 const getDiseaseRoot = (name: string): string => {
@@ -29,6 +35,9 @@ const getDiseaseRoot = (name: string): string => {
   return DISCOVERY_CONFIG.KEYWORDS.find(k => lower.includes(k)) || name;
 };
 
+/**
+ * @section Custom Hooks
+ */
 function useIntersectionObserver(callback: () => void, isLoading: boolean) {
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -106,6 +115,9 @@ function useDiseaseDiscovery(countryCode: string) {
   return { data, isLoading, error };
 }
 
+/**
+ * @section Primary View Component
+ */
 const FullReport: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

@@ -113,7 +113,6 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
     <div className="h-[450px] flex items-center justify-center bg-slate-100/50 dark:bg-slate-900/20 rounded-[2rem] border border-dashed border-slate-300 dark:border-white/10 animate-pulse text-[10px] tracking-widest text-slate-500 font-mono">
       FETCHING BENCHMARK DATA...
     </div>
-    
   );
 
   return (
