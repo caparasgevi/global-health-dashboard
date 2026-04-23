@@ -16,7 +16,7 @@ const Footer = () => {
     <>
       <footer className="theme-card border-x-0 border-b-0 py-12 px-6 mt-auto rounded-none shadow-none">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-          <div className="space-y-4">
+          <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-4">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
               Health<span className="text-brand-red">Radar</span>
             </h3>
@@ -25,13 +25,14 @@ const Footer = () => {
               Advancing global health through real-time data surveillance and
               innovative solutions.
             </p>
-            {/* CREDITS SECTION - Pushed down with mt-8 or mt-auto for desktop balance */}
-            <div className="mt-8 md:mt-auto pt-6 border-t border-slate-100 dark:border-white/5">
+            <div className="hidden md:block mt-8 md:mt-auto pt-6 border-t border-slate-100 dark:border-white/5">
               <p className="text-[12px] text-slate-600 dark:text-slate-400 font-medium leading-tight">
-                Developed by Computer Engineering Students
+                Developed by Computer Engineering students
               </p>
               <p className="text-[11px] mt-2 flex items-center gap-2">
-                  <span className="text-brand-red font-bold">Bulacan State University</span>
+                <span className="text-brand-red font-bold">
+                  Bulacan State University
+                </span>
                 <span className="h-3 w-[1px] bg-slate-200 dark:bg-slate-800"></span>
                 <span className="text-slate-400 dark:text-slate-500 font-bold">
                   2026
@@ -40,8 +41,8 @@ const Footer = () => {
             </div>
           </div>
 
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-brand-red mb-6">
+          <div className="flex flex-col items-center md:items-start">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-brand-red mb-6 text-center md:text-left">
               Platform
             </h4>
             <ul className="space-y-4 text-sm font-medium">
@@ -52,7 +53,7 @@ const Footer = () => {
                       e.preventDefault();
                       setActivePlatform(item);
                     }}
-                    className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors text-left"
+                    className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors text-center md:text-left w-full"
                   >
                     {item}
                   </button>
@@ -61,67 +62,71 @@ const Footer = () => {
             </ul>
           </div>
 
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-brand-red mb-6">
-              Global Resources
-            </h4>
-            <ul className="space-y-4 text-sm font-medium">
-              <li>
-                <a
-                  href="https://www.who.int"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors flex flex-col"
-                >
-                  World Health Organization
-                  <span className="text-[10px] text-gray-500 uppercase tracking-tighter">
-                    Global Health Security
-                  </span>
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.cdc.gov"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors flex flex-col"
-                >
-                  CDC Surveillance
-                  <span className="text-[10px] text-gray-500 uppercase tracking-tighter">
-                    Disease Tracking Hub
-                  </span>
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.gisaid.org"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors flex flex-col"
-                >
-                  GISAID Data
-                  <span className="text-[10px] text-gray-500 uppercase tracking-tighter">
-                    Genomic Intelligence
-                  </span>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
+          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+  <h4 className="text-xs font-bold uppercase tracking-widest text-brand-red mb-6">
+    Global Resources
+  </h4>
+  <ul className="space-y-4 text-sm font-medium flex flex-col items-center md:items-start">
+    <li>
+      <a
+        href="https://www.who.int"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors flex flex-col items-center md:items-start"
+      >
+        World Health Organization
+        <span className="text-[10px] text-gray-500 uppercase tracking-tighter">
+          Global Health Security
+        </span>
+      </a>
+    </li>
+    <li>
+      <a
+        href="https://www.cdc.gov"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors flex flex-col items-center md:items-start"
+      >
+        CDC Surveillance
+        <span className="text-[10px] text-gray-500 uppercase tracking-tighter">
+          Disease Tracking Hub
+        </span>
+      </a>
+    </li>
+    <li>
+      <a
+        href="https://www.gisaid.org"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-black dark:text-gray-300 hover:text-brand-red dark:hover:text-brand-red transition-colors flex flex-col items-center md:items-start"
+      >
+        GISAID Data
+        <span className="text-[10px] text-gray-500 uppercase tracking-tighter">
+          Genomic Intelligence
+        </span>
+      </a>
+    </li>
+  </ul>
+</div>
+</div>
 
         <div className="md:hidden pt-8 mt-4 border-t border-slate-100 dark:border-white/5 text-center">
-      <p className="text-[12px] text-slate-600 dark:text-slate-400 font-medium">
-        Developed by Computer Engineering students
-      </p>
-      <p className="text-[11px] mt-2 flex items-center justify-center gap-2">
-        <span className="text-brand-red font-bold">Bulacan State University</span>
-        <span className="h-3 w-[1px] bg-slate-300 dark:bg-slate-700"></span>
-        <span className="text-slate-400 dark:text-slate-500 font-bold">2026</span>
-      </p>
-    </div>
+          <p className="text-[12px] text-slate-600 dark:text-slate-400 font-medium">
+            Developed by Computer Engineering students
+          </p>
+          <p className="text-[11px] mt-2 flex items-center justify-center gap-2">
+            <span className="text-brand-red font-bold">
+              Bulacan State University
+            </span>
+            <span className="h-3 w-[1px] bg-slate-300 dark:bg-slate-700"></span>
+            <span className="text-slate-400 dark:text-slate-500 font-bold">
+              2026
+            </span>
+          </p>
+        </div>
       </footer>
 
-      {/* Persistent Session Pop-up */}
+      {/* Pop-up */}
       {activePlatform && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
