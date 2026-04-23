@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import geviImg from "../assets/ourTeam/Gevi_image.png";
-import kielImg from "../assets/ourTeam/Kiel_image.jpg";
+import kielImg from "../assets/ourTeam/Kiel_image.png";
 import shaneImg from "../assets/ourTeam/Shane_image.png";
 import elijahImg from "../assets/ourTeam/Elijah_image.png";
 import leobertImg from "../assets/ourTeam/Leobert_image.png";
