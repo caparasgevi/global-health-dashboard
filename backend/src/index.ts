@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
 
+// VERCEL FIX: Direct import forces the bundler to include the JSON data in the deployment
 import staticHealthDataRaw from '../healthiest-countries-2026.json' with { type: 'json' };
 
 dotenv.config();
@@ -14,20 +15,9 @@ const GHO_BASE_URL = 'https://ghoapi.azureedge.net/api/';
 app.use(cors());
 app.use(express.json());
 
-<<<<<<< HEAD
-const staticDataPath = path.join(__dirname, '..', 'healthiest-countries-2026.json');
-let staticHealthData: any[] = [];
-try {
-  staticHealthData = JSON.parse(fs.readFileSync(staticDataPath, 'utf-8'));
-  console.log('✅ Successfully loaded static health index JSON.');
-} catch (e) {
-  console.warn('⚠️ Could not load healthiest-countries-2026.json. Ensure it is in the root backend folder.');
-}
-=======
 // Initialize the imported JSON data
 const staticHealthData: any[] = staticHealthDataRaw;
 console.log('✅ Successfully loaded static health index JSON.');
->>>>>>> 03362f6db9bfeec02e16a16aa7cc0251532f79ac
 
 app.get('/', (req, res) => {
   res.send('Health Radar API is Live and Running.');
