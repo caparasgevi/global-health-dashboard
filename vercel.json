@@ -17,6 +17,10 @@
       "destination": "/backend/src/index.ts"
     },
     {
+      "source": "/:path([^.]*)",
+      "destination": "/health-radar/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/health-radar/$1"
     }
