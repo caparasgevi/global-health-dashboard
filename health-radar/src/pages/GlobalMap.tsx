@@ -11,10 +11,13 @@ import {
 } from "lucide-react";
 
 type OutbreakPoint = { id: string; country: string; latitude: number; longitude: number; iso2: string; };
-type IllnessData = { name: string; value: number; year: number | string; type: "Acute" | "Chronic"; };
+type IllnessData = { name: string; value: number | string; year: number | string; type: "Acute" | "Chronic"; };
 type LiveAlert = { title: string; date: string; url: string; summary: string; };
 
-const ACUTE_KEYWORDS = ["MALARIA", "DENGUE", "CHOLERA", "MEASLES", "FEVER", "EBOLA", "ZIKA", "OUTBREAK", "TUBERCULOSIS"];
+const ACUTE_KEYWORDS = [
+  "MALARIA", "DENGUE", "CHOLERA", "MEASLES", "FEVER", "EBOLA", "ZIKA", 
+  "OUTBREAK", "TUBERCULOSIS", "COVID", "MPOX", "H5N1", "POLIO", "MARBURG"
+];
 
 interface GlobalMapProps {
   isDark: boolean;
@@ -50,32 +53,88 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
 
   const fetchSpecificRisks = async (country: OutbreakPoint) => {
     setIsSearching(true);
+    setHealthRisks([]); 
+    setLiveAlerts([]);
+
     try {
-      const [alerts, allIndicators] = await Promise.all([
-        healthService.getOutbreakNews(3),
+      const [alerts, realtimeStats, allIndicators] = await Promise.all([
+        healthService.getCountrySpecificAlerts(country.id),
+        healthService.getRealtimeDiseaseStats(country.id),
         healthService.getRankedIndicators(),
       ]);
-      setLiveAlerts((alerts || []).map((a: any) => ({
-        title: a.title, date: a.date, url: a.url, summary: a.summary
-      })));
       
-      const candidateIndicators = (allIndicators || []).slice(0, 60);
+      setLiveAlerts(alerts);
+
+      const seenDataPoints = new Set<string>();
+      const rawLiveRisks: IllnessData[] = [];
+
+      (alerts as LiveAlert[]).forEach((alert: LiveAlert) => {
+        if (!seenDataPoints.has(alert.title)) {
+          seenDataPoints.add(alert.title);
+          rawLiveRisks.push({
+            name: alert.title.length > 45 ? alert.title.substring(0, 45) + "..." : alert.title,
+            value: "Active Alert",
+            year: "Live",
+            type: "Acute"
+          });
+        }
+      });
+
+      const activeRealtime = (realtimeStats as IllnessData[]).filter(s => {
+        if (Number(s.value) > 0 && !seenDataPoints.has(s.name)) {
+          seenDataPoints.add(s.name);
+          return true;
+        }
+        return false;
+      });
+
+      // WIDER COVERAGE: Shuffle and grab the top 100 instead of 50
+      const shuffledIndicators = [...(allIndicators || [])].sort(() => 0.5 - Math.random());
+      const candidateIndicators = shuffledIndicators.slice(0, 100);
+
       const results = await Promise.allSettled(
         candidateIndicators.map(async (ind: any) => {
           const stats = await healthService.checkIndicatorStatus(ind.IndicatorCode, country.id);
           if (!stats?.[0]) return null;
+          
           const val = stats[0]._safeValue ?? stats[0].NumericValue ?? 0;
+          if (Number(val) <= 0) return null; 
+
+          // STRICT FILTER: Must be 2021 or newer
+          const recordYear = parseInt(stats[0].TimeDim);
+          if (isNaN(recordYear) || recordYear < 2021) return null;
+
+          const rawName = ind.IndicatorName;
+          if (seenDataPoints.has(rawName)) return null;
+          seenDataPoints.add(rawName);
+
           return {
-            name: ind.IndicatorName,
+            name: rawName,
             value: Number(val),
             year: stats[0].TimeDim ?? "N/A",
-            type: ACUTE_KEYWORDS.some(k => ind.IndicatorName.toUpperCase().includes(k)) ? "Acute" : "Chronic"
+            type: ACUTE_KEYWORDS.some(k => rawName.toUpperCase().includes(k)) ? "Acute" : "Chronic"
           } as IllnessData;
         })
       );
-      const final = results.map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean) as IllnessData[];
-      setHealthRisks(final.sort((a,b) => (a.type === 'Acute' ? -1 : 1)).slice(0, 6));
-    } finally { setIsSearching(false); }
+      
+      const whoData = results
+        .map(r => r.status === 'fulfilled' ? r.value : null)
+        .filter(Boolean) as IllnessData[];
+
+      const combinedData = [
+        ...rawLiveRisks,
+        ...activeRealtime, 
+        ...whoData
+      ]
+        .sort((a, b) => (a.type === 'Acute' ? -1 : 1))
+        .slice(0, 6); 
+
+      setHealthRisks(combinedData);
+    } catch (e) {
+      console.error("Error fetching country data", e);
+    } finally { 
+      setIsSearching(false); 
+    }
   };
 
   const handleCountrySelect = (target: OutbreakPoint) => {
@@ -92,15 +151,10 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-6 md:mb-8 text-center md:text-left">
           <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-<<<<<<< HEAD
             Global <span className="text-brand-red">Map</span>
             <p className={`mt-2 text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             Select a destination to initiate a comprehensive screening for infectious outbreaks.
           </p>
->>>>>>> 03362f6db9bfeec02e16a16aa7cc0251532f79ac
-=======
-            Global <span className="text-brand-red">Health Risk</span> Intelligence
->>>>>>> parent of e47df42 (synced from origin)
           </h1>
         </div>
 
@@ -109,7 +163,7 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
           <Map ref={mapRef} theme={isDark ? 'dark' : 'light'}>
             {outbreaks.map((p) => (
               <MapMarker key={p.id} longitude={p.longitude} latitude={p.latitude} onClick={() => handleCountrySelect(p)}>
-                <div className="h-3 w-3 rounded-full bg-red-600 border border-white/50 shadow-lg cursor-pointer" />
+                <div className="h-3 w-3 rounded-full bg-red-600 border border-white/50 shadow-lg cursor-pointer hover:scale-150 transition-transform" />
               </MapMarker>
             ))}
           </Map>
@@ -130,7 +184,7 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
               {showSuggestions && (
                 <div className={`mt-2 border rounded-xl max-h-40 overflow-y-auto ${isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-200'}`}>
                   {outbreaks.filter(o => o.country.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5).map(s => (
-                    <button key={s.id} onClick={() => handleCountrySelect(s)} className="w-full text-left px-4 py-2 text-xs hover:bg-red-500/10">
+                    <button key={s.id} onClick={() => handleCountrySelect(s)} className="w-full text-left px-4 py-2 text-xs hover:bg-red-500/10 transition-colors">
                       {s.country}
                     </button>
                   ))}
@@ -153,64 +207,44 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
-<<<<<<< HEAD
                   {isSearching ? <div className="text-center py-10 md:py-20 animate-pulse text-[10px] uppercase tracking-tighter">Analyzing live data...</div> : (
->>>>>>> 03362f6db9bfeec02e16a16aa7cc0251532f79ac
-=======
-                  {isSearching ? <div className="text-center py-10 md:py-20 animate-pulse text-[10px] uppercase tracking-tighter">Analyzing...</div> : (
->>>>>>> parent of e47df42 (synced from origin)
                     <>
-                      {liveAlerts.length > 0 && (
+                      {liveAlerts.length > 0 ? (
                         <div className="space-y-2">
-<<<<<<< HEAD
-<<<<<<< HEAD
-                          <div className="flex items-center gap-2 text-amber-500 text-[10px] font-bold uppercase"><Activity size={14} /> Alerts</div>
-                          {liveAlerts.map((alert, i) => (
-                            <div key={i} className={`p-2 border rounded-lg text-[10px] ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
-=======
                           <div className="flex items-center gap-2 text-amber-500 text-[9px] md:text-[10px] font-bold uppercase"><Activity size={14} /> Local Alerts</div>
                           {liveAlerts.map((alert, i) => (
                             <a key={i} href={alert.url} target="_blank" rel="noreferrer" className={`block p-2 border rounded-lg text-[9px] md:text-[10px] hover:opacity-80 transition-opacity ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
                               <span className="font-bold block mb-1">{new Date(alert.date).toLocaleDateString()}</span>
->>>>>>> 03362f6db9bfeec02e16a16aa7cc0251532f79ac
-=======
-                          <div className="flex items-center gap-2 text-amber-500 text-[9px] md:text-[10px] font-bold uppercase"><Activity size={14} /> Alerts</div>
-                          {liveAlerts.map((alert, i) => (
-                            <div key={i} className={`p-2 border rounded-lg text-[9px] md:text-[10px] ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
->>>>>>> parent of e47df42 (synced from origin)
                               {alert.title}
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className={`text-[10px] p-2 rounded-lg text-center ${isDark ? 'text-slate-400 bg-white/5' : 'text-slate-500 bg-slate-100'}`}>No active severe alerts detected in this region.</div>
+                      )}
+                      
+                      <div className="text-red-500 text-[9px] md:text-[10px] font-bold uppercase flex items-center gap-2 pt-2"><Skull size={14}/> Identified Threats</div>
+                      
+                      {healthRisks.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2 md:gap-3">
+                          {healthRisks.map((risk, i) => (
+                            <div key={i} className={`p-2 md:p-3 rounded-lg md:rounded-xl border ${risk.type === 'Acute' ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-500/5 border-slate-500/20'}`}>
+                              <div className="flex justify-between text-[9px] md:text-[10px] font-bold mb-1">
+                                <span className={risk.type === 'Acute' ? 'text-red-500' : 'text-slate-400'}>{risk.name}</span>
+                                {risk.type === 'Acute' ? <AlertTriangle size={12}/> : <ShieldAlert size={12}/>}
+                              </div>
+                              <div className={`text-lg md:text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                {typeof risk.value === 'number' ? risk.value.toLocaleString() : risk.value}
+                                <span className={`text-[8px] font-sans ml-1 block mt-1 ${risk.value === 'Active Alert' ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
+                                  Reported: {risk.year}
+                                </span>
+                              </div>
                             </div>
                           ))}
                         </div>
+                      ) : (
+                         <div className={`text-[10px] text-center p-4 rounded-xl ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No recent data (2021+) or active cases recorded.</div>
                       )}
-<<<<<<< HEAD
-<<<<<<< HEAD
-                      <div className="text-red-500 text-[10px] font-bold uppercase flex items-center gap-2"><Skull size={14}/> Threats</div>
-                      {healthRisks.map((risk, i) => (
-                        <div key={i} className={`p-3 rounded-xl border ${risk.type === 'Acute' ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-500/5 border-slate-500/20'}`}>
-                          <div className="flex justify-between text-[10px] font-bold mb-1">
-                            <span className={risk.type === 'Acute' ? 'text-red-500' : 'text-slate-400'}>{risk.name}</span>
-                            {risk.type === 'Acute' ? <AlertTriangle size={12}/> : <ShieldAlert size={12}/>}
-                          </div>
-                          <div className={`text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>{risk.value.toLocaleString()}</div>
-                        </div>
-                      ))}
-=======
->>>>>>> 03362f6db9bfeec02e16a16aa7cc0251532f79ac
-=======
-                      <div className="text-red-500 text-[9px] md:text-[10px] font-bold uppercase flex items-center gap-2"><Skull size={14}/> Threats</div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2 md:gap-4">
-                        {healthRisks.map((risk, i) => (
-                          <div key={i} className={`p-2 md:p-3 rounded-lg md:rounded-xl border ${risk.type === 'Acute' ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-500/5 border-slate-500/20'}`}>
-                            <div className="flex justify-between text-[9px] md:text-[10px] font-bold mb-1">
-                              <span className={risk.type === 'Acute' ? 'text-red-500' : 'text-slate-400'}>{risk.name}</span>
-                              {risk.type === 'Acute' ? <AlertTriangle size={12}/> : <ShieldAlert size={12}/>}
-                            </div>
-                            <div className={`text-lg md:text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>{risk.value.toLocaleString()}</div>
-                          </div>
-                        ))}
-                      </div>
->>>>>>> parent of e47df42 (synced from origin)
                     </>
                   )}
                 </div>
