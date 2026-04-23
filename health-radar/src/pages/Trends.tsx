@@ -647,7 +647,7 @@ const DefaultHealthDashboard: React.FC = () => {
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="bg-white dark:bg-slate-900/50 p-4 md:p-8 rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl">
-        {/* ── Chart Header ──────────────────────────────────────────── */}
+        {/*  Chart Header  */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-start mb-6 md:mb-8 gap-4">
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -700,7 +700,7 @@ const DefaultHealthDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Legend ──────────────────────────────────────────────────── */}
+        {/* Legend */}
         <div className="flex flex-wrap items-center gap-4 mb-5">
           <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
             Threshold legend:
@@ -731,7 +731,7 @@ const DefaultHealthDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Bar Chart ────────────────────────────────────────────────── */}
+        {/* Bar Chart */}
         <div className="h-[300px] md:h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -824,7 +824,7 @@ const DefaultHealthDashboard: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* ── Active Region Detail Panel ─────────────────────────────── */}
+        {/* Active Region Detail Panel */}
         {activeDetail && (
           <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 flex flex-col sm:flex-row gap-4 items-start animate-in fade-in duration-200">
             <div className="flex-1">
@@ -867,7 +867,7 @@ const DefaultHealthDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* ── Info Cards ──────────────────────────────────────────────── */}
+        {/* Info Cards */}
         <div className="mt-6 md:mt-8 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
             <h4 className="text-emerald-500 text-[9px] md:text-[10px] font-black uppercase mb-1">
@@ -900,7 +900,7 @@ const DefaultHealthDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Source Footer ────────────────────────────────────────────── */}
+        {/* Source Footer */}
         <div className="mt-6 pt-5 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row gap-3 sm:gap-6 items-start sm:items-center">
           <div className="flex flex-wrap gap-x-6 gap-y-1 text-[10px] text-slate-400 font-medium">
             <span>
@@ -1140,7 +1140,7 @@ const Trends: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div className="text-center lg:text-left">
             <h1 className="text-4xl font-bold text-slate-900 dark:text-white font-montserrat">
-              Health Risk <span className="text-brand-red">Analysis</span>
+              Trend <span className="text-brand-red">Analysis</span>
             </h1>
             <p className="mt-2 text-slate-600 dark:text-slate-400 max-w-2xl text-lg font-poppins">
               {activeCountry ? (

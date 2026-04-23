@@ -17,6 +17,7 @@ import Auth from "./pages/Auth";
 import Trends from "./pages/Trends";
 import GlobalMap from "./pages/GlobalMap";
 import FullReport from "./pages/FullReport";
+import CountryStatistics from "./pages/CountryStatistics";
 import RiskScores from "./pages/RiskScores";
 import OurTeam from "./pages/OurTeam";
 
@@ -100,6 +101,7 @@ function App() {
                             <Home />
                             <About />
                             <GlobalMap isDark={isDark} />
+                            <CountryStatistics />
                             <Trends />
                             <RiskScores />
                             <OurTeam />

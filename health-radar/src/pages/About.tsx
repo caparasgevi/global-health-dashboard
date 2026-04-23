@@ -307,10 +307,6 @@ const About = () => {
             Core Values
           </h2>
 
-          {/* Switching to grid-cols-3 ensures that each item occupies 
-      exactly 1/3 of the container, forcing the middle item 
-      to be the absolute center of the section.
-  */}
           <div className="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center gap-y-10 w-full max-w-5xl mx-auto">
             {Object.keys(valueDetails).map((value) => (
               <div
