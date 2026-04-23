@@ -203,7 +203,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           </div>
         )}
 
-        <m.div layout transition={{ duration: 0.25, ease: "easeInOut" }}>
+        <m.div transition={{ duration: 0.25, ease: "easeInOut" }}>
           {isForgotPassword && (
             <div className="mb-4 text-center">
               <h3 className="text-lg font-bold dark:text-white mb-1">
@@ -481,7 +481,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
             <div className="pt-2">
               <m.button
-                layout
                 type="submit"
                 whileTap={{ scale: 0.98 }}
                 disabled={resetSent}
