@@ -1,4 +1,4 @@
-# 🖥️ Frontend Documentation
+# 🖥️ APP - Frontend Documentation
 
 ## 1. Application Architecture
 The frontend is a **Single Page Application (SPA)** built with **React** and **TypeScript**, utilizing a component-based architecture for modularity.
