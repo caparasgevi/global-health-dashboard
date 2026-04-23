@@ -90,11 +90,6 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
     /* FIXED: Added id="global-map" for Header navigation and scroll tracking */
     <section id="global-map" className="py-12 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4">
-<<<<<<< HEAD
-        <div className="mb-8">
-          <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Global <span className="text-brand-red">Health Risk</span> Intelligence
-=======
         <div className="mb-6 md:mb-8 text-center md:text-left">
           <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
 <<<<<<< HEAD
@@ -157,10 +152,6 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                     <X size={18} />
                   </button>
                 </div>
-<<<<<<< HEAD
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {isSearching ? <div className="text-center py-20 animate-pulse text-xs uppercase tracking-tighter">Analyzing...</div> : (
-=======
                 <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
 <<<<<<< HEAD
                   {isSearching ? <div className="text-center py-10 md:py-20 animate-pulse text-[10px] uppercase tracking-tighter">Analyzing live data...</div> : (

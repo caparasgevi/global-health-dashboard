@@ -23,10 +23,6 @@ import FullReport from "./pages/FullReport";
 import RiskScores from "./pages/RiskScores";
 import OurTeam from "./pages/OurTeam";
 
-
-
-
-
 const ResetManager = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,57 +46,43 @@ const ResetManager = () => {
       window.history.scrollRestoration = "manual";
     }
     window.scrollTo(0, 0);
-  }, []);
+  }, [location.pathname, navigate]);
 
   return null;
 };
 
 function App() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => localStorage.getItem("theme") === "dark");
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [authStatus, setAuthStatus] = useState<'unauthenticated' | 'user' | 'guest'>('unauthenticated');
   const [showAuth, setShowAuth] = useState(false);
+
+  const authStatus = user ? 'user' : 'unauthenticated';
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setAuthStatus('unauthenticated');
-  };
-
-  const handleGuestLogin = () => {
-    setAuthStatus('guest');
   };
 
   useEffect(() => {
+    // 1. Initial Session Check
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      // Wait at least 1s for the brand experience, or until session is found
+      setTimeout(() => setIsLoading(false), 1000);
+    };
+
+    checkSession();
+
+    // 2. Auth State Subscription
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+      (_event, session) => {
         setUser(session?.user ?? null);
-        if (session?.user) {
-          setAuthStatus('user');
-          setShowAuth(false);
-        } else {
-          setAuthStatus('unauthenticated');
-        }
         setIsLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.email);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setAuthStatus('user');
-      }
-      setIsLoading(false);
-    });
-
     return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -122,51 +104,54 @@ function App() {
           {!isLoading && (
             <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-colors duration-500 font-poppins">
               {authStatus !== "unauthenticated" && !showAuth && (
-                <Header isDark={isDark} setIsDark={setIsDark} 
-                authStatus={authStatus}
-                user={user}
-                onLoginClick={() => setShowAuth(true)} 
-                onLogout={handleLogout}
-                onGuestLogin={handleGuestLogin}/>
+                <Header
+                  isDark={isDark}
+                  setIsDark={setIsDark}
+                  authStatus={authStatus}
+                  user={user}
+                  onLoginClick={() => setShowAuth(true)}
+                  onLogout={handleLogout}
+                />
               )}
 
               <main className="flex-grow">
-                <Routes>
-                  {authStatus === "unauthenticated" || showAuth ? (
-                    <Route
-                      path="*"
-                      element={<Auth onLogin={(status) => {
-                        if (status === 'guest') {
-                          setAuthStatus('guest');
-                          setShowAuth(false);
-                        } else if (status === 'user') {
-                          setShowAuth(false);
-                        }
-                      }} />}
-                    />
-                  ) : (
-                    <>
+                <AnimatePresence mode="wait">
+                  <Routes>
+                    {authStatus === "unauthenticated" ? (
                       <Route
-                        path="/auth"
-                        element={<Auth />}
+                        path="*"
+                        element={<Auth onLogin={() => setUser({ id: 'guest' } as User)} />}
                       />
+                    ) : showAuth ? (
                       <Route
-                        path="/"
-                        element={
-                          <div className="flex flex-col gap-0">
-                            <Home />
-                            <About />
-                            <GlobalMap isDark={isDark} />
-                            <Trends />
-                            <RiskScores />
-                            <OurTeam />
-                          </div>
-                        }
+                        path="*"
+                        element={<Auth onLogin={() => setShowAuth(false)} />}
                       />
-                      <Route path="/full-report" element={<FullReport />} />
-                    </>
-                  )}
-                </Routes>
+                    ) : (
+                      <>
+                        <Route
+                          path="/auth"
+                          element={<Auth onLogin={() => setShowAuth(false)} />}
+                        />
+                        <Route
+                          path="/"
+                          element={
+                            <div className="flex flex-col gap-0">
+                              <Home />
+                              <About />
+                              <GlobalMap isDark={isDark} />
+                              <CountryStatistics />
+                              <Trends />
+                              <RiskScores />
+                              <OurTeam />
+                            </div>
+                          }
+                        />
+                        <Route path="/full-report" element={<FullReport />} />
+                      </>
+                    )}
+                  </Routes>
+                </AnimatePresence>
               </main>
 
               {authStatus !== "unauthenticated" && <Footer />}
