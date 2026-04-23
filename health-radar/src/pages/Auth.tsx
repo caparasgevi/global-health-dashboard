@@ -170,14 +170,15 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   }
 
   return (
-  <div className="min-h-screen flex items-center justify-between gap-12 lg:gap-20 bg-gradient-to-br from-slate-50 via-white to-brand-red/5 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 px-6 lg:px-12 py-8 font-poppins">
+  <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 bg-gradient-to-br from-slate-50 via-white to-brand-red/5 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 px-6 lg:px-12 py-8 font-poppins">
     
-    {/* ✅ LEFT: Logo */}
+    {/* ✅ MOBILE: Logo above card (stacked layout) */}
+    {/* ✅ DESKTOP: Logo LEFT + Card RIGHT */}
     <m.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
-      className="flex flex-col items-center lg:items-start text-center lg:text-left max-w-sm space-y-6"
+      className="flex flex-col items-center text-center max-w-sm space-y-6 lg:items-start lg:text-left order-1"
     >
       <img
         src="/Logo.png"
@@ -185,8 +186,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         className="w-16 h-16 lg:w-20 lg:h-20 object-contain drop-shadow-lg"
       />
       <div>
-        <span className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-900 dark:text-white leading-none block lg:inline">
-          Health<span className="text-brand-red">Radar</span>
+        <span className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">
+          Health<span className="text-brand-red block lg:inline">Radar</span>
         </span>
         <p className="text-sm lg:text-base font-bold text-slate-400 uppercase tracking-[0.25em] mt-3">
           Global Health Surveillance
@@ -194,11 +195,11 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       </div>
     </m.div>
 
-    {/* Divider */}
-    <div className="hidden lg:block w-px bg-gradient-to-b from-slate-200/50 to-slate-300/30 dark:from-slate-800/50 dark:to-slate-700/30" />
+    {/* Divider - Only on desktop */}
+    <div className="hidden lg:block w-px bg-gradient-to-b from-slate-200/50 to-slate-300/30 dark:from-slate-800/50 dark:to-slate-700/30 order-2" />
 
-    {/* ✅ RIGHT: Card (your existing card code) */}
-    <div className="w-full max-w-sm lg:max-w-md relative z-10">
+    {/* ✅ RIGHT: Card */}
+    <div className="w-full max-w-sm lg:max-w-md relative z-10 order-2 lg:order-3">
       <m.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
