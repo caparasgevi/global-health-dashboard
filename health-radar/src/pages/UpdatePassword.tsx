@@ -14,7 +14,14 @@ const UpdatePassword = () => {
     setError(null);
 
     try {
-      // Because clicking the email link logged them in, we can simply update the user!
+      // 1. Double-check that a session actually exists right now
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("No active recovery session found. Please request a new reset link.");
+      }
+
+      // 2. If session exists, proceed with the update
       const { error } = await supabase.auth.updateUser({
         password: password
       });
@@ -22,7 +29,11 @@ const UpdatePassword = () => {
       if (error) throw error;
       
       setSuccess(true);
-      setTimeout(() => navigate('/'), 2000); // Send them to dashboard after 2 seconds
+      
+      // 3. Send them back to the login page after 2 seconds
+      setTimeout(() => {
+        window.location.href = '/auth'; 
+      }, 2000); 
       
     } catch (err: any) {
       setError(err.message || "Failed to update password.");
@@ -55,7 +66,7 @@ const UpdatePassword = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <button type="submit" className="w-full bg-brand-red text-white font-bold py-2.5 rounded-xl text-sm uppercase tracking-widest">
+            <button type="submit" className="w-full bg-brand-red hover:bg-red-700 transition-colors text-white font-bold py-2.5 rounded-xl text-sm uppercase tracking-widest shadow-md shadow-brand-red/20">
               Update Password
             </button>
           </form>
