@@ -1,203 +1,236 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import type { User } from '@supabase/supabase-js';
 
 interface HeaderProps {
   isDark: boolean;
   setIsDark: React.Dispatch<React.SetStateAction<boolean>>;
+  authStatus?: 'unauthenticated' | 'user' | 'guest';
+  
+  user?: User | null;
+  onGuestLogin?: () => void;
+  onLoginClick?: () => void;
+  onLogout?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ isDark, setIsDark }) => {
+const Header: React.FC<HeaderProps> = ({
+  isDark,
+  setIsDark,
+  authStatus = 'unauthenticated',
+  user,
+  onGuestLogin,
+  onLoginClick ,
+  onLogout
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const navItems = ['Home', 'About', 'Global Map', 'Country Statistics', 'Trends', 'Risk Scores', 'Our Team'];
-  const [activeItem, setActiveItem] = useState('Home');
-  const [logoError, setLogoError] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); 
+  const navItems: string[] = ['Home', 'About', 'Global Map', 'Country Statistics', 'Trends', 'Risk Scores', 'Our Team'];
+  const [activeItem, setActiveItem] = useState<string>('Home');
+  const [logoError, setLogoError] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
+  // Display name logic
+  /*const getDisplayName = (): string => {
+    if (userName) return userName;
+    if (userEmail) return userEmail.split('@')[0];
+    return 'User';
+  };*/
+
+  // Scroll observer (your existing logic)
   useEffect(() => {
     if (location.pathname === '/full-report') {
       setActiveItem('Trends');
-      return; 
+      return;
     }
 
-    const observerOptions = {
+    const observerOptions: IntersectionObserverInit = {
       root: null,
-      rootMargin: '-100px 0px -40% 0px', // Adjusted margin for better trigger timing
+      rootMargin: '-100px 0px -40% 0px',
       threshold: 0
     };
 
-    const handleIntersect = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach((entry) => {
+    const handleIntersect: IntersectionObserverCallback = (entries) => {
+      entries.forEach((entry: IntersectionObserverEntry) => {
         if (entry.isIntersecting) {
           const id = entry.target.id;
-          
-          // Improved mapping: finds the navItem that matches the ID
           const matchedItem = navItems.find(
-            item => item.toLowerCase().replace(/\s+/g, '-') === id
+            (item: string) => item.toLowerCase().replace(/\s+/g, '-') === id
           );
-          
-          if (matchedItem) {
-            setActiveItem(matchedItem);
-          } else if (id === 'home' || id === 'hero') {
-            setActiveItem('Home');
-          }
+          if (matchedItem) setActiveItem(matchedItem);
+          else if (id === 'home' || id === 'hero') setActiveItem('Home');
         }
       });
     };
 
     const observer = new IntersectionObserver(handleIntersect, observerOptions);
-
-    // Observe each section based on formatted navItem names
     navItems.forEach((item) => {
       const elementId = item.toLowerCase().replace(/\s+/g, '-');
       const element = document.getElementById(elementId);
-      if (element) {
-        observer.observe(element);
-      }
+      if (element) observer.observe(element);
     });
 
     const handleScroll = () => {
-      // Logic for snapping back to "Home" when at the very top
-      if (window.scrollY < 100 && location.pathname === '/') {
-        setActiveItem('Home');
-      }
+      if (window.scrollY < 100 && location.pathname === '/') setActiveItem('Home');
     };
-
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       observer.disconnect();
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [location.pathname, navItems]); // Added navItems to dependency array
+  }, [location.pathname]);
 
-  const scrollToSection = (id: string) => {
-    setIsMenuOpen(false); 
+  const scrollToSection = useCallback((id: string) => {
+    setIsMenuOpen(false);
     if (location.pathname !== '/') {
       navigate('/');
-      setTimeout(() => executeScroll(id), 150); // Increased timeout slightly for component mount
+      setTimeout(() => executeScroll(id), 300);
     } else {
       executeScroll(id);
     }
-  };
+  }, [location.pathname, navigate]);
 
-  const executeScroll = (id: string) => {
+  const executeScroll = useCallback((id: string) => {
     if (id === 'Home') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       setActiveItem('Home');
       return;
     }
-
     const elementId = id.toLowerCase().replace(/\s+/g, '-');
     const element = document.getElementById(elementId);
-    
     if (element) {
-      const headerOffset = 80;
+      const headerOffset = 100;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
       setActiveItem(id);
     }
-  };
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 font-poppins">
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+    <header className="sticky top-0 z-50 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/60 dark:border-gray-800/60 transition-all duration-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         
-        {/* Logo Section */}
+        {/* Logo */}
         <div
-          className="flex items-center gap-3 cursor-pointer group shrink-0"
+          className="flex items-center gap-3 cursor-pointer group p-1 -m-1 rounded-xl hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-all"
           onClick={() => scrollToSection('Home')}
+          role="button"
+          tabIndex={0}
         >
-          <div className="relative w-10 h-10 md:w-12 md:h-10 flex items-center justify-center group-hover:scale-105 group-active:scale-95 transition-transform duration-200 overflow-hidden">
+          <div className="relative w-11 h-11 flex items-center justify-center group-hover:scale-105 active:scale-95 transition-transform overflow-hidden rounded-xl">
             {!logoError ? (
               <img
                 src={isDark ? "/LogoInvert.png" : "/Logo.png"}
                 alt="HealthRadar Logo"
-                className="w-full h-full object-contain transition-all duration-300"
+                className="w-full h-full object-contain"
                 onError={() => setLogoError(true)}
               />
             ) : (
-              <span className={`text-[10px] font-bold ${isDark ? 'text-white/70' : 'text-black/70'}`}>HR</span>
+              <span className={`text-xs font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                HR
+              </span>
             )}
-            <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           </div>
-
-          <span className="text-xl md:text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white font-montserrat">
-            Health<span className="text-brand-red inline-block group-hover:translate-x-0.5 transition-transform">Radar</span>
+          <span className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white font-montserrat hidden sm:inline">
+            Health<span className="text-brand-red">Radar</span>
           </span>
         </div>
-        
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center bg-gray-100/50 dark:bg-gray-800/40 p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
-          {navItems.map((item) => (
-            <button 
-              key={item} 
-              onClick={() => scrollToSection(item)}
-              className={`
-                relative px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 rounded-xl group font-montserrat
-                ${activeItem === item 
-                  ? 'text-brand-red bg-white dark:bg-gray-900 shadow-sm' 
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }
-              `}
-            >
-              {item}
-              <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-brand-red transition-all duration-300 rounded-full ${activeItem === item ? 'w-4 opacity-100' : 'w-0 opacity-0'}`} />
-            </button>
-          ))}
-        </nav>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsDark(!isDark)}
-            className="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-all duration-300"
-          >
-            {isDark ? (
-              <svg className="w-5 h-5 text-yellow-300" fill="currentColor" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-            ) : (
-              <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" /></svg>
+        {/* Navigation + Auth */}
+        <div className="flex-1 flex items-center justify-center lg:gap-8">
+          
+          {/* Nav Pills */}
+          <nav className="hidden lg:flex items-center bg-white/60 dark:bg-gray-800/60 p-2 rounded-3xl border border-white/50 shadow-xl">
+            {navItems.map((item) => (
+              <button
+                key={item}
+                onClick={() => scrollToSection(item)}
+                className={`
+                  px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl group transition-all
+                  ${activeItem === item 
+                    ? 'text-brand-red bg-white shadow-sm' 
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-white/70'
+                  }
+                `}
+              >
+                {item}
+              </button>
+            ))}
+          </nav>
+
+          {/* Auth Section */}
+          <div className="hidden lg:flex items-center gap-4 ml-8">
+            
+            {/* Welcome User */}
+            {user && (
+              <div className="flex items-center gap-3 p-3 bg-emerald-50/80 dark:bg-emerald-500/10 rounded-2xl border border-emerald-200/50 shadow-sm">
+                <div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Welcome,</p>
+                  <p className="text-xs font-black text-emerald-700 uppercase tracking-wider">
+                    {user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
+                  </p>
+                </div>
+              </div>
             )}
+
+            {/* Logout */}
+            {user && onLogout && (
+              <button 
+                onClick={onLogout}
+                className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm uppercase tracking-wider transition-all"
+              >
+                Logout
+              </button>
+            )}
+            
+            {/* Login */}
+            {(authStatus === 'guest' || authStatus === 'unauthenticated') && onLoginClick && (
+              <button 
+                onClick={onLoginClick}
+                className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm uppercase tracking-wider transition-all"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setIsDark(!isDark)}
+            className="p-3 rounded-2xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border transition-all shadow-sm hover:shadow-md"
+            title={isDark ? 'Light Mode' : 'Dark Mode'}
+          >
+            {isDark ? '☀️' : '🌙'}
           </button>
 
-          <button 
+          {/* Mobile Menu */}
+          <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex lg:hidden flex-col justify-center items-center w-10 h-10 rounded-xl bg-brand-red text-white shadow-lg shadow-brand-red/20 active:scale-95 transition-transform"
+            className="lg:hidden p-3 rounded-2xl bg-brand-red text-white shadow-lg hover:shadow-xl transition-all"
           >
-            <div className={`w-5 h-0.5 bg-white transition-all duration-300 mb-1 ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
-            <div className={`w-5 h-0.5 bg-white transition-all duration-300 mb-1 ${isMenuOpen ? 'opacity-0' : ''}`} />
-            <div className={`w-5 h-0.5 bg-white transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`} />
+            ☰
           </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      <div className={`
-        lg:hidden fixed inset-x-0 top-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-300 origin-top
-        ${isMenuOpen ? 'scale-y-100 opacity-100 visible' : 'scale-y-0 opacity-0 invisible'}
-      `}>
-        <div className="flex flex-col p-4 gap-2">
+      {isMenuOpen && (
+        <div className="lg:hidden bg-white dark:bg-gray-900 border-t shadow-lg p-4">
           {navItems.map((item) => (
             <button
               key={item}
               onClick={() => scrollToSection(item)}
-              className={`w-full text-left px-5 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all
-                ${activeItem === item 
-                  ? 'bg-brand-red/10 text-brand-red border-l-4 border-brand-red' 
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                }
-              `}
+              className="w-full text-left py-3 px-4 rounded-xl font-bold hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               {item}
             </button>
           ))}
         </div>
-      </div>
+      )}
     </header>
   );
 };
