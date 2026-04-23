@@ -303,9 +303,9 @@ const Home = () => {
             ) : outbreakSlides.length > 0 ? (
               <div className="flex flex-col h-full">
                 <div className="group/slider relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-200 dark:shadow-none mb-6">
-                  <button className="nav-prev absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md border border-white/10 text-white opacity-100 md:opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-brand-red hover:scale-110 active:scale-95 disabled:hidden">
+                  <button className="nav-prev absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-transparent md:bg-black/30 md:backdrop-blur-md border border-white/10 md:border-white/10 text-white opacity-100 md:opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-brand-red hover:scale-110 active:scale-95 disabled:hidden">
                     <svg
-                      className="w-5 h-5"
+                      className="w-5 h-5 drop-shadow-md"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -319,9 +319,9 @@ const Home = () => {
                     </svg>
                   </button>
 
-                  <button className="nav-next absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md border border-white/10 text-white opacity-100 md:opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-brand-red hover:scale-110 active:scale-95 disabled:hidden">
+                  <button className="nav-next absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-transparent md:bg-black/30 md:backdrop-blur-md border border-white/10 md:border-white/10 text-white opacity-100 md:opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-brand-red hover:scale-110 active:scale-95 disabled:hidden">
                     <svg
-                      className="w-5 h-5"
+                      className="w-5 h-5 drop-shadow-md"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
