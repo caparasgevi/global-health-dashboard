@@ -170,36 +170,44 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-8 font-poppins">
-      {/* Brand */}
-      <m.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center mb-6 text-center"
-      >
-        <img
-          src="/Logo.png"
-          alt="Logo"
-          className="w-12 h-12 object-contain mb-2 drop-shadow-sm"
-        />
-        <span className="text-3xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">
+  <div className="min-h-screen flex items-center justify-between gap-12 lg:gap-20 bg-gradient-to-br from-slate-50 via-white to-brand-red/5 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 px-6 lg:px-12 py-8 font-poppins">
+    
+    {/* ✅ LEFT: Logo */}
+    <m.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.1 }}
+      className="flex flex-col items-center lg:items-start text-center lg:text-left max-w-sm space-y-6"
+    >
+      <img
+        src="/Logo.png"
+        alt="Logo"
+        className="w-16 h-16 lg:w-20 lg:h-20 object-contain drop-shadow-lg"
+      />
+      <div>
+        <span className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-900 dark:text-white leading-none block lg:inline">
           Health<span className="text-brand-red">Radar</span>
         </span>
-        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.25em] mt-1.5">
+        <p className="text-sm lg:text-base font-bold text-slate-400 uppercase tracking-[0.25em] mt-3">
           Global Health Surveillance
         </p>
-      </m.div>
+      </div>
+    </m.div>
 
-      {/* Card */}
+    {/* Divider */}
+    <div className="hidden lg:block w-px bg-gradient-to-b from-slate-200/50 to-slate-300/30 dark:from-slate-800/50 dark:to-slate-700/30" />
+
+    {/* ✅ RIGHT: Card (your existing card code) */}
+    <div className="w-full max-w-sm lg:max-w-md relative z-10">
       <m.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08 }}
-        className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-lg shadow-slate-200/80 dark:shadow-black/30 border border-slate-100 dark:border-slate-800 p-7 overflow-hidden"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-200/60 dark:shadow-black/40 border border-white/60 dark:border-slate-800/60 p-8 lg:p-9 overflow-hidden"
       >
         {/* Tab toggle */}
         {!isForgotPassword && (
-          <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-6">
+          <div className="flex p-1.5 bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl mb-7">
             {["Sign In", "Sign Up"].map((label, i) => (
               <button
                 key={label}
@@ -210,10 +218,10 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                   setShowCountryDropdown(false);
                   setAuthError(null);
                 }}
-                className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all uppercase tracking-widest
+                className={`flex-1 py-2.5 text-[12px] lg:text-[11px] font-bold rounded-xl transition-all uppercase tracking-widest
                   ${
                     (isLogin ? i === 0 : i === 1)
-                      ? "bg-white dark:bg-slate-700 text-brand-red shadow-sm"
+                      ? "bg-white/90 dark:bg-slate-700/90 text-brand-red shadow-sm backdrop-blur-sm"
                       : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   }`}
               >
@@ -501,33 +509,33 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         </m.div>
 
         {!isForgotPassword && (
-          <>
-            <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100 dark:border-slate-800" />
+            <>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-100/50 dark:border-slate-800/50" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-4 bg-white/90 dark:bg-slate-900/90 text-[11px] font-bold text-slate-300 uppercase tracking-widest backdrop-blur-sm">
+                    or
+                  </span>
+                </div>
               </div>
-              <div className="relative flex justify-center">
-                <span className="px-3 bg-white dark:bg-slate-900 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                  or
-                </span>
-              </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                localStorage.setItem("auth_mode", "guest"); // This is the signal for the Header
-                onLogin && onLogin("guest");
-              }}
-              className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 font-bold text-[11px] transition-all uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800"
-            >
-              Continue as Guest
-            </button>
-          </>
-        )}
-      </m.div>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem("auth_mode", "guest");
+                  onLogin && onLogin("guest");
+                }}
+                className="w-full py-3 rounded-2xl border-2 border-slate-200/60 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 hover:bg-slate-50/90 dark:hover:bg-slate-800/90 font-bold text-sm transition-all uppercase tracking-widest backdrop-blur-sm shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+              >
+                Continue as Guest
+              </button>
+            </>
+          )}
+        </m.div>
+     </div>
     </div>
   );
 };
-
 export default Auth;
