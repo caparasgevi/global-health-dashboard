@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Hospital, Download, Search, Globe,
   Activity, ShieldCheck, Stethoscope, BriefcaseMedical,
   AlertCircle, Zap, Microscope, TrendingUp, ShieldAlert,
-  Server, Cpu, Database
+  Server, Cpu, Database, ChevronRight
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell, CartesianGrid, ReferenceLine
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import iso from 'iso-3166-1';
 import { healthService } from '../services/healthService';
 
 interface ResourcePoint {
@@ -23,37 +22,90 @@ interface ResourcePoint {
 
 const CountryStatistics: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [allCountries, setAllCountries] = useState<any[]>([]); // Pre-fetched list
   const [selectedCountry, setSelectedCountry] = useState({ name: 'Philippines', code: 'PHL' });
   const [liveStats, setLiveStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionRef = useRef<HTMLDivElement>(null);
 
+  // 1. PRE-FETCH ALL COUNTRIES (Runs once on mount)
   useEffect(() => {
+    const prefetchRegistry = async () => {
+      try {
+        const response = await fetch('https://restcountries.com/v3.1/all?fields=name,cca3,flags');
+        if (response.ok) {
+          const data = await response.json();
+          // Sort alphabetically by default
+          const sorted = data.sort((a: any, b: any) => 
+            a.name.common.localeCompare(b.name.common)
+          );
+          setAllCountries(sorted);
+        }
+      } catch (err) {
+        console.error("Registry Pre-fetch Error:", err);
+      }
+    };
+    prefetchRegistry();
+  }, []);
+
+  // 2. INSTANT LOCAL FILTERING (Sub-millisecond performance)
+  const suggestions = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (query.length < 2) return [];
+
+    return allCountries
+      .filter((c: any) => c.name.common.toLowerCase().includes(query))
+      .sort((a: any, b: any) => {
+        const aName = a.name.common.toLowerCase();
+        const bName = b.name.common.toLowerCase();
+        // Prioritize exact start-of-word matches
+        const aStarts = aName.startsWith(query);
+        const bStarts = bName.startsWith(query);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return aName.localeCompare(bName);
+      })
+      .slice(0, 6); // Top 6 matches
+  }, [searchTerm, allCountries]);
+
+  // Handle outside clicks
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Sync health data when selectedCountry changes
+  useEffect(() => {
+    let isMounted = true; 
     const fetchStats = async () => {
       setIsLoading(true);
       try {
         const data = await healthService.getLiveCountryStats(selectedCountry.code);
-        setLiveStats(data);
+        if (isMounted) setLiveStats(data);
       } catch (err) {
-        console.error("Infrastructure Audit Error:", err);
+        console.error("Health Stats Error:", err);
+        if (isMounted) setLiveStats(null); 
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
     fetchStats();
+    return () => { isMounted = false };
   }, [selectedCountry.code]);
 
-  // Logic: Color Palette restricted to Red, Amber, and Slate (No Blue/Green)
-const resourceData = useMemo((): ResourcePoint[] => {
+  const resourceData = useMemo((): ResourcePoint[] => {
     const code = selectedCountry.code;
-    // Generate a unique seed from the Alpha-3 code (e.g., 'VNM', 'ARE')
     const seedValue = code.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    
-    // Risk determination based on API code properties
     const isHighRisk = ['NGA', 'COD', 'PHL', 'VNM'].includes(code) || seedValue % 5 === 0;
-
     const baseValues = isHighRisk 
-      ? { availability: 25, risk: 75, color: '#ef4444' } // High Risk Theme (Red)
-      : { availability: 70, risk: 15, color: '#ef4444' }; // Standard Theme (Red)
+      ? { availability: 25, risk: 75, color: '#ef4444' } 
+      : { availability: 70, risk: 15, color: '#ef4444' };
 
     return [
       { sector: 'Critical Care', availability: baseValues.availability + (seedValue % 20), status: isHighRisk ? 'CRITICAL' : 'OPTIMAL', color: baseValues.color, riskScore: baseValues.risk + (seedValue % 10) },
@@ -63,29 +115,35 @@ const resourceData = useMemo((): ResourcePoint[] => {
     ];
   }, [selectedCountry.code]);
   
-  // Fix: Search coverage for all countries
-const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const query = searchTerm.trim();
-    if (!query) return;
+  const handleSelectCountry = (country: any) => {
+    setSelectedCountry({ 
+      name: country.name.common, 
+      code: country.cca3 
+    });
+    setSearchTerm('');
+    setShowSuggestions(false);
+  };
 
-    try {
-      // Use API to find the country by name or city (e.g., Dubai, Vietnam)
-      const response = await fetch(`https://restcountries.com/v3.1/name/${query}`);
-      const data = await response.json();
+  const handleDownload = () => {
+    const headers = ["Sector", "Availability (%)", "Status", "Risk Score"];
+    const rows = resourceData.map(d => [d.sector, d.availability, d.status, d.riskScore]);
+    const csvContent = [
+      [`Report for: ${selectedCountry.name} (${selectedCountry.code})`],
+      [`Generated: ${new Date().toLocaleString()}`],
+      [`Active Case Load: ${liveStats?.active || 'N/A'}`],
+      [],
+      headers,
+      ...rows
+    ].map(e => e.join(",")).join("\n");
 
-      if (data && data.length > 0) {
-        // Automatically resolves Dubai -> UAE, Vietnam -> VNM
-        const country = data[0];
-        setSelectedCountry({ 
-          name: country.name.common, 
-          code: country.cca3 // API provides the correct ISO 3166-1 alpha-3 code
-        });
-        setSearchTerm('');
-      }
-    } catch (err) {
-      console.error("Geospatial Search Error:", err);
-    }
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${selectedCountry.code}_Health_Audit.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -107,17 +165,51 @@ const handleSearch = async (e: React.FormEvent) => {
             </h1>
           </motion.div>
 
-          <form onSubmit={handleSearch} className="relative w-full lg:w-[400px]">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-            <input
-              type="text" value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search Country Name"
-              className="w-full bg-slate-100 dark:bg-slate-900 border-2 border-transparent focus:border-brand-red/20 p-4 pl-14 rounded-2xl text-slate-900 dark:text-white font-bold outline-none transition-all shadow-sm"
-            />
-          </form>
+          {/* Search with Instant Suggestions */}
+          <div className="relative w-full lg:w-[400px]" ref={suggestionRef}>
+            <div className="relative">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <input
+                type="text" 
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                placeholder="Type a country..."
+                className="w-full bg-slate-100 dark:bg-slate-900 border-2 border-transparent focus:border-brand-red/20 p-4 pl-14 rounded-2xl text-slate-900 dark:text-white font-bold outline-none transition-all shadow-sm"
+              />
+            </div>
+
+            <AnimatePresence>
+              {showSuggestions && suggestions.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[100] backdrop-blur-xl"
+                >
+                  {suggestions.map((country) => (
+                    <button
+                      key={country.cca3}
+                      onClick={() => handleSelectCountry(country)}
+                      className="w-full flex items-center justify-between p-4 hover:bg-brand-red hover:text-white text-left transition-all border-b last:border-0 border-slate-100 dark:border-white/5 group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg group-hover:scale-125 transition-transform">{country.flag}</span>
+                        <span className="text-sm font-bold">{country.name.common}</span>
+                      </div>
+                      <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </header>
 
+        {/* ... (The grid and chart sections remain the same) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <aside className="lg:col-span-4 space-y-6">
             <InteractiveMetricCard
@@ -132,7 +224,6 @@ const handleSearch = async (e: React.FormEvent) => {
               ]}
             />
 
-            {/* Red Motif Progress Bars */}
             <div className="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <ShieldAlert size={14} className="text-brand-red" /> Resilience Matrix
@@ -180,14 +271,16 @@ const handleSearch = async (e: React.FormEvent) => {
                   <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase italic">Clinical Capacity</h3>
                   <p className="text-slate-400 text-[10px] font-mono tracking-[0.2em] mt-2">Resource Stability vs. Global Thresholds</p>
                 </div>
-                <button className="p-4 bg-slate-100 dark:bg-white/5 rounded-2xl hover:bg-brand-red hover:text-white transition-all">
+                <button 
+                  onClick={handleDownload}
+                  className="p-4 bg-slate-100 dark:bg-white/5 rounded-2xl hover:bg-brand-red hover:text-white transition-all active:scale-95"
+                >
                     <Download size={20} />
                 </button>
               </div>
 
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  {/* key={selectedCountry.code} fixes the animation and movement issue */}
                   <BarChart key={selectedCountry.code} data={resourceData} margin={{ top: 20, right: 0, left: -25, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
                     <XAxis dataKey="sector" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10, fontWeight: 800 }} />
@@ -225,7 +318,8 @@ const handleSearch = async (e: React.FormEvent) => {
                 <DetailBox icon={<Microscope size={14} />} label="Audit Status" value="PASS" />
               </div>
             </div>
-
+            
+            {/* Compute and Integrity Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-slate-50 dark:bg-slate-900/60 p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5">
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
