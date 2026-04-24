@@ -30,7 +30,7 @@ interface CountryData {
 }
 
 interface CountryHealthAlertsProps {
-  isDark: boolean; // Kept in interface so Home.tsx doesn't throw an error, but we don't need to use it below
+  isDark: boolean; 
   userCountry?: string;
   userRegion?: string;
 }
@@ -43,8 +43,8 @@ const SEVERITY_CONFIG = {
 };
 
 const imageCache = new Map<string, string>();
+const dataCache = new Map<string, CountryData>();
 
-// FIXED: Removed the unused 'signal' parameter
 async function fetchImageForDisease(diseaseName: string): Promise<string> {
   const cacheKey = diseaseName.toLowerCase();
   if (imageCache.has(cacheKey)) return imageCache.get(cacheKey)!;
@@ -63,6 +63,9 @@ function getSeverityFromValue(value: number): HealthAlert["severity"] {
 }
 
 async function fetchAlertsForCountry(countryName: string, region: string, signal?: AbortSignal): Promise<CountryData> {
+  const cacheKey = `${countryName}-${region}`;
+  if (dataCache.has(cacheKey)) return dataCache.get(cacheKey)!;
+
   const countryInfo = iso.whereCountry(countryName);
   const iso3 = countryInfo?.alpha3 || "";
 
@@ -74,12 +77,23 @@ async function fetchAlertsForCountry(countryName: string, region: string, signal
 
   const countryRisk = riskScores.find((r: any) => r.name?.toLowerCase() === countryName.toLowerCase() || r.id === iso3);
   const topIndicators = indicators.slice(0, 6);
+  
   const indicatorPromises = topIndicators.map(async (ind: any) => {
     try {
       const data = await healthService.checkIndicatorStatus(ind.IndicatorCode, iso3, { signal });
-      const latestValue = data[0]?._safeValue || 0;
+      const filteredData = data.filter((d: any) => d.TimeDimensionValue >= 2020);
+      const latestValue = filteredData[0]?._safeValue || 0;
+      const actualYear = filteredData[0]?.TimeDimensionValue || "Recent";
+      
       if (latestValue > 0) {
-        return { code: ind.IndicatorCode, name: ind.IndicatorName, value: latestValue, severity: getSeverityFromValue(latestValue), image: await fetchImageForDisease(ind.IndicatorName) };
+        return { 
+          code: ind.IndicatorCode, 
+          name: ind.IndicatorName, 
+          value: latestValue, 
+          severity: getSeverityFromValue(latestValue), 
+          image: await fetchImageForDisease(ind.IndicatorName),
+          year: actualYear
+        };
       }
     } catch { return null; }
     return null;
@@ -96,7 +110,7 @@ async function fetchAlertsForCountry(countryName: string, region: string, signal
       description: `Current health risk index at ${countryRisk.score}/100. ${countryRisk.score > 70 ? "Multiple threats detected." : "Routine surveillance."}`,
       severity: riskSeverity,
       cases: countryRisk.fatality,
-      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      date: countryRisk.lastUpdated ? new Date(countryRisk.lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "2026 Index",
       imageUrl: await fetchImageForDisease("health risk"),
       bgColor: "",
       source: "Health Radar Index",
@@ -108,9 +122,9 @@ async function fetchAlertsForCountry(countryName: string, region: string, signal
     alerts.push({
       id: `ind-${ind.code}`,
       title: ind.name.length > 50 ? ind.name.substring(0, 47) + "..." : ind.name,
-      description: `Current value: ${ind.value.toFixed(1)} units.`,
+      description: `Surveillance data indicates a significant ${ind.name.toLowerCase()} presence, measured at a scale of ${ind.value.toFixed(1)} for recent observation periods.`,
       severity: ind.severity,
-      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      date: `Data Year: ${ind.year}`,
       imageUrl: ind.image,
       bgColor: "",
       source: "WHO GHO",
@@ -118,7 +132,6 @@ async function fetchAlertsForCountry(countryName: string, region: string, signal
     });
   });
 
-  // FIXED: Restored the outbreakNews logic so it actually gets used!
   if (outbreakNews.length > 0) {
     for (let idx = 0; idx < Math.min(2, outbreakNews.length); idx++) {
       const news = outbreakNews[idx];
@@ -127,7 +140,7 @@ async function fetchAlertsForCountry(countryName: string, region: string, signal
         title: news.title.length > 50 ? news.title.substring(0, 47) + "..." : news.title,
         description: news.summary?.substring(0, 120) || "Recent health incident reported.",
         severity: idx === 0 ? "high" : "moderate",
-        date: new Date(news.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        date: new Date(news.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
         imageUrl: await fetchImageForDisease(news.title),
         bgColor: "",
         source: "WHO",
@@ -138,7 +151,7 @@ async function fetchAlertsForCountry(countryName: string, region: string, signal
   }
 
   const activeAlertsCount = alerts.filter(a => a.severity === "critical" || a.severity === "high").length;
-  return {
+  const result = {
     country: countryName,
     countryCode: countryInfo?.alpha2 || "XX",
     region: region || countryName,
@@ -150,6 +163,9 @@ async function fetchAlertsForCountry(countryName: string, region: string, signal
       vaccinationRate: countryRisk ? `${Math.min(85, 50 + Math.floor(countryRisk.score / 10))}%` : "Data ready",
     }
   };
+
+  dataCache.set(cacheKey, result);
+  return result;
 }
 
 async function detectUserLocation() {
@@ -174,14 +190,13 @@ const FeaturedAlertCard: React.FC<{ alert: HealthAlert }> = ({ alert }) => (
   <div 
     className="group rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-300 hover:shadow-xl grid grid-cols-1 md:grid-cols-[320px_1fr] cursor-pointer" 
     onClick={() => {
-      // THE FIX: Use actual URL if it exists, otherwise search for the report
       const targetUrl = alert.url || `https://www.google.com/search?q=${encodeURIComponent(alert.title + " WHO official report")}`;
       window.open(targetUrl, "_blank");
     }}
   >
-    <div className="relative h-56 md:h-full overflow-hidden">
+    <div className="relative h-56 md:h-full overflow-hidden bg-slate-50 dark:bg-slate-900">
       <img src={alert.imageUrl} alt={alert.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40" />
       <div className="absolute bottom-3 left-3 text-[9px] font-black px-2.5 py-1 rounded-md bg-black/60 text-white backdrop-blur-md">{alert.source}</div>
     </div>
     <div className="p-6 flex flex-col justify-center">
@@ -191,7 +206,7 @@ const FeaturedAlertCard: React.FC<{ alert: HealthAlert }> = ({ alert }) => (
       <h3 className="text-xl md:text-2xl font-black tracking-tight mb-2 text-slate-900 dark:text-white leading-snug group-hover:text-brand-red transition-colors">{alert.title}</h3>
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 md:line-clamp-3 leading-relaxed">{alert.description}</p>
       <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-800/50">
-        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Updated {alert.date}</span>
+        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Report Date: {alert.date}</span>
       </div>
     </div>
   </div>
@@ -201,14 +216,14 @@ const SmallAlertCard: React.FC<{ alert: HealthAlert }> = ({ alert }) => (
   <div 
     className="group rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-300 hover:shadow-lg cursor-pointer flex flex-col" 
     onClick={() => {
-      // THE FIX: Use actual URL if it exists, otherwise search for the report
       const targetUrl = alert.url || `https://www.google.com/search?q=${encodeURIComponent(alert.title + " WHO official report")}`;
       window.open(targetUrl, "_blank");
     }}
   >
-    <div className="relative h-44 overflow-hidden">
-      <img src={alert.imageUrl} alt={alert.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
+    <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-slate-900">
+      {/* FIXED: Using object-cover with aspect-video to fill space without stretching or cutting off primary central subjects */}
+      <img src={alert.imageUrl} alt={alert.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+      <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="absolute top-3 right-3"><SeverityBadge severity={alert.severity} /></div>
     </div>
     <div className="p-5 flex-1 flex flex-col">
@@ -232,7 +247,6 @@ const AlertsSkeleton: React.FC = () => (
   </div>
 );
 
-// FIXED: Omitted isDark from the destructured props so TypeScript stops complaining
 const CountryHealthAlerts: React.FC<CountryHealthAlertsProps> = ({ userCountry, userRegion }) => {
   const [countryData, setCountryData] = useState<CountryData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -241,6 +255,7 @@ const CountryHealthAlerts: React.FC<CountryHealthAlertsProps> = ({ userCountry, 
 
   const loadAlerts = useCallback(async () => {
     setLoading(true); setError(false);
+    const startTime = Date.now();
     try {
       let country = userCountry;
       let region = userRegion || "";
@@ -249,6 +264,12 @@ const CountryHealthAlerts: React.FC<CountryHealthAlertsProps> = ({ userCountry, 
         country = geo.country; region = geo.region;
       }
       const data = await fetchAlertsForCountry(country || "United States", region);
+      
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < 1200) {
+        await new Promise(resolve => setTimeout(resolve, 1200 - elapsedTime));
+      }
+
       if (mountedRef.current) setCountryData(data);
     } catch (err) { if (mountedRef.current) setError(true); }
     finally { if (mountedRef.current) setLoading(false); }
@@ -281,15 +302,11 @@ const CountryHealthAlerts: React.FC<CountryHealthAlertsProps> = ({ userCountry, 
           <div className="text-center py-10"><button onClick={loadAlerts} className="text-brand-red font-bold uppercase text-[10px] tracking-widest hover:underline">Retry Loading</button></div>
         ) : (
           <div className="space-y-4">
-            {/* Featured Top Card */}
             {featured && <FeaturedAlertCard alert={featured} />}
-            
-            {/* 3-Column Grid for Small Cards */}
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {others.map(alert => <SmallAlertCard key={alert.id} alert={alert} />)}
             </div>
 
-            {/* Bottom Statistics Panel */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
               {[
                 { label: "Active Alerts", value: countryData.stats.activeCases, color: "text-red-500 dark:text-red-400" },
@@ -302,7 +319,6 @@ const CountryHealthAlerts: React.FC<CountryHealthAlertsProps> = ({ userCountry, 
                 </div>
               ))}
             </div>
-            
           </div>
         )}
       </div>

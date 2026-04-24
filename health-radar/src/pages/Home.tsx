@@ -165,7 +165,7 @@ const Home = () => {
                     ? "Critical"
                     : value > 60
                       ? "High"
-                      : value > 40
+                      : value > 25
                         ? "Moderate"
                         : "Low",
               });
