@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import iso from "iso-3166-1";
 import { supabase } from "../lib/supabase";
-import { AlertTriangle, X, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, X, CheckCircle2, Mail, Lock } from "lucide-react";
 
 interface AuthProps {
   onLogin?: (status: "user" | "guest") => void;
@@ -109,14 +109,14 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
     try {
       if (isLogin) {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
         if (error) throw error;
         if (onLogin) onLogin("user");
       } else {
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
@@ -141,8 +141,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   };
 
   const getInputClass = (isValid: boolean) => `
-    w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 outline-none text-sm transition-all
-    placeholder:text-slate-400 font-medium dark:text-white
+    w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 outline-none text-sm transition-all
+    placeholder:text-slate-400 font-medium dark:text-white font-poppins
     ${
       wasSubmitted && !isValid
         ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/10"
@@ -151,14 +151,14 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   `;
 
   const labelClass =
-    "block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-0.5";
+    "block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-0.5 font-montserrat";
 
   if (isConfirming) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 font-poppins text-center">
         <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="w-14 h-14 border-[3px] border-brand-red border-t-transparent rounded-full animate-spin mx-auto mb-5" />
-          <h2 className="text-xl font-bold dark:text-white text-slate-800 uppercase tracking-tighter">
+          <h2 className="text-xl font-bold dark:text-white text-slate-800 uppercase tracking-tighter font-montserrat">
             Synchronizing
           </h2>
           <p className="text-slate-400 text-sm mt-1">
@@ -170,10 +170,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   }
 
   return (
-  <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 bg-gradient-to-br from-slate-50 via-white to-brand-red/5 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 px-6 lg:px-12 py-8 font-poppins">
-    
-    {/* ✅ MOBILE: Logo above card (stacked layout) */}
-    {/* ✅ DESKTOP: Logo LEFT + Card RIGHT */}
+  <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center gap-20 lg:gap-32 bg-gradient-to-br from-slate-50 via-white to-brand-red/5 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 px-6 lg:px-12 py-8 font-poppins">
     <m.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -186,19 +183,15 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         className="w-16 h-16 lg:w-20 lg:h-20 object-contain drop-shadow-lg"
       />
       <div>
-        <span className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">
+        <span className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-900 dark:text-white leading-none font-montserrat">
           Health<span className="text-brand-red block lg:inline">Radar</span>
         </span>
-        <p className="text-sm lg:text-base font-bold text-slate-400 uppercase tracking-[0.25em] mt-3">
+        <p className="text-sm lg:text-base font-bold text-slate-400 uppercase tracking-[0.25em] mt-3 font-montserrat">
           Global Health Surveillance
         </p>
       </div>
     </m.div>
 
-    {/* Divider - Only on desktop */}
-    <div className="hidden lg:block w-px bg-gradient-to-b from-slate-200/50 to-slate-300/30 dark:from-slate-800/50 dark:to-slate-700/30 order-2" />
-
-    {/* ✅ RIGHT: Card */}
     <div className="w-full max-w-sm lg:max-w-md relative z-10 order-2 lg:order-3">
       <m.div
         initial={{ opacity: 0, x: 20 }}
@@ -206,9 +199,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         transition={{ delay: 0.2 }}
         className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-200/60 dark:shadow-black/40 border border-white/60 dark:border-slate-800/60 p-8 lg:p-9 overflow-hidden"
       >
-        {/* Tab toggle */}
         {!isForgotPassword && (
-          <div className="flex p-1.5 bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl mb-7">
+          <div className="flex p-1.5 bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl mb-7 font-montserrat">
             {["Sign In", "Sign Up"].map((label, i) => (
               <button
                 key={label}
@@ -231,11 +223,10 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             ))}
           </div>
         )}
-
         <m.div transition={{ duration: 0.25, ease: "easeInOut" }}>
           {isForgotPassword && (
             <div className="mb-4 text-center">
-              <h3 className="text-lg font-bold dark:text-white mb-1">
+              <h3 className="text-lg font-bold dark:text-white mb-1 font-montserrat">
                 Reset Password
               </h3>
               <p className="text-xs text-slate-500">
@@ -243,9 +234,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               </p>
             </div>
           )}
-
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            {/* Error & Success Banners */}
             <AnimatePresence>
               {authError && (
                 <m.div
@@ -283,7 +272,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 </m.div>
               )}
             </AnimatePresence>
-
             <AnimatePresence mode="popLayout" initial={false}>
               {!isLogin && !isForgotPassword && (
                 <m.div
@@ -294,31 +282,23 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                   transition={{ duration: 0.2 }}
                   className="space-y-4 pb-4"
                 >
-                  {/* Full Name */}
                   <div>
                     <label className={labelClass}>Full Name</label>
                     <input
                       type="text"
                       required
                       placeholder="Full Name"
-                      className={getInputClass(formData.name.trim().length >= 2)}
+                      className={getInputClass(formData.name.trim().length >= 2).replace("pl-11", "pl-4")}
                       onChange={(e) =>
                         setFormData({ ...formData, name: e.target.value })
                       }
                     />
-                    {wasSubmitted && formData.name.trim().length === 0 && (
+                    {wasSubmitted && formData.name.trim().length < 2 && (
                       <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-1 block">
-                        * Required
-                      </span>
-                    )}
-                    {wasSubmitted && formData.name.trim().length === 1 && (
-                      <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-1 block">
-                        * Name must be at least 2 characters
+                        * Required (min. 2 chars)
                       </span>
                     )}
                   </div>
-
-                  {/* Country searchable dropdown */}
                   <div className="relative" ref={countryRef}>
                     <label className={labelClass}>
                       Country / Region <span className="text-brand-red">*</span>
@@ -327,29 +307,16 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 transition-all cursor-pointer ${wasSubmitted && !formData.country ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/10" : showCountryDropdown ? "border-brand-red/40 ring-2 ring-brand-red/8" : "border-slate-200 dark:border-slate-700"}`}
                       onClick={() => setShowCountryDropdown((v) => !v)}
                     >
-                      <svg
-                        className="w-3.5 h-3.5 text-slate-400 shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
+                      <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
                       </svg>
-                      <span
-                        className={`flex-1 text-sm font-medium ${formData.country ? "text-slate-800 dark:text-white" : "text-slate-400"}`}
-                      >
+                      <span className={`flex-1 text-sm font-medium ${formData.country ? "text-slate-800 dark:text-white" : "text-slate-400"}`}>
                         {formData.country || "Select your country"}
                       </span>
-                      <svg
-                        className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showCountryDropdown ? "rotate-180" : ""}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
+                      <svg className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showCountryDropdown ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
-
                     <AnimatePresence>
                       {showCountryDropdown && (
                         <m.div
@@ -372,40 +339,24 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                             />
                           </div>
                           <ul className="max-h-48 overflow-y-auto">
-                            {filteredCountries.length === 0 ? (
-                              <li className="px-4 py-3 text-sm text-slate-400 text-center">No countries found</li>
-                            ) : (
-                              filteredCountries.map((c) => (
-                                <li
-                                  key={c.alpha2}
-                                  onClick={() => {
-                                    setFormData({ ...formData, country: c.country, countrySearch: "" });
-                                    setShowCountryDropdown(false);
-                                  }}
-                                  className={`flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors ${formData.country === c.country ? "bg-red-50 dark:bg-red-950/30 text-brand-red font-semibold" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
-                                >
-                                  <span>{c.country}</span>
-                                  {formData.country === c.country && (
-                                    <svg className="w-3.5 h-3.5 ml-auto text-brand-red" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  )}
-                                </li>
-                              ))
-                            )}
+                            {filteredCountries.map((c) => (
+                              <li
+                                key={c.alpha2}
+                                onClick={() => {
+                                  setFormData({ ...formData, country: c.country, countrySearch: "" });
+                                  setShowCountryDropdown(false);
+                                }}
+                                className={`flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors ${formData.country === c.country ? "bg-red-50 dark:bg-red-950/30 text-brand-red font-semibold" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
+                              >
+                                <span>{c.country}</span>
+                              </li>
+                            ))}
                           </ul>
                         </m.div>
                       )}
                     </AnimatePresence>
-                    {wasSubmitted && !formData.country && (
-                      <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-1 block">
-                        * Required
-                      </span>
-                    )}
                   </div>
-
-                  {/* Alerts opt-in */}
-                  <div className="flex items-start gap-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-xl px-4 py-3">
+                  <div className="flex items-start gap-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-xl px-4 py-3 font-poppins">
                     <input
                       id="alerts"
                       type="checkbox"
@@ -422,26 +373,22 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 </m.div>
               )}
             </AnimatePresence>
-
-            {/* ── Shared Email Field ── */}
             <div className="space-y-4">
               <div>
                 <label className={labelClass}>Email Address</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="Enter your email"
-                  className={getInputClass(EMAIL_REGEX.test(formData.email))}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-                {wasSubmitted && formData.email.length > 0 && !EMAIL_REGEX.test(formData.email) && (
-                  <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-1 block">
-                    * Please enter a valid email address
-                  </span>
-                )}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <Mail size={18} />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Enter your email"
+                    className={getInputClass(EMAIL_REGEX.test(formData.email))}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
               </div>
-
-              {/* Password field hides if in Forgot Password mode */}
               {!isForgotPassword && (
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
@@ -454,34 +401,33 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                           setAuthError(null);
                           setWasSubmitted(false);
                         }}
-                        className="text-[10px] font-semibold text-brand-red hover:underline"
+                        className="text-[10px] font-semibold text-brand-red hover:underline font-montserrat"
                       >
                         Forgot password?
                       </button>
                     )}
                   </div>
-                  <input
-                    type="password"
-                    required
-                    placeholder="Enter your password (min. 8 characters)"
-                    className={getInputClass(formData.password.length >= 8)}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  />
-                  {wasSubmitted && formData.password.length > 0 && formData.password.length < 8 && (
-                    <span className="text-[10px] text-red-500 font-semibold ml-0.5 mt-1 block">
-                      * Password must be at least 8 characters
-                    </span>
-                  )}
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                      <Lock size={18} />
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Enter your password"
+                      className={getInputClass(formData.password.length >= 8)}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    />
+                  </div>
                 </div>
               )}
             </div>
-
             <div className="pt-2">
               <m.button
                 type="submit"
                 whileTap={{ scale: 0.98 }}
                 disabled={resetSent}
-                className="w-full bg-brand-red hover:bg-red-700 disabled:bg-red-400 text-white font-bold py-2.5 rounded-xl transition-all text-sm uppercase tracking-widest shadow-md shadow-red-500/15"
+                className="w-full bg-brand-red hover:bg-red-700 disabled:bg-red-400 text-white font-bold py-2.5 rounded-xl transition-all text-sm uppercase tracking-widest shadow-md shadow-red-500/15 font-montserrat"
               >
                 {isForgotPassword
                   ? resetSent
@@ -491,7 +437,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                     ? "Sign In"
                     : "Create Account"}
               </m.button>
-
               {isForgotPassword && (
                 <button
                   type="button"
@@ -500,7 +445,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                     setAuthError(null);
                     setResetSent(false);
                   }}
-                  className="w-full mt-3 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
+                  className="w-full mt-3 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors font-poppins"
                 >
                   Back to Sign In
                 </button>
@@ -508,7 +453,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             </div>
           </form>
         </m.div>
-
         {!isForgotPassword && (
             <>
               <div className="relative my-6">
@@ -516,19 +460,15 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                   <div className="w-full border-t border-slate-100/50 dark:border-slate-800/50" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="px-4 bg-white/90 dark:bg-slate-900/90 text-[11px] font-bold text-slate-300 uppercase tracking-widest backdrop-blur-sm">
+                  <span className="px-4 bg-white/90 dark:bg-slate-900/90 text-[11px] font-bold text-slate-300 uppercase tracking-widest backdrop-blur-sm font-montserrat">
                     or
                   </span>
                 </div>
               </div>
-
               <button
                 type="button"
-                onClick={() => {
-                  localStorage.setItem("auth_mode", "guest");
-                  onLogin && onLogin("guest");
-                }}
-                className="w-full py-3 rounded-2xl border-2 border-slate-200/60 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 hover:bg-slate-50/90 dark:hover:bg-slate-800/90 font-bold text-sm transition-all uppercase tracking-widest backdrop-blur-sm shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                onClick={() => onLogin && onLogin("guest")}
+                className="w-full py-3 rounded-2xl border-2 border-slate-200/60 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 hover:bg-slate-50/90 dark:hover:bg-slate-800/90 font-bold text-sm transition-all uppercase tracking-widest backdrop-blur-sm shadow-sm hover:shadow-md flex items-center justify-center gap-2 font-montserrat"
               >
                 Continue as Guest
               </button>
