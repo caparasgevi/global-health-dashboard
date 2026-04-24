@@ -5,7 +5,7 @@
 
 Moving beyond simple data aggregation, the platform utilizes a Hybrid Data Fusion architecture. By prioritizing leading indicators over lagging metrics, the system calculates predictive risk scores, providing actionable intelligence through a dynamic geospatial interface.
 
-✨ Core Features
+## ✨ Core Features
 
 Leading-Indicator Risk Engine: Calculates global threat levels using exponential growth factors rather than relying solely on lagging mortality rates.
 
@@ -15,7 +15,7 @@ Unified Master Roster: Cross-references World Health Organization (WHO) datasets
 
 Interactive Global Map: A responsive, dark-mode optimized geospatial dashboard for real-time hotspot tracking.
 
-🧬 System Architecture & The Risk Algorithm
+## 🧬 System Architecture & The Risk Algorithm
 
 
 To generate accurate, 0-100 safety scores without penalizing nations for robust reporting, the backend processes three mathematical pillars:
