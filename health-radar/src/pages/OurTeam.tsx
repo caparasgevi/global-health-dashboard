@@ -71,7 +71,7 @@ const OurTeam: React.FC = () => {
   return (
     <div
       id="our-team"
-      className={`py-12 md:py-20 px-4 flex flex-col items-center bg-gray-50 dark:bg-[#0a0a0a] transition-all duration-500 ${
+      className={`py-12 md:py-20 px-4 flex flex-col items-center bg-gray-50 dark:bg-slate-950 transition-all duration-500 ${
         isRevealed ? "pb-20" : "pb-10"
       }`}
       onClick={() => setSelectedMember(null)}
@@ -83,11 +83,11 @@ const OurTeam: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-3xl md:text-5xl font-extrabold font-montserrat text-gray-900 dark:text-white mb-4 tracking-tight"
         >
-          Meet Our{" "}
-          <span className="text-[var(--color-brand-red)]">Team</span>
+          Meet Our <span className="text-[var(--color-brand-red)]">Team</span>
         </motion.h1>
         <p className="text-gray-500 dark:text-gray-400 max-w-lg mx-auto font-medium px-4 text-sm md:text-base">
-          The multidisciplinary team dedicated to advancing HealthRadar's predictive surveillance and public health technology.
+          The multidisciplinary team dedicated to advancing HealthRadar's
+          predictive surveillance and public health technology.
         </p>
       </div>
 
@@ -147,7 +147,7 @@ const OurTeam: React.FC = () => {
                       e.stopPropagation();
                       setSelectedMember(isActive ? null : member.id);
                     }}
-                    className="group relative h-[420px] md:h-[480px] bg-white dark:bg-[#121212] rounded-2xl overflow-hidden flex flex-col shadow-xl border border-gray-100 dark:border-white/5 cursor-pointer"
+                    className="group relative h-[420px] md:h-[480px] bg-white dark:bg-slate-900 rounded-2xl overflow-hidden flex flex-col shadow-xl border border-gray-100 dark:border-white/5 cursor-pointer"
                   >
                     <div className="relative w-full h-[300px] md:h-[340px] overflow-hidden bg-gray-200 dark:bg-gray-800">
                       <img
@@ -172,7 +172,7 @@ const OurTeam: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex-grow flex flex-col justify-center p-4 md:p-5 text-center bg-white dark:bg-[#121212]">
+                    <div className="flex-grow flex flex-col justify-center p-4 md:p-5 text-center bg-white dark:bg-slate-900">
                       <h3 className="font-montserrat font-bold text-[13px] md:text-[15px] leading-tight text-gray-900 dark:text-gray-100">
                         {member.name}
                       </h3>

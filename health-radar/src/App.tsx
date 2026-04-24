@@ -25,6 +25,7 @@ import CountryStatistics from "./pages/CountryStatistics";
 import RiskScores from "./pages/RiskScores";
 import OurTeam from "./pages/OurTeam";
 import UpdatePassword from "./pages/UpdatePassword";
+import Profile from "./pages/Profile"; // ADDED
 
 const ResetManager = () => {
   const navigate = useNavigate();
@@ -41,8 +42,8 @@ const ResetManager = () => {
       sessionStorage.removeItem("health_radar_country");
     }
 
-    // ALLOW-LIST: Now includes "/home", we redirect unknown paths to "/home"
-    const allowedPaths = ["/home", "/update-password", "/auth", "/full-report", "/"];
+    // ADDED "/profile" to the allow-list
+    const allowedPaths = ["/home", "/update-password", "/auth", "/full-report", "/profile", "/"];
     if (!allowedPaths.includes(location.pathname)) {
       navigate("/home", { replace: true });
     }
@@ -60,21 +61,18 @@ const ResetManager = () => {
 };
 
 const AuthWrapper = ({ setUser, setShowAuth }: { setUser: any, setShowAuth: any }) => {
-  // We no longer need useNavigate() here
   return (
     <Auth 
       onLogin={(status) => {
         setShowAuth(false);
         
         if (status === 'guest') {
-          // Lock in the guest state
           localStorage.setItem("auth_mode", "guest");
           setUser({ id: 'guest' } as User);
         } else {
           localStorage.removeItem("auth_mode");
         }
         
-        // 🚨 THE FIX: Force a hard browser refresh instead of React routing!
         window.location.href = '/home'; 
       }} 
     />
@@ -87,14 +85,13 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
 
-  // Helper function: Checks Supabase first, then falls back to Guest Mode
   const checkAuthState = (session: any) => {
     const authMode = localStorage.getItem("auth_mode");
     if (session?.user) {
       setUser(session.user);
-      localStorage.removeItem("auth_mode"); // clear guest flag if a real user is found
+      localStorage.removeItem("auth_mode");
     } else if (authMode === "guest") {
-      setUser({ id: 'guest' } as User); // Restore guest status
+      setUser({ id: 'guest' } as User);
     } else {
       setUser(null);
     }
@@ -103,13 +100,12 @@ function App() {
   const authStatus = user ? 'user' : 'unauthenticated';
 
   const handleLogout = async () => {
-    localStorage.removeItem("auth_mode"); // Ensure guest mode clears on logout
+    localStorage.removeItem("auth_mode");
     await supabase.auth.signOut();
     setUser(null);
   };
 
   useEffect(() => {
-    // 1. Initial Session Check
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       checkAuthState(session);
@@ -118,7 +114,6 @@ function App() {
 
     checkSession();
 
-    // 2. Auth State Subscription
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         checkAuthState(session);
@@ -159,14 +154,11 @@ function App() {
 
             <main className="flex-grow">
               <Routes>
-                {/* Automatically redirect base URL to /home */}
                 <Route path="/" element={<Navigate to="/home" replace />} />
                 
-                {/* Explicit Auth & Password Routes */}
                 <Route path="/auth" element={<AuthWrapper setUser={setUser} setShowAuth={setShowAuth} />} />
                 <Route path="/update-password" element={<UpdatePassword />} />
                 
-                {/* Protected Dashboard Route is now explicitly /home */}
                 <Route
                   path="/home"
                   element={
@@ -186,7 +178,6 @@ function App() {
                   }
                 />
 
-                {/* Protected Report Route */}
                 <Route 
                   path="/full-report" 
                   element={
@@ -198,7 +189,18 @@ function App() {
                   } 
                 />
 
-                {/* Catch-all fallback goes to /home */}
+                {/* ADDED: Protected Profile Route */}
+                <Route
+                  path="/profile"
+                  element={
+                    authStatus === "unauthenticated" ? (
+                      <Navigate to="/auth" replace />
+                    ) : (
+                      <Profile user={user} isDark={isDark} onLogout={handleLogout} />
+                    )
+                  }
+                />
+
                 <Route path="*" element={<Navigate to="/home" replace />} />
               </Routes>
             </main>
