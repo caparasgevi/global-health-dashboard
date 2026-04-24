@@ -42,47 +42,55 @@ const Header: React.FC<HeaderProps> = ({
     }
 
     const observerOptions = {
-      root: null,
-      rootMargin: '-100px 0px -40% 0px',
-      threshold: 0
-    };
+    root: null,
+    // Use a tighter margin to ensure only the section currently 
+    // occupying the top-middle of the screen is "Active"
+    rootMargin: '-150px 0px -70% 0px', 
+    threshold: 0
+  };
 
-    const handleIntersect = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const id = entry.target.id;
-          const matchedItem = navItems.find(
-            item => item.toLowerCase().replace(/\s+/g, '-') === id
-          );
-          if (matchedItem) {
-            setActiveItem(matchedItem);
-          } else if (id === 'home' || id === 'hero') {
-            setActiveItem('Home');
-          }
+  const handleIntersect = (entries: IntersectionObserverEntry[]) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        
+        // Find matching item by transforming navItems to match ID format
+        const matchedItem = navItems.find(
+          item => item.toLowerCase().replace(/\s+/g, '-') === id
+        );
+
+        if (matchedItem) {
+          setActiveItem(matchedItem);
+        } else if (id === 'home' || id === 'hero') {
+          setActiveItem('Home');
         }
-      });
-    };
-
-    const observer = new IntersectionObserver(handleIntersect, observerOptions);
-    navItems.forEach((item) => {
-      const elementId = item.toLowerCase().replace(/\s+/g, '-');
-      const element = document.getElementById(elementId);
-      if (element) observer.observe(element);
-    });
-
-    const handleScroll = () => {
-      if (window.scrollY < 100 && location.pathname === '/home') {
-        setActiveItem('Home');
       }
-    };
+    });
+  };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [location.pathname]);
+  const observer = new IntersectionObserver(handleIntersect, observerOptions);
+  
+  // Observe all sections
+  navItems.forEach((item) => {
+    const elementId = item.toLowerCase().replace(/\s+/g, '-');
+    const element = document.getElementById(elementId);
+    if (element) observer.observe(element);
+  });
 
+  // Special case for the very top of the page
+  const handleTopScroll = () => {
+    if (window.scrollY < 50) {
+      setActiveItem('Home');
+    }
+  };
+
+  window.addEventListener('scroll', handleTopScroll);
+
+  return () => {
+    observer.disconnect();
+    window.removeEventListener('scroll', handleTopScroll);
+  };
+}, [location.pathname]);
   const scrollToSection = (id: string) => {
     setIsMenuOpen(false); 
     if (location.pathname !== '/home') {

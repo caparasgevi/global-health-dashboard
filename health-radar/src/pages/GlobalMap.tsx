@@ -88,7 +88,6 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
         return false;
       });
 
-      // WIDER COVERAGE: Shuffle and grab the top 100 instead of 50
       const shuffledIndicators = [...(allIndicators || [])].sort(() => 0.5 - Math.random());
       const candidateIndicators = shuffledIndicators.slice(0, 100);
 
@@ -100,7 +99,6 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
           const val = stats[0]._safeValue ?? stats[0].NumericValue ?? 0;
           if (Number(val) <= 0) return null; 
 
-          // STRICT FILTER: Must be 2021 or newer
           const recordYear = parseInt(stats[0].TimeDim);
           if (isNaN(recordYear) || recordYear < 2021) return null;
 
@@ -152,8 +150,8 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
           <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Global <span className="text-brand-red">Map</span>
             <p className={`mt-2 text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            Select a destination to initiate a comprehensive screening for infectious outbreaks.
-          </p>
+              Select a destination to initiate a comprehensive screening for infectious outbreaks.
+            </p>
           </h1>
         </div>
 
@@ -167,8 +165,8 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
             ))}
           </Map>
 
-          {/* 1. SEARCH BAR: FIXED TOP-LEFT */}
-          <div className="absolute top-4 left-4 z-20 w-80">
+          {/* 1. SEARCH BAR: CENTERED ON MOBILE, TOP-LEFT ON DESKTOP */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 z-20 w-[90%] sm:w-80">
             <div className={`backdrop-blur-lg border p-4 rounded-2xl shadow-xl ${isDark ? 'bg-slate-950/80 border-white/20 text-white' : 'bg-white/80 border-slate-300 text-slate-900'}`}>
               <div className="flex items-center gap-2 text-brand-red font-bold text-[10px] uppercase tracking-widest mb-3">
                 <Search size={14} /> Search Country
@@ -192,9 +190,9 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
             </div>
           </div>
 
-          {/* 2 & 3. INFO CONTAINER: POSITIONED TOP-RIGHT, LEFT OF THE ZOOM CONTROLS */}
+          {/* 2 & 3. INFO CONTAINER: CENTERED OVERLAY ON MOBILE, TOP-RIGHT ON DESKTOP */}
           {selectedCountry && (
-            <div className="absolute top-4 right-[60px] z-20 w-80 h-[580px]">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 md:top-4 md:right-[60px] md:left-auto md:translate-x-0 md:translate-y-0 z-30 w-[90%] sm:w-80 h-auto max-h-[85%] md:h-[580px]">
               <div className={`h-full backdrop-blur-xl border rounded-2xl flex flex-col shadow-2xl overflow-hidden ${isDark ? 'bg-slate-950/85 border-white/20' : 'bg-white/90 border-slate-300'}`}>
                 <div className={`p-4 border-b flex justify-between items-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
                   <div>
@@ -228,8 +226,6 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2 md:gap-3">
                           {healthRisks.map((risk, i) => (
                             <div key={i} className={`p-2 md:p-3 rounded-lg md:rounded-xl border ${risk.type === 'Acute' ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-500/5 border-slate-500/20'}`}>
-                              
-                             
                               <div className="flex justify-between items-start gap-2 text-[9px] md:text-[10px] font-bold mb-1">
                                 <span className={risk.type === 'Acute' ? 'text-red-500' : 'text-slate-400'}>{risk.name}</span>
                                 {risk.type === 'Acute' ? (
@@ -238,8 +234,6 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                                   <ShieldAlert size={12} className="shrink-0 mt-[2px]" />
                                 )}
                               </div>
-                              
-
                               <div className={`text-lg md:text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>
                                 {typeof risk.value === 'number' ? risk.value.toLocaleString() : risk.value}
                                 <span className={`text-[8px] font-sans ml-1 block mt-1 ${risk.value === 'Active Alert' ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
