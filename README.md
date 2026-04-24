@@ -78,7 +78,9 @@ $$Final_Score = \min(100, Base_Risk + \text{Velocity Penalty} + \text{Fatality P
    npm install
 
 3. **Configure Environment Variables:**
+
 Code snippet:
+
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
