@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { m, AnimatePresence } from "framer-motion";
+import { m } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { 
-  User, Mail, Bell, ShieldCheck, Camera, Edit3, 
+  User, Mail, Bell, ShieldCheck, Edit3, 
   Save, LogOut, Activity, Globe, Zap, History, 
   Settings2, Lock, ChevronRight, X 
 } from "lucide-react";
 import iso from "iso-3166-1";
-import type { User as SupabaseUser } from "@supabase/supabase-js"; // ADDED
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface ProfileProps {
   user: SupabaseUser | null;
@@ -15,7 +15,7 @@ interface ProfileProps {
   onLogout: () => Promise<void>;
 }
 
-const Profile: React.FC<ProfileProps> = ({ user: propUser, isDark, onLogout }) => { // CHANGED: accept props
+const Profile: React.FC<ProfileProps> = ({ user: propUser, isDark, onLogout }) => {
   const [user, setUser] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -74,11 +74,9 @@ const Profile: React.FC<ProfileProps> = ({ user: propUser, isDark, onLogout }) =
           >
             <div className="relative">
               <div className="w-32 h-32 rounded-[2.5rem] bg-slate-100 dark:bg-slate-800 border-4 border-white dark:border-slate-900 flex items-center justify-center overflow-hidden shadow-2xl">
+                {/* Visual Placeholder: Clean Icon instead of Camera/Upload */}
                 <User size={64} className="text-slate-300 dark:text-slate-600" />
               </div>
-              <button className="absolute -bottom-1 -right-1 p-2.5 bg-brand-red text-white rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all">
-                <Camera size={16} />
-              </button>
             </div>
 
             <div className="flex-1 text-center md:text-left">
@@ -120,7 +118,6 @@ const Profile: React.FC<ProfileProps> = ({ user: propUser, isDark, onLogout }) =
 
         {/* MIDDLE SECTION: Settings & Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
           <div className="lg:col-span-2 space-y-6">
             <section className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
               <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-10 flex items-center gap-3">
@@ -157,7 +154,6 @@ const Profile: React.FC<ProfileProps> = ({ user: propUser, isDark, onLogout }) =
                   </div>
                 </div>
 
-                {/* Notifications Switch */}
                 <div className="p-6 rounded-3xl bg-[#f8fafc] dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50 flex items-center justify-between group transition-all hover:border-brand-red/20">
                   <div className="flex items-center gap-5">
                     <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm text-brand-red group-hover:scale-110 transition-transform">
@@ -195,7 +191,6 @@ const Profile: React.FC<ProfileProps> = ({ user: propUser, isDark, onLogout }) =
           </div>
 
           <aside className="space-y-6">
-            {/* Stats Card */}
             <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
                 <Activity size={14} className="text-brand-red"/> Account Activity
@@ -218,7 +213,6 @@ const Profile: React.FC<ProfileProps> = ({ user: propUser, isDark, onLogout }) =
               </div>
             </div>
 
-            {/* Security Actions */}
             <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-full bg-brand-red/5 pointer-events-none" />
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-red mb-6 flex items-center gap-2">
@@ -232,7 +226,7 @@ const Profile: React.FC<ProfileProps> = ({ user: propUser, isDark, onLogout }) =
                   Change Password <ChevronRight size={14} className="text-brand-red" />
                 </button>
                 <button 
-                  onClick={onLogout} // CHANGED: was supabase.auth.signOut(), now uses the prop
+                  onClick={onLogout}
                   className="w-full py-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-all text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
                 >
                   <LogOut size={14} /> Sign Out
@@ -240,7 +234,6 @@ const Profile: React.FC<ProfileProps> = ({ user: propUser, isDark, onLogout }) =
               </div>
             </div>
           </aside>
-
         </div>
       </div>
     </div>
