@@ -146,7 +146,6 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
   };
 
   return (
-    /* FIXED: Added id="global-map" for Header navigation and scroll tracking */
     <section id="global-map" className="py-12 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-6 md:mb-8 text-center md:text-left">
@@ -163,7 +162,7 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
           <Map ref={mapRef} theme={isDark ? 'dark' : 'light'}>
             {outbreaks.map((p) => (
               <MapMarker key={p.id} longitude={p.longitude} latitude={p.latitude} onClick={() => handleCountrySelect(p)}>
-                <div className="h-3 w-3 rounded-full bg-red-600 border border-white/50 shadow-lg cursor-pointer hover:scale-150 transition-transform" />
+                <div className="h-3 w-3 min-w-[12px] min-h-[12px] flex-shrink-0 box-border rounded-full bg-red-600 border border-white/50 shadow-lg cursor-pointer hover:scale-150 transition-transform origin-center" />
               </MapMarker>
             ))}
           </Map>
@@ -229,10 +228,18 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2 md:gap-3">
                           {healthRisks.map((risk, i) => (
                             <div key={i} className={`p-2 md:p-3 rounded-lg md:rounded-xl border ${risk.type === 'Acute' ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-500/5 border-slate-500/20'}`}>
-                              <div className="flex justify-between text-[9px] md:text-[10px] font-bold mb-1">
+                              
+                             
+                              <div className="flex justify-between items-start gap-2 text-[9px] md:text-[10px] font-bold mb-1">
                                 <span className={risk.type === 'Acute' ? 'text-red-500' : 'text-slate-400'}>{risk.name}</span>
-                                {risk.type === 'Acute' ? <AlertTriangle size={12}/> : <ShieldAlert size={12}/>}
+                                {risk.type === 'Acute' ? (
+                                  <AlertTriangle size={12} className="shrink-0 mt-[2px]" /> 
+                                ) : (
+                                  <ShieldAlert size={12} className="shrink-0 mt-[2px]" />
+                                )}
                               </div>
+                              
+
                               <div className={`text-lg md:text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>
                                 {typeof risk.value === 'number' ? risk.value.toLocaleString() : risk.value}
                                 <span className={`text-[8px] font-sans ml-1 block mt-1 ${risk.value === 'Active Alert' ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
