@@ -3,33 +3,7 @@
 
 **Health Radar** is a full-stack, real-time global health surveillance platform. It is engineered to monitor and visualize emerging disease outbreaks by acting as an early-warning system. 
 
-[cite_start]Moving beyond simple data aggregation, the platform utilizes a Hybrid Data Fusion architecture[cite: 1]. By prioritizing leading indicators over lagging metrics, the system calculates predictive risk scores, providing actionable intelligence through a dynamic geospatial interface.
-
-## ✨ Core Features
-* [cite_start]**Leading-Indicator Risk Engine:** Calculates global threat levels using exponential growth factors rather than relying solely on lagging mortality rates[cite: 101, 105, 110].
-* [cite_start]**Time Machine Simulator:** An interactive analytical tool that allows users to scrub backward through 30 days of case history[cite: 119, 131]. [cite_start]It dynamically recalculates global leaderboards in milliseconds to visualize the exact moment an outbreak hits exponential velocity[cite: 125, 140].
-* [cite_start]**Unified Master Roster:** Cross-references World Health Organization (WHO) datasets with live epidemiological APIs[cite: 22]. [cite_start]It automatically injects missing nations to guarantee 100% global coverage and eliminate geopolitical data gaps[cite: 25, 26].
-* **Interactive Global Map:** A responsive, dark-mode optimized geospatial dashboard for real-time hotspot tracking.
-
-## 🧬 System Architecture & The Risk Algorithm
-[cite_start]To generate accurate, 0-100 safety scores without penalizing nations for robust reporting, the backend processes three mathematical pillars[cite: 3, 10]:
-
-### 1. The Anchor (Static Baseline)
-[cite_start]We establish a baseline vulnerability score derived from established health indices (infrastructure, security, and long-term outcomes)[cite: 4, 5]. [cite_start]We invert the standard metric to calculate risk[cite: 6]:
-
-[cite_start]$$Base\_Risk = 100 - \text{Health Index}$$ [cite: 8]
-
-[cite_start]This stable proxy is split into **Systemic Infrastructure (70%)** and **Endemic Burden (30%)**[cite: 75, 81]. [cite_start]If live API data is temporarily unavailable, the system safely falls back to this baseline[cite: 73].
-
-### 2. The Sensor (Real-Time Telemetry)
-[cite_start]The system fetches live data to measure the immediate momentum of a disease[cite: 13, 110]. [cite_start]The primary driver is the Epidemic Growth Factor, measuring surge acceleration over rolling 7-day windows[cite: 142, 143, 147]:
-
-[cite_start]$$Growth\_Factor = \frac{\text{New Cases This Week}}{\text{New Cases Last Week}}$$ [cite: 148, 149]
-
-### 3. The Fusion 
-[cite_start]The backend unifies the static anchor with the real-time velocity penalties, capping the result to maintain a consistent scale[cite: 18, 19].
-
-[cite_start]$$Final\_Score = \min(100, Base\_Risk + \text{Velocity Penalty} + \text{Fatality Penalty})$$ [cite: 19]
+✨ Core FeaturesLeading-Indicator Risk Engine: Calculates global threat levels using exponential growth factors rather than relying solely on lagging mortality rates.Time Machine Simulator: An interactive analytical tool that allows users to scrub backward through 30 days of case history. It dynamically recalculates global leaderboards in milliseconds to visualize the exact moment an outbreak hits exponential velocity.Unified Master Roster: Cross-references World Health Organization (WHO) datasets with live epidemiological APIs. It automatically injects missing nations to guarantee 100% global coverage and eliminate geopolitical data gaps.Interactive Global Map: A responsive, dark-mode optimized geospatial dashboard for real-time hotspot tracking.🧬 System Architecture & The Risk AlgorithmTo generate accurate, 0-100 safety scores without penalizing nations for robust reporting, the backend processes three mathematical pillars:1. The Anchor (Static Baseline)We establish a baseline vulnerability score derived from established health indices (infrastructure, security, and long-term outcomes). We invert the standard metric to calculate risk:$$Base\_Risk = 100 - \text{Health Index}$$This stable proxy is split into Systemic Infrastructure (70%) and Endemic Burden (30%). If live API data is temporarily unavailable, the system safely falls back to this baseline.2. The Sensor (Real-Time Telemetry)The system fetches live data to measure the immediate momentum of a disease. The primary driver is the Epidemic Growth Factor, measuring surge acceleration over rolling 7-day windows:$$Growth\_Factor = \frac{\text{New Cases This Week}}{\text{New Cases Last Week}}$$3. The FusionThe backend unifies the static anchor with the real-time velocity penalties, capping the result to maintain a consistent scale.$$Final\_Score = \min(100, Base\_Risk + \text{Velocity Penalty} + \text{Fatality Penalty})$$
 
 ## 🛠️ Technical Stack
 **Frontend (Client)**
