@@ -77,6 +77,7 @@ $$Final_Score = \min(100, Base_Risk + \text{Velocity Penalty} + \text{Fatality P
 
 ```bash
 npm install
+.
 
 3. **Configure Environment Variables:**
 Create a .env file in the root directory and add your Supabase and API keys:
@@ -84,6 +85,7 @@ Create a .env file in the root directory and add your Supabase and API keys:
 ```Code snippet
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+.
 
 4. **Start the development server:**
 
