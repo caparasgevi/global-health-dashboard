@@ -61,7 +61,6 @@ const TrendChart: React.FC<TrendChartProps> = memo(({
       const avgPrev = (sorted[sorted.length - 2].value + sorted[sorted.length - 3].value) / 2;
       const changePct = (last - avgPrev) / avgPrev;
 
-      // Only trigger trend shifts if change is > 5% to account for reporting noise
       if (changePct > 0.05) currentTrend = 'rising';
       else if (changePct < -0.05) currentTrend = 'falling';
       else currentTrend = 'stable';

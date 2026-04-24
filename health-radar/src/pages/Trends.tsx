@@ -489,7 +489,6 @@ const WHO_REGIONAL_LIFE_EXPECTANCY = [
   },
 ];
 
-// Custom tooltip for the life expectancy chart
 const LifeExpectancyTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   const d = WHO_REGIONAL_LIFE_EXPECTANCY.find(

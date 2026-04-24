@@ -3,7 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
 
-// VERCEL FIX: Direct import forces the bundler to include the JSON data in the deployment
 import staticHealthDataRaw from '../healthiest-countries-2026.json' with { type: 'json' };
 
 dotenv.config();

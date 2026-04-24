@@ -189,7 +189,6 @@ function App() {
                   } 
                 />
 
-                {/* ADDED: Protected Profile Route */}
                 <Route
                   path="/profile"
                   element={

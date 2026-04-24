@@ -117,14 +117,13 @@ const ComparisonChart: React.FC<ComparisonChartProps> = ({
   );
 
   return (
-    // FIXED: Container height must be a concrete value (px) or h-full within a fixed parent to avoid -1 Recharts warning
     <div className="w-full h-[450px] bg-white/50 dark:bg-slate-950/40 p-4 md:p-8 rounded-[2rem] border border-slate-200 dark:border-white/5 backdrop-blur-xl shadow-2xl transition-colors duration-300 flex flex-col">
       <div className="mb-4">
         <h3 className="text-slate-900 dark:text-white text-lg md:text-xl font-bold tracking-tight uppercase">Comparative Analysis</h3>
         <p className="text-brand-red text-xs font-black uppercase tracking-widest">{indicatorName}</p>
       </div>
 
-      <div className="flex-1 w-full min-h-0"> {/* min-h-0 is vital for ResponsiveContainer in Flexbox */}
+      <div className="flex-1 w-full min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="8 8" vertical={false} strokeOpacity={0.1} />

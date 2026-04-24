@@ -79,18 +79,12 @@ const Home = () => {
   const [outbreakLoading, setOutbreakLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBasis, setShowBasis] = useState(false);
-
-  // NEW: Auth states for CountryHealthAlerts
   const [user, setUser] = useState<any>(null);
   const [isGuest, setIsGuest] = useState(false);
-
   const swiperRef = useRef<any>(null);
-
-  // NEW: Get user country from metadata if available
   const userCountry = user?.user_metadata?.country ?? undefined;
   const userRegion = user?.user_metadata?.region ?? undefined;
 
-  // NEW: Fetch auth state (copy from Header)
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -303,7 +297,7 @@ const Home = () => {
             variants={revealVariants}
           >
             <CountryHealthAlerts
-              isDark={false} // Pass isDark from parent if available, or use state
+              isDark={false} 
               userCountry={userCountry}
               userRegion={userRegion}
             />
@@ -316,7 +310,6 @@ const Home = () => {
             viewport={{ once: true }}
             variants={revealVariants}
           >
-            {/* Original WHO Surveillance Archive - COMPLETELY UNCHANGED */}
             <div className="theme-card rounded-[2rem] p-5 md:p-8 flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
               {/* Header Section */}
               <div className="flex items-center justify-between mb-6">

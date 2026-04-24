@@ -61,7 +61,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setWasSubmitted(true);
     setAuthError(null);
 
-    // --- FORGOT PASSWORD FLOW ---
     if (isForgotPassword) {
       if (!EMAIL_REGEX.test(formData.email)) {
         setAuthError("Please enter a valid email address.");
@@ -82,9 +81,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       }
       return;
     }
-    // --- END FORGOT PASSWORD FLOW ---
 
-    // --- PRE-FLIGHT VALIDATION CHECKS ---
     if (!EMAIL_REGEX.test(formData.email)) {
       setAuthError("Please enter a valid email address.");
       return;
@@ -105,7 +102,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         return;
       }
     }
-    // --- END PRE-FLIGHT VALIDATION ---
 
     try {
       if (isLogin) {
