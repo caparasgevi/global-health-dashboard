@@ -84,7 +84,7 @@ const OurTeam: React.FC = () => {
           className="text-3xl md:text-5xl font-extrabold font-montserrat text-gray-900 dark:text-white mb-4 tracking-tight"
         >
           Meet Our{" "}
-          <span className="text-[var(--color-brand-red)]">Expert Team</span>
+          <span className="text-[var(--color-brand-red)]">Team</span>
         </motion.h1>
         <p className="text-gray-500 dark:text-gray-400 max-w-lg mx-auto font-medium px-4 text-sm md:text-base">
           The multidisciplinary team dedicated to advancing HealthRadar's predictive surveillance and public health technology.
