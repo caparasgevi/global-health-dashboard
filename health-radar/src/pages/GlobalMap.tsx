@@ -10,13 +10,36 @@ import {
   Activity,
 } from "lucide-react";
 
-type OutbreakPoint = { id: string; country: string; latitude: number; longitude: number; iso2: string; };
-type IllnessData = { name: string; value: number | string; year: number | string; type: "Acute" | "Chronic"; };
-type LiveAlert = { title: string; date: string; url: string; summary: string; };
+type OutbreakPoint = {
+  id: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  iso2: string;
+};
+type IllnessData = {
+  name: string;
+  value: number | string;
+  year: number | string;
+  type: "Acute" | "Chronic";
+};
+type LiveAlert = { title: string; date: string; url: string; summary: string };
 
 const ACUTE_KEYWORDS = [
-  "MALARIA", "DENGUE", "CHOLERA", "MEASLES", "FEVER", "EBOLA", "ZIKA", 
-  "OUTBREAK", "TUBERCULOSIS", "COVID", "MPOX", "H5N1", "POLIO", "MARBURG"
+  "MALARIA",
+  "DENGUE",
+  "CHOLERA",
+  "MEASLES",
+  "FEVER",
+  "EBOLA",
+  "ZIKA",
+  "OUTBREAK",
+  "TUBERCULOSIS",
+  "COVID",
+  "MPOX",
+  "H5N1",
+  "POLIO",
+  "MARBURG",
 ];
 
 interface GlobalMapProps {
@@ -28,7 +51,9 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
   const [outbreaks, setOutbreaks] = useState<OutbreakPoint[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState<OutbreakPoint | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<OutbreakPoint | null>(
+    null,
+  );
   const [healthRisks, setHealthRisks] = useState<IllnessData[]>([]);
   const [liveAlerts, setLiveAlerts] = useState<LiveAlert[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -36,24 +61,28 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
   useEffect(() => {
     const initMapData = async () => {
       try {
-        const response = await fetch("https://disease.sh/v3/covid-19/countries");
+        const response = await fetch(
+          "https://disease.sh/v3/covid-19/countries",
+        );
         const data = await response.json();
         const points = data.map((item: any) => ({
-          id: item.countryInfo.iso3,
+          id: item.countryInfo.iso3 || item.country,
           iso2: item.countryInfo.iso2,
           country: item.country,
           latitude: item.countryInfo.lat,
           longitude: item.countryInfo.long,
         }));
         setOutbreaks(points);
-      } catch (e) { console.error("Map data error", e); }
+      } catch (e) {
+        console.error("Map data error", e);
+      }
     };
     initMapData();
   }, []);
 
   const fetchSpecificRisks = async (country: OutbreakPoint) => {
     setIsSearching(true);
-    setHealthRisks([]); 
+    setHealthRisks([]);
     setLiveAlerts([]);
 
     try {
@@ -62,7 +91,7 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
         healthService.getRealtimeDiseaseStats(country.id),
         healthService.getRankedIndicators(),
       ]);
-      
+
       setLiveAlerts(alerts);
 
       const seenDataPoints = new Set<string>();
@@ -72,15 +101,18 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
         if (!seenDataPoints.has(alert.title)) {
           seenDataPoints.add(alert.title);
           rawLiveRisks.push({
-            name: alert.title.length > 45 ? alert.title.substring(0, 45) + "..." : alert.title,
+            name:
+              alert.title.length > 45
+                ? alert.title.substring(0, 45) + "..."
+                : alert.title,
             value: "Active Alert",
             year: "Live",
-            type: "Acute"
+            type: "Acute",
           });
         }
       });
 
-      const activeRealtime = (realtimeStats as IllnessData[]).filter(s => {
+      const activeRealtime = (realtimeStats as IllnessData[]).filter((s) => {
         if (Number(s.value) > 0 && !seenDataPoints.has(s.name)) {
           seenDataPoints.add(s.name);
           return true;
@@ -88,16 +120,21 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
         return false;
       });
 
-      const shuffledIndicators = [...(allIndicators || [])].sort(() => 0.5 - Math.random());
+      const shuffledIndicators = [...(allIndicators || [])].sort(
+        () => 0.5 - Math.random(),
+      );
       const candidateIndicators = shuffledIndicators.slice(0, 100);
 
       const results = await Promise.allSettled(
         candidateIndicators.map(async (ind: any) => {
-          const stats = await healthService.checkIndicatorStatus(ind.IndicatorCode, country.id);
+          const stats = await healthService.checkIndicatorStatus(
+            ind.IndicatorCode,
+            country.id,
+          );
           if (!stats?.[0]) return null;
-          
+
           const val = stats[0]._safeValue ?? stats[0].NumericValue ?? 0;
-          if (Number(val) <= 0) return null; 
+          if (Number(val) <= 0) return null;
 
           const recordYear = parseInt(stats[0].TimeDim);
           if (isNaN(recordYear) || recordYear < 2021) return null;
@@ -110,28 +147,26 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
             name: rawName,
             value: Number(val),
             year: stats[0].TimeDim ?? "N/A",
-            type: ACUTE_KEYWORDS.some(k => rawName.toUpperCase().includes(k)) ? "Acute" : "Chronic"
+            type: ACUTE_KEYWORDS.some((k) => rawName.toUpperCase().includes(k))
+              ? "Acute"
+              : "Chronic",
           } as IllnessData;
-        })
+        }),
       );
-      
+
       const whoData = results
-        .map(r => r.status === 'fulfilled' ? r.value : null)
+        .map((r) => (r.status === "fulfilled" ? r.value : null))
         .filter(Boolean) as IllnessData[];
 
-      const combinedData = [
-        ...rawLiveRisks,
-        ...activeRealtime, 
-        ...whoData
-      ]
-        .sort((a, b) => (a.type === 'Acute' ? -1 : 1))
-        .slice(0, 6); 
+      const combinedData = [...rawLiveRisks, ...activeRealtime, ...whoData]
+        .sort((a, b) => (a.type === "Acute" ? -1 : 1))
+        .slice(0, 6);
 
       setHealthRisks(combinedData);
     } catch (e) {
       console.error("Error fetching country data", e);
-    } finally { 
-      setIsSearching(false); 
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -139,7 +174,11 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
     setSearchQuery(target.country);
     setShowSuggestions(false);
     setSelectedCountry(target);
-    mapRef.current?.flyTo({ center: [target.longitude, target.latitude], zoom: 4, duration: 1500 });
+    mapRef.current?.flyTo({
+      center: [target.longitude, target.latitude],
+      zoom: 4,
+      duration: 1500,
+    });
     fetchSpecificRisks(target);
   };
 
@@ -147,96 +186,112 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
     <section id="global-map" className="py-12 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-6 md:mb-8 text-center md:text-left">
-          <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
             Global <span className="text-brand-red">Map</span>
-            <p className={`mt-2 text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            <p className={`mt-2 text-sm md:text-base ${isDark ? "text-slate-400" : "text-slate-600"}`}>
               Select a destination to initiate a comprehensive screening for infectious outbreaks.
             </p>
           </h1>
         </div>
 
-        <div className={`relative h-[650px] w-full overflow-hidden rounded-3xl border shadow-2xl transition-all duration-500 ${isDark ? 'border-white/10 bg-slate-900' : 'border-slate-300 bg-slate-200'}`}>
-          
-          <Map ref={mapRef} theme={isDark ? 'dark' : 'light'}>
-            {outbreaks.map((p) => (
-              <MapMarker key={p.id} longitude={p.longitude} latitude={p.latitude} onClick={() => handleCountrySelect(p)}>
-                <div className="h-3 w-3 min-w-[12px] min-h-[12px] flex-shrink-0 box-border rounded-full bg-red-600 border border-white/50 shadow-lg cursor-pointer hover:scale-150 transition-transform origin-center" />
-              </MapMarker>
-            ))}
-          </Map>
+        <div className={`relative h-[500px] md:h-[650px] w-full overflow-hidden rounded-3xl border shadow-2xl transition-all duration-500 ${isDark ? "border-white/10 bg-slate-900" : "border-slate-300 bg-slate-200"}`}>
+          {/* Map wrapper with touch-pan-y to allow scrolling past the map */}
+          <div className="absolute inset-0 touch-pan-y">
+            <Map ref={mapRef} theme={isDark ? "dark" : "light"}>
+              {outbreaks.map((p, idx) => (
+                <MapMarker
+                  key={p.id || `outbreak-${idx}`}
+                  longitude={p.longitude}
+                  latitude={p.latitude}
+                  onClick={() => handleCountrySelect(p)}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 -translate-y-1/2 -translate-x-1/2 cursor-pointer">
+                    <div className="h-3 w-3 rounded-full bg-red-600 border border-white/50 shadow-lg active:scale-150 md:hover:scale-150 transition-transform" />
+                  </div>
+                </MapMarker>
+              ))}
+            </Map>
+          </div>
 
-          {/* 1. SEARCH BAR: CENTERED ON MOBILE, TOP-LEFT ON DESKTOP */}
+          {/* Search UI */}
           <div className="absolute top-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 z-20 w-[90%] sm:w-80">
-            <div className={`backdrop-blur-lg border p-4 rounded-2xl shadow-xl ${isDark ? 'bg-slate-950/80 border-white/20 text-white' : 'bg-white/80 border-slate-300 text-slate-900'}`}>
+            <div className={`backdrop-blur-lg border p-4 rounded-2xl shadow-xl ${isDark ? "bg-slate-950/80 border-white/20 text-white" : "bg-white/80 border-slate-300 text-slate-900"}`}>
               <div className="flex items-center gap-2 text-brand-red font-bold text-[10px] uppercase tracking-widest mb-3">
                 <Search size={14} /> Search Country
               </div>
               <input
-                className={`w-full border rounded-xl px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-red-500 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}
+                className={`w-full border rounded-xl px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-red-500 ${isDark ? "bg-white/5 border-white/10" : "bg-slate-100 border-slate-200"}`}
                 placeholder="Type to search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
               />
               {showSuggestions && (
-                <div className={`mt-2 border rounded-xl max-h-40 overflow-y-auto ${isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-200'}`}>
-                  {outbreaks.filter(o => o.country.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5).map(s => (
-                    <button key={s.id} onClick={() => handleCountrySelect(s)} className="w-full text-left px-4 py-2 text-xs hover:bg-red-500/10 transition-colors">
-                      {s.country}
-                    </button>
-                  ))}
+                <div className={`mt-2 border rounded-xl max-h-40 overflow-y-auto ${isDark ? "bg-slate-900 border-white/10" : "bg-white border-slate-200"}`}>
+                  {outbreaks
+                    .filter((o) => o.country.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .slice(0, 5)
+                    .map((s) => (
+                      <button key={s.id} onClick={() => handleCountrySelect(s)} className="w-full text-left px-4 py-2 text-xs hover:bg-red-500/10 transition-colors">
+                        {s.country}
+                      </button>
+                    ))}
                 </div>
               )}
             </div>
           </div>
 
-          {/* 2 & 3. INFO CONTAINER: CENTERED OVERLAY ON MOBILE, TOP-RIGHT ON DESKTOP */}
+          {/* Detailed Info Card */}
           {selectedCountry && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 md:top-4 md:right-[60px] md:left-auto md:translate-x-0 md:translate-y-0 z-30 w-[90%] sm:w-80 h-auto max-h-[85%] md:h-[580px]">
-              <div className={`h-full backdrop-blur-xl border rounded-2xl flex flex-col shadow-2xl overflow-hidden ${isDark ? 'bg-slate-950/85 border-white/20' : 'bg-white/90 border-slate-300'}`}>
-                <div className={`p-4 border-b flex justify-between items-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+            <div className="absolute inset-0 z-30 flex items-center justify-center md:items-start md:justify-end md:p-4 pointer-events-none">
+              <div className={`w-[90%] sm:w-80 h-auto max-h-[85%] md:h-[580px] pointer-events-auto backdrop-blur-xl border rounded-2xl flex flex-col shadow-2xl overflow-hidden ${isDark ? "bg-slate-950/85 border-white/20" : "bg-white/90 border-slate-300"}`}>
+                <div className={`p-4 border-b flex justify-between items-center ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
                   <div>
-                    <h2 className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{selectedCountry.country}</h2>
+                    <h2 className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{selectedCountry.country}</h2>
                     <p className="text-[10px] text-red-500 font-bold uppercase">Risk Intelligence</p>
                   </div>
                   <button onClick={() => setSelectedCountry(null)} className="p-1 hover:bg-red-500/10 rounded-full transition-colors">
                     <X size={18} />
                   </button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
-                  {isSearching ? <div className="text-center py-10 md:py-20 animate-pulse text-[10px] uppercase tracking-tighter">Analyzing live data...</div> : (
+                <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 touch-auto">
+                  {isSearching ? (
+                    <div className="text-center py-10 md:py-20 animate-pulse text-[10px] uppercase tracking-tighter">Analyzing live data...</div>
+                  ) : (
                     <>
                       {liveAlerts.length > 0 ? (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-amber-500 text-[9px] md:text-[10px] font-bold uppercase"><Activity size={14} /> Local Alerts</div>
+                          <div className="flex items-center gap-2 text-amber-500 text-[9px] md:text-[10px] font-bold uppercase">
+                            <Activity size={14} /> Local Alerts
+                          </div>
                           {liveAlerts.map((alert, i) => (
-                            <a key={i} href={alert.url} target="_blank" rel="noreferrer" className={`block p-2 border rounded-lg text-[9px] md:text-[10px] hover:opacity-80 transition-opacity ${isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                            <a key={i} href={alert.url} target="_blank" rel="noreferrer" className={`block p-2 border rounded-lg text-[9px] md:text-[10px] hover:opacity-80 transition-opacity ${isDark ? "bg-amber-500/10 border-amber-500/20 text-amber-200" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
                               <span className="font-bold block mb-1">{new Date(alert.date).toLocaleDateString()}</span>
                               {alert.title}
                             </a>
                           ))}
                         </div>
                       ) : (
-                        <div className={`text-[10px] p-2 rounded-lg text-center ${isDark ? 'text-slate-400 bg-white/5' : 'text-slate-500 bg-slate-100'}`}>No active severe alerts detected in this region.</div>
+                        <div className={`text-[10px] p-2 rounded-lg text-center ${isDark ? "text-slate-400 bg-white/5" : "text-slate-500 bg-slate-100"}`}>
+                          No active severe alerts detected in this region.
+                        </div>
                       )}
-                      
-                      <div className="text-red-500 text-[9px] md:text-[10px] font-bold uppercase flex items-center gap-2 pt-2"><Skull size={14}/> Identified Threats</div>
-                      
+
+                      <div className="text-red-500 text-[9px] md:text-[10px] font-bold uppercase flex items-center gap-2 pt-2">
+                        <Skull size={14} /> Identified Threats
+                      </div>
+
                       {healthRisks.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2 md:gap-3">
                           {healthRisks.map((risk, i) => (
-                            <div key={i} className={`p-2 md:p-3 rounded-lg md:rounded-xl border ${risk.type === 'Acute' ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-500/5 border-slate-500/20'}`}>
+                            <div key={i} className={`p-2 md:p-3 rounded-lg md:rounded-xl border ${risk.type === "Acute" ? "bg-red-500/5 border-red-500/20" : "bg-slate-500/5 border-slate-500/20"}`}>
                               <div className="flex justify-between items-start gap-2 text-[9px] md:text-[10px] font-bold mb-1">
-                                <span className={risk.type === 'Acute' ? 'text-red-500' : 'text-slate-400'}>{risk.name}</span>
-                                {risk.type === 'Acute' ? (
-                                  <AlertTriangle size={12} className="shrink-0 mt-[2px]" /> 
-                                ) : (
-                                  <ShieldAlert size={12} className="shrink-0 mt-[2px]" />
-                                )}
+                                <span className={risk.type === "Acute" ? "text-red-500" : "text-slate-400"}>{risk.name}</span>
+                                {risk.type === "Acute" ? <AlertTriangle size={12} className="shrink-0 mt-[2px]" /> : <ShieldAlert size={12} className="shrink-0 mt-[2px]" />}
                               </div>
-                              <div className={`text-lg md:text-xl font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                                {typeof risk.value === 'number' ? risk.value.toLocaleString() : risk.value}
-                                <span className={`text-[8px] font-sans ml-1 block mt-1 ${risk.value === 'Active Alert' ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
+                              <div className={`text-lg md:text-xl font-mono ${isDark ? "text-white" : "text-slate-900"}`}>
+                                {typeof risk.value === "number" ? risk.value.toLocaleString() : risk.value}
+                                <span className={`text-[8px] font-sans ml-1 block mt-1 ${risk.value === "Active Alert" ? "text-red-400 animate-pulse" : "text-slate-400"}`}>
                                   Reported: {risk.year}
                                 </span>
                               </div>
@@ -244,7 +299,9 @@ const GlobalMap: React.FC<GlobalMapProps> = ({ isDark }) => {
                           ))}
                         </div>
                       ) : (
-                         <div className={`text-[10px] text-center p-4 rounded-xl ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No recent data (2021+) or active cases recorded.</div>
+                        <div className={`text-[10px] text-center p-4 rounded-xl ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                          No recent data (2021+) or active cases recorded.
+                        </div>
                       )}
                     </>
                   )}
