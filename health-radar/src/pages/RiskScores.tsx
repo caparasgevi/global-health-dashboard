@@ -205,8 +205,8 @@ const RiskScores = () => {
 
     // 4. FINALLY, apply the search filter
     let filtered = ranked.filter((country) =>
-      country.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+  (country?.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase())
+);
 
     return filtered;
   }, [riskData, searchQuery, sortOrder, timeOffset]);
